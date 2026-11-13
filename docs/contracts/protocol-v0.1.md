@@ -2,7 +2,7 @@
 slug: /contracts/protocol-v0.1
 title: Kshift Protocol Contract v0.1
 type: reference
-status: review
+status: active
 version: "0.1"
 updated: "2026-11-13"
 keywords:
@@ -140,6 +140,8 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | `PERMISSION_DENIED` | `ERROR_CODE_FORBIDDEN` | 项目授权失败 |
 | `INVALID_ARGUMENT` | `ERROR_CODE_INVALID_INPUT` | 字段或大小非法 |
 | `NOT_FOUND` | `ERROR_CODE_INVALID_STATE` | 实体不存在或已删除 |
+| `ALREADY_EXISTS` | `ERROR_CODE_ALREADY_EXISTS` | 唯一约束或幂等键冲突 |
+| `FAILED_PRECONDITION` | `ERROR_CODE_FAILED_PRECONDITION` | 状态不允许或事件无效 |
 | `ABORTED` | `ERROR_CODE_CONFLICT` | 实体版本过期 |
 | `FAILED_PRECONDITION` | `ERROR_CODE_RESET_REQUIRED` | revision gap 或 schema mismatch |
 | `RESOURCE_EXHAUSTED` | `ERROR_CODE_LIMIT_EXCEEDED` | 容量或消息大小超限 |
@@ -150,13 +152,14 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 
 ## 8. 大小限制
 
-所有消息和缓冲必须有显式上限。`OQ-011` 关闭前，使用以下建议值评审。
+所有消息和缓冲必须有显式上限。以下值由 `DEC-027` 固定。
 
-| 对象 | 建议上限 |
+| 对象 | 上限 |
 | --- | ---: |
-| Unary request/response | 1 MiB |
+| gRPC unary request | 1 MiB |
+| gRPC unary response | 16 MiB |
+| Snapshot response | 16 MiB |
 | Single event | 256 KiB |
-| Snapshot | 16 MiB |
 | Attachment cache item | 256 MiB |
 
 - 超过上限时返回 `RESOURCE_EXHAUSTED`。

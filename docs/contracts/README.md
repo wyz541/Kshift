@@ -2,7 +2,7 @@
 slug: /contracts
 title: Kshift 合同基线
 type: reference
-status: review
+status: active
 updated: "2026-11-13"
 keywords:
   - 合同
@@ -36,7 +36,7 @@ description: 列出 Kshift v0.1 的协议、FFI 和 Release 合同入口。
 
 ## 3. 状态
 
-合同状态为 `review`。合同结构已冻结。`OQ-011` 关闭前，大小上限只作为配置项。
+合同状态为 `active`。合同结构已冻结。`OQ-011` 已在 R0 正式评审中关闭。
 
 ## 4. 变更规则
 

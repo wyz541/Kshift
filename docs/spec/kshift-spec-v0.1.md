@@ -2,9 +2,10 @@
 slug: /spec/kshift-v0.1
 title: Kshift Spec v0.1
 type: standard
-status: review
+status: active
 version: "0.1"
 updated: "2026-11-13"
+effective: "2026-11-13"
 keywords:
   - Kshift
   - 产品规格
@@ -25,10 +26,12 @@ source: https://github.com/wyz541/Kshift/discussions/1
 
 | 项目 | 内容 |
 | --- | --- |
-| 状态 | `review` |
+| 状态 | `active` |
 | 版本 | `0.1` |
 | Owner | `@wyz541` |
-| 评审截止 | `2026-11-20` |
+| 正式评审 | [R0 Spec Review](../reviews/2026-11-13-r0-spec-review.md) |
+| 生效日期 | `2026-11-13` |
+| 下一次复核 | `2026-12-11` |
 | 首版平台 | macOS 26.0+、iOS 26.0+ |
 | 实现起点 | [Issue #2](https://github.com/wyz541/Kshift/issues/2) |
 | 讨论来源 | [Discussion #1](https://github.com/wyz541/Kshift/discussions/1) |
@@ -454,6 +457,10 @@ sequenceDiagram
 - `CTR-005`：所有 snapshot、event 和附件必须有大小上限。
 - `CTR-006`：JSON Schema 只允许兼容扩展。
 - `CTR-007`：Release fixture 必须通过 schema 校验。
+- `CTR-008`：gRPC unary request 上限为 1 MiB。
+- `CTR-009`：gRPC unary response 和 snapshot 上限为 16 MiB。
+- `CTR-010`：单个 event 上限为 256 KiB。
+- `CTR-011`：附件缓存单项上限为 256 MiB。
 
 详细规则见 [Protocol Contract](../contracts/protocol-v0.1.md) 和 [Release Contract](../contracts/release-v0.1.md)。
 
@@ -538,22 +545,21 @@ flowchart TD
 | `OQ-008` | 首版是否支持应用内更新 | `@wyz541` | `2026-11-27` | 更新检查和回滚 |
 | `OQ-009` | 加密备份目标由谁提供 | `@wyz541` | `2026-11-27` | RPO、RTO 和恢复演练 |
 | `OQ-010` | 产品成功指标的具体数值 | `@wyz541` | `2026-12-11` | 首轮试用和发布评审 |
-| `OQ-011` | unary、event、snapshot 和附件的大小上限 | `@wyz541` | `2026-11-20` | 合同、FFI 和背压 |
 
-## 16. 评审与完成标准
+## 16. 正式评审结果
 
-本文进入 `active` 前必须满足以下条件。
+R0 正式评审已通过。评审记录见 [2026-11-13 R0 Spec Review](../reviews/2026-11-13-r0-spec-review.md)。
 
-- [ ] Spec v0.1 的章节可从 Discussion #1 追踪。
-- [ ] 每个关键决策有 `confirmed`、`pending` 或 `rejected` 状态。
-- [ ] 每个未决项有 owner、截止日期和影响范围。
-- [ ] macOS/iOS 复用边界和 Liquid Glass 门禁已写入。
-- [ ] protobuf 合同通过 `buf lint`。
-- [ ] Release JSON Schema 通过 meta-schema 校验。
-- [ ] 所有 Mermaid 图可解析。
-- [ ] 所有相对链接可打开。
-- [ ] 子 Issue 已增加 Spec 入口。
-- [ ] 评审人批准本文。
+- [x] Spec v0.1 的章节可从 Discussion #1 追踪。
+- [x] 每个关键决策有 `confirmed`、`pending` 或 `rejected` 状态。
+- [x] 每个未决项有 owner、截止日期和影响范围。
+- [x] macOS/iOS 复用边界和 Liquid Glass 门禁已写入。
+- [x] protobuf 合同通过 `buf lint`。
+- [x] Release JSON Schema 通过 meta-schema 校验。
+- [x] 所有 Mermaid 图可解析。
+- [x] 所有相对链接可打开。
+- [x] 子 Issue 已增加 Spec 入口。
+- [x] 评审人批准本文。
 
 ## 17. 来源
 
@@ -568,4 +574,4 @@ flowchart TD
 
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
-| 0.1 | 2026-11-13 | 从 Discussion #1 形成首个可评审版本。 |
+| 0.1 | 2026-11-13 | 从 Discussion #1 形成首个版本。完成正式评审并进入 `active`。 |

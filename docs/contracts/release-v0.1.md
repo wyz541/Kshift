@@ -2,7 +2,7 @@
 slug: /contracts/release-v0.1
 title: Kshift Release Contract v0.1
 type: reference
-status: review
+status: active
 version: "0.1"
 updated: "2026-11-13"
 keywords:

@@ -2,7 +2,7 @@
 slug: /decisions/decision-register
 title: Kshift 决策登记表
 type: reference
-status: review
+status: active
 version: "0.1"
 updated: "2026-11-13"
 keywords:
@@ -45,22 +45,22 @@ description: 记录 Kshift v1 的确认、待定和拒绝决策。
 | `DEC-014` | Rust 质量使用 fmt、clippy、测试、buf 和 deny | Discussion #1 | `@wyz541` | `2026-11-13` |
 | `DEC-015` | 首版路线为 R0 至 R5 | Issue #2、Issue #3 | `@wyz541` | `2026-11-13` |
 | `DEC-016` | 实现 Issue 只引用 Spec，不复制冲突规则 | Issue #3 | `@wyz541` | `2026-11-13` |
+| `DEC-027` | 协议 request、response、event 和附件使用固定上限 | Formal review | `@wyz541` | `2026-11-13` |
 
 ## 3. 待定决策
 
-| ID | 问题 | Owner | 截止日期 | 影响 |
-| --- | --- | --- | --- | --- |
-| `DEC-017` | 内部身份来源 | `@wyz541` | `2026-11-20` | 认证、Keychain、成员管理 |
-| `DEC-018` | macOS 签名和分发 | `@wyz541` | `2026-11-20` | 打包、安装和 Release |
-| `DEC-019` | iOS 分发方式 | `@wyz541` | `2026-11-20` | 安装和 Release 证据 |
-| `DEC-020` | Release 仓库 | `@wyz541` | `2026-11-20` | workflow 权限和资产 URL |
-| `DEC-021` | Release 通道 | `@wyz541` | `2026-11-20` | 版本和发布策略 |
-| `DEC-022` | Release 审批人数 | `@wyz541` | `2026-11-20` | GitHub environment |
-| `DEC-023` | Server 发行格式 | `@wyz541` | `2026-11-20` | 部署和升级 |
-| `DEC-024` | 应用内更新 | `@wyz541` | `2026-11-27` | 更新和回滚 |
-| `DEC-025` | 备份存储 provider | `@wyz541` | `2026-11-27` | RPO、RTO 和恢复 |
-| `DEC-026` | 产品成功指标数值 | `@wyz541` | `2026-12-11` | 首轮试用和发布评审 |
-| `DEC-027` | 协议和附件大小上限 | `@wyz541` | `2026-11-20` | 合同、FFI 和背压 |
+| ID | 问题 | Open Question | Owner | 截止日期 | 影响 |
+| --- | --- | --- | --- | --- | --- |
+| `DEC-017` | 内部身份来源 | `OQ-001` | `@wyz541` | `2026-11-20` | 认证、Keychain、成员管理 |
+| `DEC-018` | macOS 签名和分发 | `OQ-002` | `@wyz541` | `2026-11-20` | 打包、安装和 Release |
+| `DEC-019` | iOS 分发方式 | `OQ-003` | `@wyz541` | `2026-11-20` | 安装和 Release 证据 |
+| `DEC-020` | Release 仓库 | `OQ-004` | `@wyz541` | `2026-11-20` | workflow 权限和资产 URL |
+| `DEC-021` | Release 通道 | `OQ-005` | `@wyz541` | `2026-11-20` | 版本和发布策略 |
+| `DEC-022` | Release 审批人数 | `OQ-006` | `@wyz541` | `2026-11-20` | GitHub environment |
+| `DEC-023` | Server 发行格式 | `OQ-007` | `@wyz541` | `2026-11-20` | 部署和升级 |
+| `DEC-024` | 应用内更新 | `OQ-008` | `@wyz541` | `2026-11-27` | 更新和回滚 |
+| `DEC-025` | 备份存储 provider | `OQ-009` | `@wyz541` | `2026-11-27` | RPO、RTO 和恢复 |
+| `DEC-026` | 产品成功指标数值 | `OQ-010` | `@wyz541` | `2026-12-11` | 首轮试用和发布评审 |
 
 ## 4. 已拒绝决策
 
