@@ -1,0 +1,82 @@
+{
+  "schema_version": "1",
+  "product": "Kshift",
+  "version": "0.1.0-preview.1",
+  "channel": "preview",
+  "tag": "v0.1.0-preview.1",
+  "source_commit": "0123456789abcdef0123456789abcdef01234567",
+  "generated_at": "2026-11-13T00:00:00Z",
+  "minimum_os": {
+    "macos": "26.0",
+    "ios": "26.0"
+  },
+  "database": {
+    "engine": "postgresql",
+    "major": 18,
+    "exact_version": "18.0",
+    "schema_version": "0001",
+    "migration_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "assets": [
+    {
+      "name": "kshift-0.1.0-preview.1-source.tar.gz",
+      "platform": "source",
+      "architecture": "all",
+      "role": "source",
+      "size_bytes": 1024,
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "kshift-0.1.0-preview.1-server-macos-arm64.tar.gz",
+      "platform": "server",
+      "architecture": "arm64",
+      "role": "server-bundle",
+      "size_bytes": 2048,
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "signing_status": "unsigned"
+    }
+  ],
+  "signing": {
+    "status": "unsigned",
+    "identity": null,
+    "notarization": "not-requested"
+  },
+  "sbom": {
+    "format": "spdx-json",
+    "file": "sbom.spdx.json",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "provenance": {
+    "workflow": ".github/workflows/release-preview.yml",
+    "run_id": "10000000001",
+    "run_attempt": 1,
+    "artifact_id": "20000000001"
+  },
+  "gates": [
+    {
+      "name": "schema-validation",
+      "status": "passed",
+      "evidence": "schemas/examples/release-manifest.example.json"
+    }
+  ],
+  "limitations": [
+    "Preview fixture only. It does not represent an installable product."
+  ],
+  "rollback": {
+    "strategy": "new-patch-release",
+    "notes": "Publish a new patch preview after the faulty preview is stopped."
+  },
+  "release_status": "draft",
+  "missing_platforms": [
+    {
+      "platform": "macos",
+      "reason": "Signing and distribution decision pending."
+    },
+    {
+      "platform": "ios",
+      "reason": "Distribution decision pending."
+    }
+  ],
+  "promotion": null
+}

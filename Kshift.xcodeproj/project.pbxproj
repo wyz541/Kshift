@@ -1,0 +1,739 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		179D64ED7A27CC78253A71F4 /* KshiftAdapterBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425BBD6F9BFA1CB7E3296C95 /* KshiftAdapterBoundaryTests.swift */; };
+		1AD17F56B3ABC6DAC8AE0080 /* KshiftAdapterBoundaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 425BBD6F9BFA1CB7E3296C95 /* KshiftAdapterBoundaryTests.swift */; };
+		1D893A78E2A058FC7CBF9950 /* KshiftPlatformIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7A66B0DCC60389A69B17B6 /* KshiftPlatformIsolationTests.swift */; };
+		20D043A43DFC2E849EF9CAD5 /* KshiftAppKitAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 05DAB3F86466E70C68934CE4 /* KshiftAppKitAdapter */; };
+		38F6EBE5E1802690A59140FC /* KshiftUIKitAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 965D3B8F2AE9712ECF94CC2A /* KshiftUIKitAdapter */; };
+		7A5657D74792EC41AEC4FE3B /* KshiftPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 0B56FDA69468D1C985900769 /* KshiftPresentation */; };
+		83AC62AB4DE5E7CD1C612B05 /* KshiftIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48E4E9907998A85F5C3C69B0 /* KshiftIOSApp.swift */; };
+		8B72CE3052F678D39D5E1F14 /* KshiftAppKitAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 9285AB05C661B70D8A2B46D4 /* KshiftAppKitAdapter */; };
+		C129E926871335D0185623A8 /* KshiftMacOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87C44A58202E9612D43374B0 /* KshiftMacOSApp.swift */; };
+		C5994A4792C51CB8AF81A259 /* KshiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 2ED892B9E5AB5C204091E834 /* KshiftUI */; };
+		C5FE5A4968AF3DD565BCF570 /* KshiftUIKitAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = FD887D1FD77181A850ED8905 /* KshiftUIKitAdapter */; };
+		CA6338F0D0D6F893F5C131D2 /* KshiftPresentation in Frameworks */ = {isa = PBXBuildFile; productRef = 07A009E7CDDD3540F87EE935 /* KshiftPresentation */; };
+		E11EED8BE2EC3560FCF1838D /* KshiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = B1C87815A9EB1F166DE17D65 /* KshiftUI */; };
+		F2BA6998E4A717D9C7B433E9 /* KshiftPlatformIsolationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C7A66B0DCC60389A69B17B6 /* KshiftPlatformIsolationTests.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		12A3FABB56B4D345077925D1 /* Kshift-iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kshift-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3C7A66B0DCC60389A69B17B6 /* KshiftPlatformIsolationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KshiftPlatformIsolationTests.swift; sourceTree = "<group>"; };
+		425BBD6F9BFA1CB7E3296C95 /* KshiftAdapterBoundaryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KshiftAdapterBoundaryTests.swift; sourceTree = "<group>"; };
+		48E4E9907998A85F5C3C69B0 /* KshiftIOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KshiftIOSApp.swift; sourceTree = "<group>"; };
+		50A673B513E6A242BB35FFB1 /* Kshift-macOS-AdapterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kshift-macOS-AdapterTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A9DEB4DDE5D33BFBC38DD70 /* Kshift-iOS-AdapterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Kshift-iOS-AdapterTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		87C44A58202E9612D43374B0 /* KshiftMacOSApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = KshiftMacOSApp.swift; sourceTree = "<group>"; };
+		FCDCCAD34A89610D8B24A2A9 /* Kshift-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kshift-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0E48C0950F3A117D7A655807 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A5657D74792EC41AEC4FE3B /* KshiftPresentation in Frameworks */,
+				20D043A43DFC2E849EF9CAD5 /* KshiftAppKitAdapter in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		4A8D7B33FF4AD7C8BDA59F84 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E11EED8BE2EC3560FCF1838D /* KshiftUI in Frameworks */,
+				38F6EBE5E1802690A59140FC /* KshiftUIKitAdapter in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5FB1EA8C3133A2B4C2063E39 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				CA6338F0D0D6F893F5C131D2 /* KshiftPresentation in Frameworks */,
+				C5FE5A4968AF3DD565BCF570 /* KshiftUIKitAdapter in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E271B9C636A912A4BEFC10B4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5994A4792C51CB8AF81A259 /* KshiftUI in Frameworks */,
+				8B72CE3052F678D39D5E1F14 /* KshiftAppKitAdapter in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		06E4F86966A4F7187E28D37B = {
+			isa = PBXGroup;
+			children = (
+				69DF10F59CAAF7FA3F08BF57 /* Products */,
+				E61E5D4719DC8D5FEEAB5DAF /* Frameworks */,
+				C9A0E6674B011BE347CC9359 /* Apps */,
+				AF62B18078C6659DC72E04BC /* Tests */,
+			);
+			sourceTree = "<group>";
+		};
+		0BB97F45E5CDB4FB1E701D71 /* KshiftIOS */ = {
+			isa = PBXGroup;
+			children = (
+				48E4E9907998A85F5C3C69B0 /* KshiftIOSApp.swift */,
+			);
+			name = KshiftIOS;
+			path = KshiftIOS;
+			sourceTree = "<group>";
+		};
+		69DF10F59CAAF7FA3F08BF57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FCDCCAD34A89610D8B24A2A9 /* Kshift-macOS.app */,
+				12A3FABB56B4D345077925D1 /* Kshift-iOS.app */,
+				50A673B513E6A242BB35FFB1 /* Kshift-macOS-AdapterTests.xctest */,
+				6A9DEB4DDE5D33BFBC38DD70 /* Kshift-iOS-AdapterTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AF62B18078C6659DC72E04BC /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				BE479A6BAC8D7D5ABE3EC76B /* KshiftAdapterBoundaryTests */,
+			);
+			name = Tests;
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		B816DC91358FF30BE7F147F4 /* KshiftMacOS */ = {
+			isa = PBXGroup;
+			children = (
+				87C44A58202E9612D43374B0 /* KshiftMacOSApp.swift */,
+			);
+			name = KshiftMacOS;
+			path = KshiftMacOS;
+			sourceTree = "<group>";
+		};
+		BE479A6BAC8D7D5ABE3EC76B /* KshiftAdapterBoundaryTests */ = {
+			isa = PBXGroup;
+			children = (
+				425BBD6F9BFA1CB7E3296C95 /* KshiftAdapterBoundaryTests.swift */,
+				3C7A66B0DCC60389A69B17B6 /* KshiftPlatformIsolationTests.swift */,
+			);
+			name = KshiftAdapterBoundaryTests;
+			path = KshiftAdapterBoundaryTests;
+			sourceTree = "<group>";
+		};
+		C9A0E6674B011BE347CC9359 /* Apps */ = {
+			isa = PBXGroup;
+			children = (
+				B816DC91358FF30BE7F147F4 /* KshiftMacOS */,
+				0BB97F45E5CDB4FB1E701D71 /* KshiftIOS */,
+			);
+			name = Apps;
+			path = Apps;
+			sourceTree = "<group>";
+		};
+		E61E5D4719DC8D5FEEAB5DAF /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		609D61062C933CC5BD98514B /* Kshift-iOS-AdapterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E10CA2669E75879BCC7743BA /* Build configuration list for PBXNativeTarget "Kshift-iOS-AdapterTests" */;
+			buildPhases = (
+				92D9C1276D11E0085251FA1F /* Sources */,
+				5FB1EA8C3133A2B4C2063E39 /* Frameworks */,
+				0E84AF92C6F1EC2728959618 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Kshift-iOS-AdapterTests";
+			packageProductDependencies = (
+				07A009E7CDDD3540F87EE935 /* KshiftPresentation */,
+				FD887D1FD77181A850ED8905 /* KshiftUIKitAdapter */,
+			);
+			productName = "Kshift-iOS-AdapterTests";
+			productReference = 6A9DEB4DDE5D33BFBC38DD70 /* Kshift-iOS-AdapterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		B99A211DC0AAF99A97FC6DAB /* Kshift-macOS-AdapterTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 634A44CED572E102904BF680 /* Build configuration list for PBXNativeTarget "Kshift-macOS-AdapterTests" */;
+			buildPhases = (
+				5E91B5168E4E8D150735E85F /* Sources */,
+				0E48C0950F3A117D7A655807 /* Frameworks */,
+				8C2B68830FBF26E597D6BED8 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Kshift-macOS-AdapterTests";
+			packageProductDependencies = (
+				0B56FDA69468D1C985900769 /* KshiftPresentation */,
+				05DAB3F86466E70C68934CE4 /* KshiftAppKitAdapter */,
+			);
+			productName = "Kshift-macOS-AdapterTests";
+			productReference = 50A673B513E6A242BB35FFB1 /* Kshift-macOS-AdapterTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C80DBC0CB194C8CEF18ABB99 /* Kshift-iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E34A738310687F7960B706C3 /* Build configuration list for PBXNativeTarget "Kshift-iOS" */;
+			buildPhases = (
+				81C7C3ED8685C7ABF98231E7 /* Sources */,
+				4A8D7B33FF4AD7C8BDA59F84 /* Frameworks */,
+				370A5BA4337DBF3CBA703256 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Kshift-iOS";
+			packageProductDependencies = (
+				B1C87815A9EB1F166DE17D65 /* KshiftUI */,
+				965D3B8F2AE9712ECF94CC2A /* KshiftUIKitAdapter */,
+			);
+			productName = "Kshift-iOS";
+			productReference = 12A3FABB56B4D345077925D1 /* Kshift-iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C94531BF444197D9C6F97E79 /* Kshift-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 82F5BD43FA5B6343A9784A6F /* Build configuration list for PBXNativeTarget "Kshift-macOS" */;
+			buildPhases = (
+				C543B2910361AD67E6BB5720 /* Sources */,
+				E271B9C636A912A4BEFC10B4 /* Frameworks */,
+				AE22DF5C804C6B77A95249B4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Kshift-macOS";
+			packageProductDependencies = (
+				2ED892B9E5AB5C204091E834 /* KshiftUI */,
+				9285AB05C661B70D8A2B46D4 /* KshiftAppKitAdapter */,
+			);
+			productName = "Kshift-macOS";
+			productReference = FCDCCAD34A89610D8B24A2A9 /* Kshift-macOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		04B903F5D3216459BA2FDF84 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2720;
+				LastUpgradeCheck = 2720;
+			};
+			buildConfigurationList = F732132D87B16390C393763C /* Build configuration list for PBXProject "Kshift" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 06E4F86966A4F7187E28D37B;
+			minimizedProjectReferenceProxies = 0;
+			packageReferences = (
+				F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 100;
+			productRefGroup = 69DF10F59CAAF7FA3F08BF57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C94531BF444197D9C6F97E79 /* Kshift-macOS */,
+				C80DBC0CB194C8CEF18ABB99 /* Kshift-iOS */,
+				B99A211DC0AAF99A97FC6DAB /* Kshift-macOS-AdapterTests */,
+				609D61062C933CC5BD98514B /* Kshift-iOS-AdapterTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0E84AF92C6F1EC2728959618 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		370A5BA4337DBF3CBA703256 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C2B68830FBF26E597D6BED8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AE22DF5C804C6B77A95249B4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		5E91B5168E4E8D150735E85F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				179D64ED7A27CC78253A71F4 /* KshiftAdapterBoundaryTests.swift in Sources */,
+				1D893A78E2A058FC7CBF9950 /* KshiftPlatformIsolationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81C7C3ED8685C7ABF98231E7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				83AC62AB4DE5E7CD1C612B05 /* KshiftIOSApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		92D9C1276D11E0085251FA1F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1AD17F56B3ABC6DAC8AE0080 /* KshiftAdapterBoundaryTests.swift in Sources */,
+				F2BA6998E4A717D9C7B433E9 /* KshiftPlatformIsolationTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C543B2910361AD67E6BB5720 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C129E926871335D0185623A8 /* KshiftMacOSApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		0C63A28BD88FCA605E012727 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift.AdapterTests;
+				PRODUCT_NAME = KshiftAdapterTests;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		1D8EC8A2234D3E079F6BDF20 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift.iOSAdapterTests;
+				PRODUCT_NAME = KshiftAdapterTests;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		407E851C31970CB2920D8BF5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift.AdapterTests;
+				PRODUCT_NAME = KshiftAdapterTests;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		4CDDD9E89F2E57A3B6DFB8D9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift;
+				PRODUCT_NAME = Kshift;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6B5432EDC012324D8D85E27B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B65C4AD6772AA804B65F5211 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift;
+				PRODUCT_NAME = Kshift;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E0B587C7F4CA284991C33C10 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift.iOSAdapterTests;
+				PRODUCT_NAME = KshiftAdapterTests;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E6863FB7DE09B77D479D9B6C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift;
+				PRODUCT_NAME = Kshift;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		ED55A85C255F234F49096BB2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		F6D6F16CE653FA7E384B0F8A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.wyz541.Kshift;
+				PRODUCT_NAME = Kshift;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		634A44CED572E102904BF680 /* Build configuration list for PBXNativeTarget "Kshift-macOS-AdapterTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0C63A28BD88FCA605E012727 /* Release */,
+				407E851C31970CB2920D8BF5 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		82F5BD43FA5B6343A9784A6F /* Build configuration list for PBXNativeTarget "Kshift-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B65C4AD6772AA804B65F5211 /* Release */,
+				F6D6F16CE653FA7E384B0F8A /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E10CA2669E75879BCC7743BA /* Build configuration list for PBXNativeTarget "Kshift-iOS-AdapterTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1D8EC8A2234D3E079F6BDF20 /* Release */,
+				E0B587C7F4CA284991C33C10 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E34A738310687F7960B706C3 /* Build configuration list for PBXNativeTarget "Kshift-iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6863FB7DE09B77D479D9B6C /* Release */,
+				4CDDD9E89F2E57A3B6DFB8D9 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F732132D87B16390C393763C /* Build configuration list for PBXProject "Kshift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6B5432EDC012324D8D85E27B /* Debug */,
+				ED55A85C255F234F49096BB2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		05DAB3F86466E70C68934CE4 /* KshiftAppKitAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftAppKitAdapter;
+		};
+		07A009E7CDDD3540F87EE935 /* KshiftPresentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftPresentation;
+		};
+		0B56FDA69468D1C985900769 /* KshiftPresentation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftPresentation;
+		};
+		2ED892B9E5AB5C204091E834 /* KshiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftUI;
+		};
+		9285AB05C661B70D8A2B46D4 /* KshiftAppKitAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftAppKitAdapter;
+		};
+		965D3B8F2AE9712ECF94CC2A /* KshiftUIKitAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftUIKitAdapter;
+		};
+		B1C87815A9EB1F166DE17D65 /* KshiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftUI;
+		};
+		FD887D1FD77181A850ED8905 /* KshiftUIKitAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F2C99FCA84FB1B1572C97F03 /* XCLocalSwiftPackageReference "." */;
+			productName = KshiftUIKitAdapter;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 04B903F5D3216459BA2FDF84 /* Project object */;
+}
