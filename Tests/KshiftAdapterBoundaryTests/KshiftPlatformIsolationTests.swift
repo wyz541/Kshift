@@ -67,12 +67,19 @@ final class KshiftPlatformIsolationTests: XCTestCase {
     let macEntry = root.appending(path: "Apps/KshiftMacOS/KshiftMacOSApp.swift")
     let iosEntry = root.appending(path: "Apps/KshiftIOS/KshiftIOSApp.swift")
     let sharedFeature = root.appending(path: "Sources/KshiftUI/KshiftRootView.swift")
+    let retiredFeature = root.appending(
+      path: "Sources/KshiftUI/Feature/KshiftDayPlanFeatureView.swift"
+    )
 
     let macSource = try String(contentsOf: macEntry, encoding: .utf8)
     let iosSource = try String(contentsOf: iosEntry, encoding: .utf8)
 
     XCTAssertTrue(macSource.contains("KshiftRootView(model: model)"))
     XCTAssertTrue(iosSource.contains("KshiftRootView(model: model)"))
+    XCTAssertFalse(
+      FileManager.default.fileExists(atPath: retiredFeature.path),
+      "ADR-0009 permits only the KshiftRootView day-plan UI"
+    )
 
     let featureFiles = try swiftFiles(in: root.appending(path: "Sources/KshiftUI"))
       .filter { $0.lastPathComponent == "KshiftRootView.swift" }

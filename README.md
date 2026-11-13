@@ -149,8 +149,8 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 
 | 路径 | 职责 |
 | --- | --- |
-| `Sources/KshiftPresentation` | 业务快照、typed command 和 presentation mapping |
-| `Sources/KshiftFFI` | Swift typed boundary、正式 Rust C ABI wrapper 和可替换的内存实现 |
+| `Sources/KshiftPresentation` | 共享平台 capability 类型 |
+| `Sources/KshiftFFI` | 正式 Rust C ABI wrapper |
 | `include` | `kshift-ffi` C header 和 Swift C module map |
 | `Sources/KshiftUI` | 共享 SwiftUI 页面、组件、语义色和 Liquid Glass 入口 |
 | `Sources/KshiftAppKitAdapter` | macOS 系统能力和 `NSViewRepresentable` |
@@ -161,12 +161,12 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 
 当前边界：
 
-- macOS 和 iOS 的 P0 入口组合同一个 `KshiftRootView`。
+- macOS 和 iOS 的 P0 入口只组合同一个 `KshiftRootView`。
 - AppKit 和 UIKit 只处理系统能力，不承载产品页面。
 - 共享代码不使用 HTTP、PostgreSQL 或 protobuf 类型。
 - `#if os(...)` 只出现在 app entry。
 - `RustClient` 读取 `kshift-ffi` 的 bounded JSON，并映射为共享 UI 模型。
-- `KshiftRustClient` 保留底层 C ABI wrapper。`InMemoryKshiftFFIBoundary` 用于界面样例。
+- `KshiftRustClient` 保留底层 C ABI wrapper。`KshiftRootView` 通过 `RustClient` 读取数据。
 - Debug 截图使用 `DemoKshiftClient`。Release 入口使用 `RustClient`。
 - 当前构建使用 Xcode 27.2 SDK。部署目标为 macOS 26.0 和 iOS 26.0。
 

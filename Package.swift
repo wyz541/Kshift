@@ -35,7 +35,7 @@ let package = Package(
     ),
     .target(
       name: "KshiftUI",
-      dependencies: ["KshiftCore", "KshiftPresentation", "KshiftFFI"]
+      dependencies: ["KshiftCore", "KshiftPresentation"]
     ),
     .target(
       name: "KshiftAppKitAdapter",
@@ -50,16 +50,8 @@ let package = Package(
       dependencies: ["KshiftCore", "KshiftUI"]
     ),
     .testTarget(
-      name: "KshiftPresentationTests",
-      dependencies: ["KshiftPresentation"]
-    ),
-    .testTarget(
       name: "KshiftFFITests",
       dependencies: ["KshiftFFI"]
-    ),
-    .testTarget(
-      name: "KshiftFeatureTests",
-      dependencies: ["KshiftPresentation", "KshiftFFI", "KshiftUI"]
     ),
     .testTarget(
       name: "KshiftAdapterBoundaryTests",

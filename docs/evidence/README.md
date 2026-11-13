@@ -59,7 +59,7 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | --- | --- |
 | 真实 gRPC/PostgreSQL UI E2E | 已采集，见 [live-server.md](live-server.md) |
 | Instruments frame trace | 未采集 |
-| macOS 主截图 | 当前截图来自旧 UI |
+| macOS 主截图 | 当前截图对应唯一 UI |
 
 ## 性能
 
