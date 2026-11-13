@@ -41,7 +41,11 @@
 | 检查 | 结果 |
 | --- | --- |
 | 触控目标 | 通过 |
+| 结构无障碍审计 | 通过 |
 | 大号文字核心操作 | 通过 |
+| 完整 contrast/Dynamic Type audit | 有未解决项 |
 | VoiceOver | 待人工检查 |
 | 系统 Reduce Transparency | 待人工检查 |
 | Reduce Motion 全流程 | 待人工检查 |
+
+结构审计使用 `performAccessibilityAudit` 的 element detection、hit region、element description 和 trait 检查。完整 audit 仍报告对比度和 Dynamic Type 问题。这些问题不作为通过证据。

@@ -278,10 +278,16 @@ impl KshiftApi {
                 )
                 .await?
             }
-            Command::BatchUpdateTasks => {
-                return Err(ApiError::Unsupported(
-                    "batch_update_tasks is not enabled in R1".to_owned(),
-                ));
+            Command::BatchUpdateTasks { mutations } => {
+                batch_update_tasks(
+                    &mut tx,
+                    actor,
+                    parsed,
+                    mutations,
+                    request_id,
+                    retention_days,
+                )
+                .await?
             }
         };
 
@@ -709,9 +715,9 @@ async fn create_project(
         schema_version: SCHEMA_VERSION,
         command_id: parsed.envelope.command_id,
         occurred_at: now,
-        change: Change::ProjectUpserted {
+        changes: vec![Change::ProjectUpserted {
             project: project.clone(),
-        },
+        }],
     };
     insert_event(tx, &event, retention_days).await?;
     insert_audit(
@@ -792,9 +798,9 @@ async fn add_project_member(
         schema_version: SCHEMA_VERSION,
         command_id: parsed.envelope.command_id,
         occurred_at: now,
-        change: Change::ProjectMemberUpserted {
+        changes: vec![Change::ProjectMemberUpserted {
             member: member.clone(),
-        },
+        }],
     };
     insert_event(tx, &event, retention_days).await?;
     insert_audit(
@@ -831,6 +837,46 @@ async fn create_task(
         lock_project_for_write(tx, actor, project_id, parsed.envelope.expected_revision).await?;
     let current_revision = project.current_revision_u64()?;
     require_write_role(tx, actor, project_id).await?;
+    let now = Utc::now();
+    let task = apply_create_task(tx, actor, project_id, draft, now).await?;
+    let revision = bump_revision(tx, project_id, current_revision, now).await?;
+    let event = ChangeEvent {
+        project_id,
+        revision,
+        schema_version: SCHEMA_VERSION,
+        command_id: parsed.envelope.command_id,
+        occurred_at: now,
+        changes: vec![Change::TaskCreated { task: task.clone() }],
+    };
+    insert_event(tx, &event, retention_days).await?;
+    insert_audit(
+        tx,
+        actor,
+        parsed,
+        "task",
+        task.id,
+        None,
+        Some(serde_json::to_value(&task).map_err(|_| ApiError::Internal)?),
+        now,
+    )
+    .await?;
+    tracing::info!(
+        request_id = %request_id,
+        project_id = %project_id,
+        revision,
+        entity_id = %task.id,
+        "task created"
+    );
+    Ok(event)
+}
+
+async fn apply_create_task(
+    tx: &mut Transaction<'_, Postgres>,
+    actor: &AuthenticatedUser,
+    project_id: Uuid,
+    draft: TaskDraft<'_>,
+    now: DateTime<Utc>,
+) -> Result<Task, ApiError> {
     validate_task_links(
         tx,
         project_id,
@@ -841,7 +887,6 @@ async fn create_task(
     .await?;
     validate_assignees(tx, draft.assignee_ids).await?;
 
-    let now = Utc::now();
     sqlx::query(
         r#"
         INSERT INTO kshift.task (
@@ -876,8 +921,7 @@ async fn create_task(
     )
     .await?;
 
-    let revision = bump_revision(tx, project_id, current_revision, now).await?;
-    let task = Task {
+    Ok(Task {
         id: draft.task_id,
         project_id,
         title: draft.title.to_owned(),
@@ -896,35 +940,7 @@ async fn create_task(
         updated_by: actor.id,
         created_at: now,
         updated_at: now,
-    };
-    let event = ChangeEvent {
-        project_id,
-        revision,
-        schema_version: SCHEMA_VERSION,
-        command_id: parsed.envelope.command_id,
-        occurred_at: now,
-        change: Change::TaskCreated { task: task.clone() },
-    };
-    insert_event(tx, &event, retention_days).await?;
-    insert_audit(
-        tx,
-        actor,
-        parsed,
-        "task",
-        task.id,
-        None,
-        Some(serde_json::to_value(&task).map_err(|_| ApiError::Internal)?),
-        now,
-    )
-    .await?;
-    tracing::info!(
-        request_id = %request_id,
-        project_id = %project_id,
-        revision,
-        entity_id = %task.id,
-        "task created"
-    );
-    Ok(event)
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -943,6 +959,59 @@ async fn update_task(
         lock_project_for_write(tx, actor, project_id, parsed.envelope.expected_revision).await?;
     let current_revision = project.current_revision_u64()?;
     require_write_role(tx, actor, project_id).await?;
+    let (existing, updated) = apply_update_task(
+        tx,
+        actor,
+        project_id,
+        current_revision,
+        task_id,
+        expected_entity_version,
+        patch,
+    )
+    .await?;
+    let revision = bump_revision(tx, project_id, current_revision, updated.updated_at).await?;
+    let event = ChangeEvent {
+        project_id,
+        revision,
+        schema_version: SCHEMA_VERSION,
+        command_id: parsed.envelope.command_id,
+        occurred_at: updated.updated_at,
+        changes: vec![Change::TaskUpdated {
+            task: updated.clone(),
+        }],
+    };
+    insert_event(tx, &event, retention_days).await?;
+    insert_audit(
+        tx,
+        actor,
+        parsed,
+        "task",
+        task_id,
+        Some(serde_json::to_value(&existing).map_err(|_| ApiError::Internal)?),
+        Some(serde_json::to_value(&updated).map_err(|_| ApiError::Internal)?),
+        updated.updated_at,
+    )
+    .await?;
+    tracing::info!(
+        request_id = %request_id,
+        project_id = %project_id,
+        revision,
+        entity_id = %task_id,
+        entity_version = updated.version,
+        "task updated"
+    );
+    Ok(event)
+}
+
+async fn apply_update_task(
+    tx: &mut Transaction<'_, Postgres>,
+    actor: &AuthenticatedUser,
+    project_id: Uuid,
+    current_revision: u64,
+    task_id: Uuid,
+    expected_entity_version: u64,
+    patch: &TaskPatch,
+) -> Result<(Task, Task), ApiError> {
     let existing = lock_task(tx, project_id, task_id, current_revision).await?;
     if existing.version != expected_entity_version {
         return Err(ApiError::Conflict {
@@ -1004,39 +1073,7 @@ async fn update_task(
         &updated.dependency_task_ids,
     )
     .await?;
-
-    let revision = bump_revision(tx, project_id, current_revision, updated.updated_at).await?;
-    let event = ChangeEvent {
-        project_id,
-        revision,
-        schema_version: SCHEMA_VERSION,
-        command_id: parsed.envelope.command_id,
-        occurred_at: updated.updated_at,
-        change: Change::TaskUpdated {
-            task: updated.clone(),
-        },
-    };
-    insert_event(tx, &event, retention_days).await?;
-    insert_audit(
-        tx,
-        actor,
-        parsed,
-        "task",
-        task_id,
-        Some(serde_json::to_value(&existing).map_err(|_| ApiError::Internal)?),
-        Some(serde_json::to_value(&updated).map_err(|_| ApiError::Internal)?),
-        updated.updated_at,
-    )
-    .await?;
-    tracing::info!(
-        request_id = %request_id,
-        project_id = %project_id,
-        revision,
-        entity_id = %task_id,
-        entity_version = updated.version,
-        "task updated"
-    );
-    Ok(event)
+    Ok((existing, updated))
 }
 
 async fn delete_task(
@@ -1053,36 +1090,17 @@ async fn delete_task(
         lock_project_for_write(tx, actor, project_id, parsed.envelope.expected_revision).await?;
     let current_revision = project.current_revision_u64()?;
     require_write_role(tx, actor, project_id).await?;
-    let existing = lock_task(tx, project_id, task_id, current_revision).await?;
-    if existing.version != expected_entity_version {
-        return Err(ApiError::Conflict {
-            current_revision: Some(current_revision),
-            entity_id: Some(task_id),
-            current_entity_version: Some(existing.version),
-        });
-    }
-    let deleted_version = existing.version.checked_add(1).ok_or(ApiError::Internal)?;
     let now = Utc::now();
-    sqlx::query(
-        r#"
-        UPDATE kshift.task SET
-            version = $3,
-            deleted_at = $4,
-            deleted_by = $5,
-            updated_by = $5,
-            updated_at = $4
-        WHERE id = $1 AND project_id = $2 AND deleted_at IS NULL
-        "#,
+    let (existing, deleted_version) = apply_delete_task(
+        tx,
+        actor,
+        project_id,
+        current_revision,
+        task_id,
+        expected_entity_version,
+        now,
     )
-    .bind(task_id)
-    .bind(project_id)
-    .bind(to_i64(deleted_version, "task version")?)
-    .bind(now)
-    .bind(actor.id)
-    .execute(&mut **tx)
-    .await
-    .map_err(|error| command_database_error(error, "delete task"))?;
-
+    .await?;
     let revision = bump_revision(tx, project_id, current_revision, now).await?;
     let event = ChangeEvent {
         project_id,
@@ -1090,7 +1108,7 @@ async fn delete_task(
         schema_version: SCHEMA_VERSION,
         command_id: parsed.envelope.command_id,
         occurred_at: now,
-        change: Change::TaskDeleted { task_id },
+        changes: vec![Change::TaskDeleted { task_id }],
     };
     insert_event(tx, &event, retention_days).await?;
     insert_audit(
@@ -1117,6 +1135,194 @@ async fn delete_task(
         "task deleted"
     );
     Ok(event)
+}
+
+async fn batch_update_tasks(
+    tx: &mut Transaction<'_, Postgres>,
+    actor: &AuthenticatedUser,
+    parsed: &ParsedCommand,
+    mutations: &[domain::TaskMutation],
+    request_id: Uuid,
+    retention_days: i32,
+) -> Result<ChangeEvent, ApiError> {
+    let project_id = parsed.envelope.project_id;
+    let project =
+        lock_project_for_write(tx, actor, project_id, parsed.envelope.expected_revision).await?;
+    let current_revision = project.current_revision_u64()?;
+    require_write_role(tx, actor, project_id).await?;
+    let now = Utc::now();
+    let mut changes = Vec::with_capacity(mutations.len());
+
+    for mutation in mutations {
+        match mutation {
+            domain::TaskMutation::CreateTask {
+                task_id,
+                title,
+                description_markdown,
+                status,
+                priority,
+                assignee_ids,
+                planned_on,
+                starts_on,
+                due_on,
+                tags,
+                parent_task_id,
+                dependency_task_ids,
+            } => {
+                let task = apply_create_task(
+                    tx,
+                    actor,
+                    project_id,
+                    TaskDraft {
+                        task_id: *task_id,
+                        title,
+                        description_markdown,
+                        status: *status,
+                        priority: *priority,
+                        assignee_ids,
+                        planned_on: *planned_on,
+                        starts_on: *starts_on,
+                        due_on: *due_on,
+                        tags,
+                        parent_task_id: *parent_task_id,
+                        dependency_task_ids,
+                    },
+                    now,
+                )
+                .await?;
+                insert_audit(
+                    tx,
+                    actor,
+                    parsed,
+                    "task",
+                    task.id,
+                    None,
+                    Some(serde_json::to_value(&task).map_err(|_| ApiError::Internal)?),
+                    now,
+                )
+                .await?;
+                changes.push(Change::TaskCreated { task });
+            }
+            domain::TaskMutation::UpdateTask {
+                task_id,
+                expected_entity_version,
+                patch,
+            } => {
+                let (existing, updated) = apply_update_task(
+                    tx,
+                    actor,
+                    project_id,
+                    current_revision,
+                    *task_id,
+                    *expected_entity_version,
+                    patch,
+                )
+                .await?;
+                insert_audit(
+                    tx,
+                    actor,
+                    parsed,
+                    "task",
+                    *task_id,
+                    Some(serde_json::to_value(&existing).map_err(|_| ApiError::Internal)?),
+                    Some(serde_json::to_value(&updated).map_err(|_| ApiError::Internal)?),
+                    updated.updated_at,
+                )
+                .await?;
+                changes.push(Change::TaskUpdated { task: updated });
+            }
+            domain::TaskMutation::DeleteTask {
+                task_id,
+                expected_entity_version,
+            } => {
+                let (existing, deleted_version) = apply_delete_task(
+                    tx,
+                    actor,
+                    project_id,
+                    current_revision,
+                    *task_id,
+                    *expected_entity_version,
+                    now,
+                )
+                .await?;
+                insert_audit(
+                    tx,
+                    actor,
+                    parsed,
+                    "task",
+                    *task_id,
+                    Some(serde_json::to_value(&existing).map_err(|_| ApiError::Internal)?),
+                    Some(serde_json::json!({
+                        "id": task_id,
+                        "version": deleted_version,
+                        "deleted_at": now
+                    })),
+                    now,
+                )
+                .await?;
+                changes.push(Change::TaskDeleted { task_id: *task_id });
+            }
+        }
+    }
+
+    let revision = bump_revision(tx, project_id, current_revision, now).await?;
+    let event = ChangeEvent {
+        project_id,
+        revision,
+        schema_version: SCHEMA_VERSION,
+        command_id: parsed.envelope.command_id,
+        occurred_at: now,
+        changes,
+    };
+    insert_event(tx, &event, retention_days).await?;
+    tracing::info!(
+        request_id = %request_id,
+        project_id = %project_id,
+        revision,
+        mutation_count = mutations.len(),
+        "task batch updated"
+    );
+    Ok(event)
+}
+
+async fn apply_delete_task(
+    tx: &mut Transaction<'_, Postgres>,
+    actor: &AuthenticatedUser,
+    project_id: Uuid,
+    current_revision: u64,
+    task_id: Uuid,
+    expected_entity_version: u64,
+    now: DateTime<Utc>,
+) -> Result<(Task, u64), ApiError> {
+    let existing = lock_task(tx, project_id, task_id, current_revision).await?;
+    if existing.version != expected_entity_version {
+        return Err(ApiError::Conflict {
+            current_revision: Some(current_revision),
+            entity_id: Some(task_id),
+            current_entity_version: Some(existing.version),
+        });
+    }
+    let deleted_version = existing.version.checked_add(1).ok_or(ApiError::Internal)?;
+    sqlx::query(
+        r#"
+        UPDATE kshift.task SET
+            version = $3,
+            deleted_at = $4,
+            deleted_by = $5,
+            updated_by = $5,
+            updated_at = $4
+        WHERE id = $1 AND project_id = $2 AND deleted_at IS NULL
+        "#,
+    )
+    .bind(task_id)
+    .bind(project_id)
+    .bind(to_i64(deleted_version, "task version")?)
+    .bind(now)
+    .bind(actor.id)
+    .execute(&mut **tx)
+    .await
+    .map_err(|error| command_database_error(error, "delete task"))?;
+    Ok((existing, deleted_version))
 }
 
 fn command_response(event: &ChangeEvent) -> v1::ExecuteCommandResponse {

@@ -63,6 +63,32 @@ Command envelope 使用 UUID、`expected_project_revision` 和 tagged command。
 }
 ```
 
+包含 `mutations` 的 `batch_update_tasks` 使用同一 project revision 提交。server 在一个事务内应用全部 mutation。任一版本冲突会回滚整批：
+
+```json
+{
+  "client_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  "command_id": "88888888-7777-4666-8555-444444444444",
+  "project_id": "11111111-2222-4333-8444-555555555555",
+  "expected_project_revision": 3,
+  "command": {
+    "type": "batch_update_tasks",
+    "value": {
+      "mutations": [
+        {
+          "type": "update_task",
+          "value": {
+            "task_id": "22222222-2222-4222-8222-222222222222",
+            "expected_entity_version": 1,
+            "status": "done"
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
 ## 构建
 
 | 产物 | 命令 |

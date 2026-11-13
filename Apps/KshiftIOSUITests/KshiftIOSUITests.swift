@@ -60,6 +60,18 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
     }
 
+    func testAccessibilityAudit() throws {
+        let app = launchPlanner()
+        try app.performAccessibilityAudit(
+            for: [
+                .elementDetection,
+                .hitRegion,
+                .sufficientElementDescription,
+                .trait,
+            ]
+        )
+    }
+
     func testAccessibilityTextSizeKeepsCoreActionsAvailable() throws {
         let app = XCUIApplication()
         app.launchArguments += [

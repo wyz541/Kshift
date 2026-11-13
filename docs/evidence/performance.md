@@ -17,15 +17,15 @@
 
 | 场景 | 平均值 | RSD | 样本数 | 原始值 |
 | --- | ---: | ---: | ---: | --- |
-| 看板左右滚动 | 2.937 s | 0.458% | 3 | 2.953807、2.935901、2.920922 |
-| 拖拽 “Ship brief” | 1.676 s | 0% | 1 | 1.676249 |
-| Sheet 打开和关闭 | 7.436 s | 0.187% | 3 | 7.454029、7.431980、7.420522 |
+| 看板左右滚动 | 2.919 s | 1.383% | 3 | 2.869790、2.918323、2.968661 |
+| 拖拽 “Ship brief” | 1.673 s | 0% | 1 | 1.673105 |
+| Sheet 打开和关闭 | 7.258 s | 0.694% | 3 | 7.296059、7.186682、7.290938 |
 
 ## 读取方法
 
 ```sh
 xcrun xcresulttool get test-results metrics \
-  --path '/Users/wyz/Library/Developer/Xcode/DerivedData/Kshift-efiloqhuibevqqdtynrqdqvdqvhs/Logs/Test/Test-Kshift-iOS-2026.11.13_12-54-05-+0800.xcresult' \
+  --path '/Users/wyz/Library/Developer/Xcode/DerivedData/Kshift-efiloqhuibevqqdtynrqdqvdqvhs/Logs/Test/Test-Kshift-iOS-2026.11.13_13-53-53-+0800.xcresult' \
   --format json
 ```
 

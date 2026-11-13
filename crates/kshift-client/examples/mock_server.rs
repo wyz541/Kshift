@@ -139,7 +139,7 @@ impl contract::KshiftService for MockService {
             | Command::AddProjectMember { .. }
             | Command::UpdateTask { .. }
             | Command::DeleteTask { .. }
-            | Command::BatchUpdateTasks => {
+            | Command::BatchUpdateTasks { .. } => {
                 return Err(Status::invalid_argument(
                     "smoke server only accepts create_task",
                 ));
@@ -157,7 +157,7 @@ impl contract::KshiftService for MockService {
             schema_version: domain::SCHEMA_VERSION,
             command_id: parsed.envelope.command_id,
             occurred_at: now(),
-            change: Change::TaskCreated { task },
+            changes: vec![Change::TaskCreated { task }],
         };
         Ok(Response::new(v1::ExecuteCommandResponse {
             result: Some(v1::CommandResult {

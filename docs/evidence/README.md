@@ -6,11 +6,13 @@
 
 | 文件 | 平台 | 内容 |
 | --- | --- | --- |
-| `macos-board.png` | macOS 27.2 | 侧栏、项目快照、人员看板、工具栏和 Liquid Glass 卡片 |
-| `accessibility/ios-light.png` | iOS 27.0 Simulator | 亮色看板 |
-| `accessibility/ios-dark.png` | iOS 27.0 Simulator | 深色看板 |
+| `macos-board.png` | macOS 27.2 | 演示数据看板 |
+| `macos-live-server.png` | macOS 27.2 | 真实 TLS server 数据 |
+| `accessibility/ios-light.png` | iOS 27.0 Simulator | 演示数据亮色看板 |
+| `accessibility/ios-dark.png` | iOS 27.0 Simulator | 演示数据深色看板 |
+| `ios-live-server.png` | iOS 27.0 Simulator | 真实 TLS server 数据 |
 
-macOS 截图只包含 Kshift 窗口。iOS 截图使用 Debug 演示数据。
+macOS 截图只包含 Kshift 窗口。普通截图使用 Debug 演示数据；`*-live-server.png` 使用真实 TLS server 和 PostgreSQL。
 
 ## 无障碍截图
 
@@ -28,12 +30,13 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | 检查 | 结果 |
 | --- | --- |
 | `cargo fmt --all -- --check` | 通过 |
-| `cargo clippy --offline -p kshift-client -p kshift-ffi --all-targets -- -D warnings` | 通过 |
-| `cargo test --offline -p kshift-client -p kshift-ffi` | 13 项通过 |
+| `cargo clippy --offline --workspace --all-targets -- -D warnings` | 通过 |
+| `cargo test --offline --workspace` | 32 项通过 |
 | `swift test` | 21 项通过，1 项 live server test 跳过 |
 | macOS `xcodebuild build` | 通过 |
-| iOS `xcodebuild test` | 7 项通过 |
-| iOS UI tests | 6 项通过 |
+| iOS `xcodebuild test` | 8 项通过 |
+| iOS UI tests | 7 项通过 |
+| 结构无障碍审计 | 通过 |
 
 ## 未覆盖
 
@@ -43,8 +46,9 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | macOS 键盘导航 | macOS UI test runner 未建立连接 |
 | macOS 窗口缩放性能 | 未采集 |
 | 真机环境 | 未采集 |
-| 真实 gRPC/PostgreSQL UI E2E | 未采集 |
+| 真实 gRPC/PostgreSQL UI E2E | 已采集，见 [live-server.md](live-server.md) |
 | Instruments frame trace | 未采集 |
+| 完整 contrast/Dynamic Type audit | 有未解决项 |
 
 ## 性能
 

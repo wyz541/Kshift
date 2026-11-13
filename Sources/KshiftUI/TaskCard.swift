@@ -39,6 +39,7 @@ struct TaskCard: View {
                             .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
                     }
                 }
+                .accessibilityHidden(true)
 
                 Spacer(minLength: 0)
             }
@@ -53,11 +54,13 @@ struct TaskCard: View {
                 Spacer()
                 PersonAvatar(person: person, size: 23)
             }
+            .accessibilityHidden(true)
 
             HStack {
                 Label("v\(task.version)", systemImage: "number")
                     .font(.caption2.monospacedDigit())
                     .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
                 Spacer()
                 Menu {
                     Button {

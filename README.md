@@ -6,7 +6,7 @@
 
 - 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
 - Spec 版本：`0.1`。
-- 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；UI 到真实 server 的 E2E 尚未验证。
+- 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；本地真实 server E2E 已验证。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
@@ -243,12 +243,13 @@ Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只�
 
 - 身份认证数据源尚未最终确认。R1 使用可控 bearer token hash。
 - Release app 需要配置 `KSHIFT_ENDPOINT`、CA 和 token。登录界面尚未实现。
-- UI 到真实 gRPC/PostgreSQL server 的 E2E 尚未验证。
+- UI 已通过 `kshift-ffi` 读取真实 gRPC/PostgreSQL server 数据。
 - macOS 和 iOS 分发方式尚未确认。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
 - VoiceOver、macOS 键盘导航、macOS 窗口缩放性能和真机证据尚未完成。
-- 批次状态在生产 adapter 中是顺序更新，不是原子事务。
+- 完整 contrast/Dynamic Type audit 仍有未解决项。
+- live snapshot 尚未映射 task history 和 project audit。
 - PostgreSQL 高可用集群不在首版范围。
 
 ## 安全边界

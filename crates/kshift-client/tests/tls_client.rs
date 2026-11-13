@@ -169,7 +169,7 @@ impl contract::KshiftService for MockService {
                 schema_version: domain::SCHEMA_VERSION,
                 command_id: parsed.envelope.command_id,
                 occurred_at: now(),
-                change: Change::TaskCreated {
+                changes: vec![Change::TaskCreated {
                     task: Task {
                         id: task_id,
                         project_id: project_id(),
@@ -190,7 +190,7 @@ impl contract::KshiftService for MockService {
                         created_at: now(),
                         updated_at: now(),
                     },
-                },
+                }],
             },
             Command::UpdateTask { task_id, .. } => ChangeEvent {
                 project_id: project_id(),
@@ -198,13 +198,13 @@ impl contract::KshiftService for MockService {
                 schema_version: domain::SCHEMA_VERSION,
                 command_id: parsed.envelope.command_id,
                 occurred_at: now(),
-                change: Change::TaskUpdated {
+                changes: vec![Change::TaskUpdated {
                     task: Task {
                         id: task_id,
                         version: 2,
                         ..task(1)
                     },
-                },
+                }],
             },
             Command::DeleteTask { task_id, .. } => ChangeEvent {
                 project_id: project_id(),
@@ -212,11 +212,11 @@ impl contract::KshiftService for MockService {
                 schema_version: domain::SCHEMA_VERSION,
                 command_id: parsed.envelope.command_id,
                 occurred_at: now(),
-                change: Change::TaskDeleted { task_id },
+                changes: vec![Change::TaskDeleted { task_id }],
             },
             Command::CreateProject { .. }
             | Command::AddProjectMember { .. }
-            | Command::BatchUpdateTasks => {
+            | Command::BatchUpdateTasks { .. } => {
                 return Err(Status::invalid_argument("unexpected command in test"));
             }
         };
@@ -283,7 +283,7 @@ fn change_event(revision: u64, change: Change) -> ChangeEvent {
         schema_version: domain::SCHEMA_VERSION,
         command_id: Uuid::new_v4(),
         occurred_at: now(),
-        change,
+        changes: vec![change],
     }
 }
 
@@ -416,7 +416,11 @@ async fn tls_snapshot_and_retry_work() {
     assert_eq!(outcome.revision, 6);
     assert_eq!(outcome.command_id, command.command_id);
     assert_eq!(state.execute_calls.load(Ordering::SeqCst), 2);
-    assert!(matches!(outcome.event.change, Change::TaskUpdated { .. }));
+    assert!(outcome
+        .event
+        .changes
+        .iter()
+        .any(|change| matches!(change, Change::TaskUpdated { .. })));
 
     let _ = shutdown.send(());
     server.await.expect("server shutdown");

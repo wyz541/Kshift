@@ -142,66 +142,45 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
         command: SetTasksStatusCommand
     ) async throws -> CommandResponse {
         let client = try requireClient()
-        var revision = envelope.expectedRevision
-        var latestSnapshot: ProjectSnapshot?
-        var affectedTaskIDs: [String] = []
-
-        for (index, item) in command.items.enumerated() {
-            let requestID = index == 0 ? envelope.requestID : UUID().uuidString
-            let request: Data
-            do {
-                request = try Self.encodeStatusCommand(
-                    projectID: projectID,
-                    requestID: requestID,
-                    clientID: clientID,
-                    expectedRevision: revision,
-                    item: item,
-                    status: command.status
-                )
-            } catch {
-                throw KshiftClientError.invalidResponse(error.localizedDescription)
-            }
-
-            do {
-                let snapshot = try await Task.detached { [client, deadlineMilliseconds] in
-                    _ = try client.executeCommand(
-                        request,
-                        deadlineMilliseconds: deadlineMilliseconds
-                    )
-                    let data = try client.snapshot(
-                        projectID: projectID,
-                        deadlineMilliseconds: deadlineMilliseconds
-                    )
-                    let value = try JSONDecoder().decode(OfficialProjectSnapshot.self, from: data)
-                    return Self.mapSnapshot(value)
-                }.value
-                revision = snapshot.project.revision
-                latestSnapshot = snapshot
-                affectedTaskIDs.append(item.taskID)
-            } catch let error as KshiftCFFIError {
-                var failure = Self.failure(error, requestID: requestID)
-                if let latestSnapshot {
-                    failure = CommandResponse(
-                        ok: false,
-                        requestID: failure.requestID,
-                        snapshot: latestSnapshot,
-                        affectedTaskIDs: affectedTaskIDs,
-                        error: failure.error
-                    )
-                }
-                return failure
-            } catch {
-                throw KshiftClientError.transport(error.localizedDescription)
-            }
+        let request: Data
+        do {
+            request = try Self.encodeBatchStatusCommand(
+                projectID: projectID,
+                requestID: envelope.requestID,
+                clientID: clientID,
+                expectedRevision: envelope.expectedRevision,
+                items: command.items,
+                status: command.status
+            )
+        } catch {
+            throw KshiftClientError.invalidResponse(error.localizedDescription)
         }
 
-        return CommandResponse(
-            ok: true,
-            requestID: envelope.requestID,
-            snapshot: latestSnapshot,
-            affectedTaskIDs: affectedTaskIDs,
-            error: nil
-        )
+        do {
+            let snapshot = try await Task.detached { [client, deadlineMilliseconds] in
+                _ = try client.executeCommand(
+                    request,
+                    deadlineMilliseconds: deadlineMilliseconds
+                )
+                let data = try client.snapshot(
+                    projectID: projectID,
+                    deadlineMilliseconds: deadlineMilliseconds
+                )
+                let value = try JSONDecoder().decode(OfficialProjectSnapshot.self, from: data)
+                return Self.mapSnapshot(value)
+            }.value
+            return CommandResponse(
+                ok: true,
+                requestID: envelope.requestID,
+                snapshot: snapshot,
+                affectedTaskIDs: command.items.map(\.taskID),
+                error: nil
+            )
+        } catch let error as KshiftCFFIError {
+            return Self.failure(error, requestID: envelope.requestID)
+        } catch {
+            throw KshiftClientError.transport(error.localizedDescription)
+        }
     }
 
     private func requireClient() throws -> KshiftClient {
@@ -342,26 +321,29 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
         return try encoder.encode(body)
     }
 
-    private static func encodeStatusCommand(
+    private static func encodeBatchStatusCommand(
         projectID: String,
         requestID: String,
         clientID: String,
         expectedRevision: UInt64,
-        item: TaskVersionRef,
+        items: [TaskVersionRef],
         status: TaskStatus
     ) throws -> Data {
-        let body = FFICommandEnvelope(
-            clientID: clientID,
-            commandID: UUID(uuidString: requestID)?.uuidString ?? UUID().uuidString,
-            projectID: projectID,
-            expectedProjectRevision: expectedRevision,
-            command: .updateTask(
+        let mutations = items.map { item in
+            FFITaskMutation.updateTask(
                 FFIUpdateTask(
                     taskID: item.taskID,
                     expectedEntityVersion: item.expectedTaskVersion,
                     status: status.rawValue
                 )
             )
+        }
+        let body = FFICommandEnvelope(
+            clientID: clientID,
+            commandID: UUID(uuidString: requestID)?.uuidString ?? UUID().uuidString,
+            projectID: projectID,
+            expectedProjectRevision: expectedRevision,
+            command: .batchUpdateTasks(mutations)
         )
         return try JSONEncoder().encode(body)
     }
@@ -553,6 +535,7 @@ private enum FFICommand: Encodable {
     case createTask(FFICreateTask)
     case updateTask(FFIUpdateTask)
     case deleteTask(FFIDeleteTask)
+    case batchUpdateTasks([FFITaskMutation])
 
     enum CodingKeys: String, CodingKey {
         case type
@@ -570,6 +553,31 @@ private enum FFICommand: Encodable {
             try container.encode(value, forKey: .value)
         case let .deleteTask(value):
             try container.encode("delete_task", forKey: .type)
+            try container.encode(value, forKey: .value)
+        case let .batchUpdateTasks(mutations):
+            try container.encode("batch_update_tasks", forKey: .type)
+            try container.encode(FFIBatchUpdateTasks(mutations: mutations), forKey: .value)
+        }
+    }
+}
+
+private struct FFIBatchUpdateTasks: Encodable {
+    let mutations: [FFITaskMutation]
+}
+
+private enum FFITaskMutation: Encodable {
+    case updateTask(FFIUpdateTask)
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case let .updateTask(value):
+            try container.encode("update_task", forKey: .type)
             try container.encode(value, forKey: .value)
         }
     }

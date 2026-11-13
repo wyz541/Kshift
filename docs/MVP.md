@@ -1,6 +1,6 @@
 # R2 MVP 证据
 
-结论：#7 的共享 SwiftUI 日计划 MVP 已可构建和运行。生产路径已适配 #15 的 Rust client C ABI；UI 到真实 gRPC/PostgreSQL server 的端到端流程仍未验证。
+结论：#7 的共享 SwiftUI 日计划 MVP 已可构建和运行。UI 已通过 `kshift-ffi`、Rust client 和 TLS gRPC 读取真实 PostgreSQL 数据。
 
 ## 客户端路径
 
@@ -31,8 +31,8 @@ flowchart LR
 | 日历 | `CalendarView` | iOS build | 已构建 |
 | 表格 | `TaskTableView` | iOS build | 已构建 |
 | 搜索、筛选、排序 | `AppModel.filteredTasks` | `testSearchAndFiltersReduceDailyTasks` | 已验证 |
-| 批量处理 | `SetTasksStatusCommand` | UI 和演示客户端 | 已验证，生产适配为顺序更新 |
-| 并发冲突 | revision 和 task version | Rust conflict tests、`testConflictIsExplicitAndDoesNotReplaceSnapshot` | 已验证到 adapter 和假客户端 |
+| 批量处理 | `BatchUpdateTasksCommand` | service integration 和 live server | 已验证，单事务原子提交 |
+| 并发冲突 | revision 和 task version | Rust conflict tests、`testConflictIsExplicitAndDoesNotReplaceSnapshot` | 已验证到 server、adapter 和假客户端 |
 | 历史 | task history 和 project audit UI | 尚无 live snapshot 字段映射 | 未完成 live 验证 |
 | Liquid Glass | 原生 Glass API | `scripts/verify.sh` 结构检查 | 已验证 |
 | 单 UI 实现 | `Sources/KshiftUI` 无平台条件分支 | `scripts/verify.sh`、adapter tests | 已验证 |
@@ -43,12 +43,13 @@ flowchart LR
 | 检查 | 状态 | 证据 |
 | --- | --- | --- |
 | 触控目标 | 通过 | iOS `testCoreActionsMeetMinimumTouchTargets` |
-| 系统大号文字 | 通过 | iOS `testAccessibilityTextSizeKeepsCoreActionsAvailable` |
+| 结构无障碍审计 | 通过 | iOS `testAccessibilityAudit` |
+| 系统大号文字 | 核心操作通过 | iOS `testAccessibilityTextSizeKeepsCoreActionsAvailable` |
 | 亮色和深色 | 已截图 | `docs/evidence/accessibility` |
 | Increase Contrast | 已截图 | `docs/evidence/accessibility/ios-increase-contrast.png` |
 | Reduce Transparency | 已截图，使用环境覆盖 | 系统设置入口不在 `simctl ui` 中 |
 | Reduce Motion | 已截图 | 截图不证明全部动画行为 |
-| VoiceOver | 待检查 | 需要人工 Accessibility Inspector |
+| VoiceOver | 部分自动检查 | 结构审计通过，完整 VoiceOver 仍需人工检查 |
 | macOS 键盘导航 | 待检查 | macOS UI test runner 未建立连接 |
 | 真机检查 | 待检查 | 当前证据来自模拟器 |
 
@@ -56,12 +57,12 @@ flowchart LR
 
 | 场景 | 设备 | 平均值 | RSD | 样本 |
 | --- | --- | ---: | ---: | ---: |
-| 看板左右滚动 | iPhone 18 Pro，iOS 27.0 模拟器 | 2.937 s | 0.458% | 3 |
-| 拖拽 | iPhone 18 Pro，iOS 27.0 模拟器 | 1.676 s | 0% | 1 |
-| Sheet 打开和关闭 | iPhone 18 Pro，iOS 27.0 模拟器 | 7.436 s | 0.187% | 3 |
+| 看板左右滚动 | iPhone 18 Pro，iOS 27.0 模拟器 | 2.919 s | 1.383% | 3 |
+| 拖拽 | iPhone 18 Pro，iOS 27.0 模拟器 | 1.673 s | 0% | 1 |
+| Sheet 打开和关闭 | iPhone 18 Pro，iOS 27.0 模拟器 | 7.258 s | 0.694% | 3 |
 | macOS 窗口缩放 | macOS | 未采集 | 未采集 | 0 |
 
-这些数值来自 `XCTClockMetric`。数值是 XCUITest automation clock，不是帧耗时，也不是 Instruments trace。详见 [Performance](evidence/performance.md)。
+这些数值来自 `XCTClockMetric`。数值是 XCUITest automation clock，不是帧耗时，也不是 Instruments trace。真实服务端 E2E 见 [Live server evidence](evidence/live-server.md)。性能详见 [Performance](evidence/performance.md)。
 
 ## 冲突语义
 
@@ -69,7 +70,7 @@ flowchart LR
 | --- | --- | --- |
 | 项目 revision 过期 | `revision_conflict` | 拒绝 |
 | 任务 version 过期 | `version_conflict` | 拒绝 |
-| 批量中一个任务失败 | 返回失败和已完成项目快照 | 生产适配为顺序更新，不是原子事务 |
+| 批量中一个任务失败 | `version_conflict` | 整个事务回滚，不写入部分结果 |
 | 同一 command ID 重试 | Rust client 幂等缓存 | 不重复写入 |
 
 ## Liquid Glass 预算
@@ -89,11 +90,10 @@ flowchart LR
 
 | 项目 | 原因 |
 | --- | --- |
-| UI 到真实 gRPC/PostgreSQL 的 E2E | 尚未配置登录和 server fixture |
-| 多人并发冲突的真机验证 | 需要两个客户端和共享 server |
-| 批量操作原子性 | #15 C ABI 当前只暴露单条 typed command |
+| 多人并发冲突的真机验证 | 需要两个客户端和真实设备 |
 | task history 和 project audit 的 live 映射 | 当前 snapshot JSON 不含所需历史字段 |
-| VoiceOver | 需要人工检查 |
+| VoiceOver | 完整人工检查待完成 |
+| 完整 contrast/Dynamic Type audit | 自动审计仍有未解决项 |
 | macOS 键盘导航 | macOS UI test runner 未建立连接 |
 | macOS 窗口缩放性能 | 没有有效读数 |
 | 真机环境 | 当前只验证 Simulator |

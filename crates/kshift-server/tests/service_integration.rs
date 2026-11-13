@@ -175,6 +175,107 @@ async fn concurrent_writes_do_not_silently_overwrite() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn batch_status_update_is_atomic() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    db.seed_user(admin_id, "Admin", true).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "admin-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Batch"),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("project should be created");
+    let first = created_task(
+        api.api
+            .execute_command(request(
+                create_task(project_id, Uuid::new_v4(), Uuid::new_v4(), "First", "", 1),
+                api.token(admin_id),
+            ))
+            .await
+            .expect("first task should be created")
+            .into_inner(),
+    );
+    let second = created_task(
+        api.api
+            .execute_command(request(
+                create_task(project_id, Uuid::new_v4(), Uuid::new_v4(), "Second", "", 2),
+                api.token(admin_id),
+            ))
+            .await
+            .expect("second task should be created")
+            .into_inner(),
+    );
+    let first_id = Uuid::parse_str(&first.id).unwrap();
+    let second_id = Uuid::parse_str(&second.id).unwrap();
+
+    let response = api
+        .api
+        .execute_command(request(
+            batch_update_status(
+                project_id,
+                Uuid::new_v4(),
+                vec![(first_id, 1), (second_id, 1)],
+                v1::TaskStatus::Done,
+                3,
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("batch should commit")
+        .into_inner();
+    assert_eq!(response_revision(&response), 4);
+    let event = response
+        .result
+        .and_then(|result| result.event)
+        .expect("batch event should be present");
+    assert_eq!(event.changes.len(), 2);
+
+    let conflict = api
+        .api
+        .execute_command(request(
+            batch_update_status(
+                project_id,
+                Uuid::new_v4(),
+                vec![(first_id, 2), (second_id, 1)],
+                v1::TaskStatus::Todo,
+                4,
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect_err("a stale entity version must reject the batch");
+    assert_eq!(conflict.code(), Code::Aborted);
+
+    let snapshot = api
+        .api
+        .get_project_snapshot(request(
+            v1::GetProjectSnapshotRequest {
+                project_id: project_id.to_string(),
+            },
+            api.token(admin_id),
+        ))
+        .await
+        .expect("snapshot should succeed")
+        .into_inner();
+    assert_eq!(snapshot.revision, 4);
+    assert!(snapshot
+        .tasks
+        .iter()
+        .all(|task| task.status == v1::TaskStatus::Done as i32));
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn idempotent_command_replays_without_second_write() {
     let Some(db) = TestDatabase::create().await else {
         return;

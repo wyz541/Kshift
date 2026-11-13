@@ -415,28 +415,30 @@ impl AttachmentState {
 }
 
 fn apply_change(snapshot: &mut ProjectSnapshot, event: &ChangeEvent) {
-    match &event.change {
-        Change::ProjectUpserted { project } => snapshot.project = project.clone(),
-        Change::ProjectMemberUpserted { member } => {
-            if let Some(existing) = snapshot
-                .members
-                .iter_mut()
-                .find(|existing| existing.user_id == member.user_id)
-            {
-                *existing = member.clone();
-            } else {
-                snapshot.members.push(member.clone());
+    for change in &event.changes {
+        match change {
+            Change::ProjectUpserted { project } => snapshot.project = project.clone(),
+            Change::ProjectMemberUpserted { member } => {
+                if let Some(existing) = snapshot
+                    .members
+                    .iter_mut()
+                    .find(|existing| existing.user_id == member.user_id)
+                {
+                    *existing = member.clone();
+                } else {
+                    snapshot.members.push(member.clone());
+                }
             }
-        }
-        Change::TaskCreated { task } | Change::TaskUpdated { task } => {
-            if let Some(existing) = snapshot.tasks.iter_mut().find(|item| item.id == task.id) {
-                *existing = task.clone();
-            } else {
-                snapshot.tasks.push(task.clone());
+            Change::TaskCreated { task } | Change::TaskUpdated { task } => {
+                if let Some(existing) = snapshot.tasks.iter_mut().find(|item| item.id == task.id) {
+                    *existing = task.clone();
+                } else {
+                    snapshot.tasks.push(task.clone());
+                }
             }
-        }
-        Change::TaskDeleted { task_id } => {
-            snapshot.tasks.retain(|task| task.id != *task_id);
+            Change::TaskDeleted { task_id } => {
+                snapshot.tasks.retain(|task| task.id != *task_id);
+            }
         }
     }
 }
@@ -514,9 +516,9 @@ mod tests {
             schema_version: domain::SCHEMA_VERSION,
             command_id: Uuid::new_v4(),
             occurred_at: Utc::now(),
-            change: Change::TaskCreated {
+            changes: vec![Change::TaskCreated {
                 task: task(project_id),
-            },
+            }],
         }
     }
 
@@ -567,7 +569,7 @@ mod tests {
             schema_version: domain::SCHEMA_VERSION,
             command_id: Uuid::new_v4(),
             occurred_at: Utc::now(),
-            change: Change::ProjectMemberUpserted { member },
+            changes: vec![Change::ProjectMemberUpserted { member }],
         };
         assert!(matches!(
             cache.apply_event(&event),
