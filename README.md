@@ -4,13 +4,13 @@
 
 ## 当前状态
 
-- 阶段：R0 Spec 评审。
+- 阶段：R2 共享 SwiftUI 基座已实现。
 - Spec 版本：`0.1`。
-- 实现状态：尚未开始。
+- 实现状态：共享 UI 基座可构建；P0 日计划 MVP 尚未实现。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
-- 当前任务：[Issue #3](https://github.com/wyz541/Kshift/issues/3)。
+- 下一个任务：[Issue #7](https://github.com/wyz541/Kshift/issues/7)。
 
 ## 首版边界
 
@@ -38,6 +38,54 @@ flowchart LR
   SV -->|"snapshot / events"| CL
 ```
 
+## 共享 SwiftUI 基座
+
+| 路径 | 职责 |
+| --- | --- |
+| `Sources/KshiftPresentation` | 业务快照、typed command 和 presentation mapping |
+| `Sources/KshiftFFI` | Swift FFI 边界和可替换的内存实现 |
+| `Sources/KshiftUI` | 共享 SwiftUI 页面、组件、语义色和 Liquid Glass 入口 |
+| `Sources/KshiftAppKitAdapter` | macOS 系统能力和 `NSViewRepresentable` |
+| `Sources/KshiftUIKitAdapter` | iOS 系统能力和 `UIViewControllerRepresentable` |
+| `Apps/KshiftMacOS` | macOS 最小启动入口 |
+| `Apps/KshiftIOS` | iOS 最小启动入口 |
+| `Kshift.xcodeproj` | 两个 app target 和共享 package 引用 |
+
+当前边界：
+
+- macOS 和 iOS 组合同一个 `KshiftDayPlanFeatureView`。
+- AppKit 和 UIKit 只处理系统能力，不承载产品页面。
+- 共享代码不使用 HTTP、PostgreSQL 或 protobuf 类型。
+- `#if os(...)` 只出现在 app entry。
+- `InMemoryKshiftFFIBoundary` 只提供界面基座样例。Issue #5 接入正式 `kshift-ffi`。
+- 当前构建使用 Xcode 27.2 SDK。部署目标为 macOS 26.0 和 iOS 26.0。
+
+## 构建
+
+1. 检查共享边界。
+
+   ```sh
+   ./Scripts/check-platform-boundaries.sh
+   ```
+
+2. 运行共享测试。
+
+   ```sh
+   swift test
+   ```
+
+3. 构建 macOS app。
+
+   ```sh
+   xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
+   ```
+
+4. 构建 iOS app。
+
+   ```sh
+   xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+   ```
+
 ## 文档入口
 
 | 内容 | 入口 |
@@ -56,7 +104,8 @@ flowchart LR
 - macOS 和 iOS 分发方式尚未确认。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
-- 仓库当前只有 Spec 和合同。没有运行中的产品服务。
+- 真实 `kshift-ffi` 和产品服务尚未接入。
+- P0 日计划流程、无障碍证据和性能读数尚未完成。
 
 ## 来源
 
