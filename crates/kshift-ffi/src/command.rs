@@ -1,5 +1,7 @@
 use chrono::NaiveDate;
-use domain::{Command, CommandEnvelope, Maybe, ProjectRole, TaskPatch, TaskPriority, TaskStatus};
+use domain::{
+    Command, CommandEnvelope, Maybe, ProjectRole, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
+};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -24,6 +26,24 @@ enum CommandDto {
     CreateTask(CreateTaskDto),
     UpdateTask(UpdateTaskDto),
     DeleteTask(DeleteTaskDto),
+    BatchUpdateTasks(BatchUpdateTasksDto),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BatchUpdateTasksDto {
+    mutations: Vec<TaskMutationDto>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", content = "value", rename_all = "snake_case")]
+enum TaskMutationDto {
+    #[serde(rename = "create_task")]
+    Create(CreateTaskDto),
+    #[serde(rename = "update_task")]
+    Update(UpdateTaskDto),
+    #[serde(rename = "delete_task")]
+    Delete(DeleteTaskDto),
 }
 
 #[derive(Debug, Deserialize)]
@@ -187,26 +207,18 @@ pub fn command_from_json(bytes: &[u8]) -> Result<CommandEnvelope, FfiError> {
         CommandDto::UpdateTask(value) => Command::UpdateTask {
             task_id: parse_uuid("task_id", &value.task_id)?,
             expected_entity_version: value.expected_entity_version,
-            patch: TaskPatch {
-                title: maybe_scalar(value.title, |value| value),
-                description_markdown: maybe_scalar(value.description_markdown, |value| value),
-                status: maybe_scalar(value.status, task_status),
-                priority: maybe_scalar(value.priority, task_priority),
-                assignee_ids: maybe_uuid_list("assignee_ids", value.assignee_ids)?,
-                planned_on: maybe_date("planned_on", value.planned_on)?,
-                starts_on: maybe_optional_date("starts_on", value.starts_on)?,
-                due_on: maybe_optional_date("due_on", value.due_on)?,
-                tags: maybe_string_list(value.tags),
-                parent_task_id: maybe_optional_uuid("parent_task_id", value.parent_task_id)?,
-                dependency_task_ids: maybe_uuid_list(
-                    "dependency_task_ids",
-                    value.dependency_task_ids,
-                )?,
-            },
+            patch: task_patch(value)?,
         },
         CommandDto::DeleteTask(value) => Command::DeleteTask {
             task_id: parse_uuid("task_id", &value.task_id)?,
             expected_entity_version: value.expected_entity_version,
+        },
+        CommandDto::BatchUpdateTasks(value) => Command::BatchUpdateTasks {
+            mutations: value
+                .mutations
+                .into_iter()
+                .map(task_mutation)
+                .collect::<Result<Vec<_>, _>>()?,
         },
     };
     let envelope = CommandEnvelope {
@@ -218,6 +230,68 @@ pub fn command_from_json(bytes: &[u8]) -> Result<CommandEnvelope, FfiError> {
     };
     envelope.validate()?;
     Ok(envelope)
+}
+
+fn task_mutation(value: TaskMutationDto) -> Result<TaskMutation, FfiError> {
+    match value {
+        TaskMutationDto::Create(value) => {
+            let task_id = Uuid::new_v4();
+            Ok(TaskMutation::CreateTask {
+                task_id,
+                title: value.title,
+                description_markdown: value.description_markdown,
+                status: task_status(value.status),
+                priority: task_priority(value.priority),
+                assignee_ids: parse_uuid_list("assignee_ids", value.assignee_ids)?,
+                planned_on: parse_date("planned_on", &value.planned_on)?,
+                starts_on: value
+                    .starts_on
+                    .as_deref()
+                    .map(|value| parse_date("starts_on", value))
+                    .transpose()?,
+                due_on: value
+                    .due_on
+                    .as_deref()
+                    .map(|value| parse_date("due_on", value))
+                    .transpose()?,
+                tags: value.tags,
+                parent_task_id: value
+                    .parent_task_id
+                    .as_deref()
+                    .map(|value| parse_uuid("parent_task_id", value))
+                    .transpose()?,
+                dependency_task_ids: parse_uuid_list(
+                    "dependency_task_ids",
+                    value.dependency_task_ids,
+                )?,
+            })
+        }
+        TaskMutationDto::Update(value) => Ok(TaskMutation::UpdateTask {
+            task_id: parse_uuid("task_id", &value.task_id)?,
+            expected_entity_version: value.expected_entity_version,
+            patch: task_patch(value)?,
+        }),
+        TaskMutationDto::Delete(value) => Ok(TaskMutation::DeleteTask {
+            task_id: parse_uuid("task_id", &value.task_id)?,
+            expected_entity_version: value.expected_entity_version,
+        }),
+    }
+}
+
+fn task_patch(value: UpdateTaskDto) -> Result<TaskPatch, FfiError> {
+    Ok(TaskPatch {
+        title: maybe_scalar(value.title, |value| value),
+        description_markdown: maybe_scalar(value.description_markdown, |value| value),
+        status: maybe_scalar(value.status, task_status),
+        priority: maybe_scalar(value.priority, task_priority),
+        assignee_ids: maybe_uuid_list("assignee_ids", value.assignee_ids)?,
+        planned_on: maybe_date("planned_on", value.planned_on)?,
+        starts_on: maybe_optional_date("starts_on", value.starts_on)?,
+        due_on: maybe_optional_date("due_on", value.due_on)?,
+        tags: maybe_string_list(value.tags),
+        parent_task_id: maybe_optional_uuid("parent_task_id", value.parent_task_id)?,
+        dependency_task_ids: maybe_uuid_list("dependency_task_ids", value.dependency_task_ids)?,
+    })
 }
 
 fn maybe_scalar<T, U>(value: PatchField<T>, map: impl FnOnce(T) -> U) -> Maybe<U> {
@@ -318,5 +392,59 @@ fn task_priority(value: TaskPriorityDto) -> TaskPriority {
         TaskPriorityDto::Medium => TaskPriority::Medium,
         TaskPriorityDto::High => TaskPriority::High,
         TaskPriorityDto::Urgent => TaskPriority::Urgent,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_atomic_batch_update() {
+        let json = br#"{
+          "client_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "command_id": "99999999-8888-4777-8666-555555555555",
+          "project_id": "11111111-2222-4333-8444-555555555555",
+          "expected_project_revision": 7,
+          "command": {
+            "type": "batch_update_tasks",
+            "value": {
+              "mutations": [
+                {
+                  "type": "update_task",
+                  "value": {
+                    "task_id": "22222222-2222-4222-8222-222222222222",
+                    "expected_entity_version": 3,
+                    "status": "done"
+                  }
+                },
+                {
+                  "type": "update_task",
+                  "value": {
+                    "task_id": "33333333-3333-4333-8333-333333333333",
+                    "expected_entity_version": 4,
+                    "status": "done"
+                  }
+                }
+              ]
+            }
+          }
+        }"#;
+        let envelope = command_from_json(json).expect("batch JSON should parse");
+        let Command::BatchUpdateTasks { mutations } = envelope.command else {
+            panic!("expected batch command");
+        };
+        assert_eq!(mutations.len(), 2);
+        assert!(matches!(
+            &mutations[0],
+            TaskMutation::UpdateTask {
+                expected_entity_version: 3,
+                patch: TaskPatch {
+                    status: Maybe::Value(TaskStatus::Done),
+                    ..
+                },
+                ..
+            }
+        ));
     }
 }

@@ -261,6 +261,45 @@ pub fn update_task_title(
     )
 }
 
+pub fn batch_update_status(
+    project_id: Uuid,
+    command_id: Uuid,
+    items: Vec<(Uuid, u64)>,
+    status: v1::TaskStatus,
+    expected_revision: u64,
+) -> v1::ExecuteCommandRequest {
+    let mutations = items
+        .into_iter()
+        .map(|(task_id, expected_entity_version)| v1::TaskMutation {
+            mutation: Some(v1::task_mutation::Mutation::UpdateTask(
+                v1::UpdateTaskCommand {
+                    task_id: task_id.to_string(),
+                    expected_entity_version,
+                    patch: Some(v1::TaskPatch {
+                        title: None,
+                        description_markdown: None,
+                        status: Some(status as i32),
+                        priority: None,
+                        assignee_ids: None,
+                        planned_on: None,
+                        starts_on: None,
+                        due_on: None,
+                        tags: None,
+                        parent_task_id: None,
+                        dependency_task_ids: None,
+                    }),
+                },
+            )),
+        })
+        .collect();
+    execute_envelope(
+        project_id,
+        command_id,
+        expected_revision,
+        ProtoCommand::BatchUpdateTasks(v1::BatchUpdateTasksCommand { mutations }),
+    )
+}
+
 pub fn response_revision(response: &v1::ExecuteCommandResponse) -> u64 {
     response
         .result

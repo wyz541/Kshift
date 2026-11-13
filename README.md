@@ -6,7 +6,7 @@
 
 - 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
 - Spec 版本：`0.1`。
-- 实现状态：Rust server、PostgreSQL schema、Rust client、C ABI 和共享 UI 基座可构建；P0 日计划业务映射尚未完成。
+- 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；本地真实 server E2E 已验证。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
@@ -157,12 +157,13 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 
 当前边界：
 
-- macOS 和 iOS 组合同一个 `KshiftDayPlanFeatureView`。
+- macOS 和 iOS 的 P0 入口组合同一个 `KshiftRootView`。
 - AppKit 和 UIKit 只处理系统能力，不承载产品页面。
 - 共享代码不使用 HTTP、PostgreSQL 或 protobuf 类型。
 - `#if os(...)` 只出现在 app entry。
-- `KshiftRustClient` 通过 `kshift-ffi` 提供正式 Rust client wrapper；`InMemoryKshiftFFIBoundary` 保留为界面样例。
-- Feature view 仍需通过后续 typed presentation mapping 接入正式 Rust client。
+- `RustClient` 读取 `kshift-ffi` 的 bounded JSON，并映射为共享 UI 模型。
+- `KshiftRustClient` 保留底层 C ABI wrapper。`InMemoryKshiftFFIBoundary` 用于界面样例。
+- Debug 截图使用 `DemoKshiftClient`。Release 入口使用 `RustClient`。
 - 当前构建使用 Xcode 27.2 SDK。部署目标为 macOS 26.0 和 iOS 26.0。
 
 ### Swift 验证
@@ -170,13 +171,13 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 1. 检查共享边界。
 
    ```sh
-   ./Scripts/check-platform-boundaries.sh
+   ./scripts/check-platform-boundaries.sh
    ```
 
 2. 构建 Rust static library。
 
    ```sh
-   cargo build --locked -p kshift-ffi
+   ./scripts/build-ffi.sh macos
    ```
 
 3. 运行共享测试。
@@ -234,16 +235,19 @@ Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只�
 | R1 运维和恢复 | [Operations](docs/operations.md) |
 | R1 验收证据 | [Acceptance](docs/r1-acceptance.md) |
 | Rust client、cache 和 C ABI | [Client/FFI](docs/client-ffi.md) |
+| R2 功能和证据 | [MVP](docs/MVP.md) |
+| R2 截图和性能 | [Evidence](docs/evidence/README.md) |
 | 贡献与评审流程 | [CONTRIBUTING](CONTRIBUTING.md) |
 
 ## 当前限制
 
 - 身份认证数据源尚未最终确认。R1 使用可控 bearer token hash。
-- 正式 Rust client bridge 尚未接入 `KshiftDayPlanFeatureView`。
+- Release app 需要配置 `KSHIFT_ENDPOINT`、CA 和 token。登录界面尚未实现。
+- UI 已通过 `kshift-ffi` 读取真实 gRPC/PostgreSQL server 数据。
 - macOS 和 iOS 分发方式尚未确认。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
-- P0 日计划流程、无障碍证据和性能读数尚未完成。
+- live snapshot 尚未映射 task history 和 project audit。
 - PostgreSQL 高可用集群不在首版范围。
 
 ## 安全边界

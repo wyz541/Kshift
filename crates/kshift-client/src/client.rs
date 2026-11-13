@@ -5,7 +5,7 @@ use chrono::{DateTime, NaiveDate, Utc};
 use contract::v1;
 use domain::{
     ChangeEvent, Command, CommandEnvelope, Maybe, Project, ProjectMember, ProjectSnapshot,
-    ResetReason, Task, TaskPriority, TaskStatus,
+    ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
 };
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
@@ -862,26 +862,7 @@ fn command_envelope_to_proto(value: &CommandEnvelope) -> Result<v1::CommandEnvel
         } => v1::command_envelope::Command::UpdateTask(v1::UpdateTaskCommand {
             task_id: task_id.to_string(),
             expected_entity_version: *expected_entity_version,
-            patch: Some(v1::TaskPatch {
-                title: maybe_value(&patch.title, "title")?,
-                description_markdown: maybe_value(
-                    &patch.description_markdown,
-                    "description_markdown",
-                )?,
-                status: maybe_mapped(&patch.status, "status", |value| {
-                    task_status_to_proto(*value) as i32
-                })?,
-                priority: maybe_mapped(&patch.priority, "priority", |value| {
-                    task_priority_to_proto(*value) as i32
-                })?,
-                assignee_ids: uuid_list_patch(&patch.assignee_ids)?,
-                planned_on: required_date_patch(&patch.planned_on, "planned_on")?,
-                starts_on: optional_date_patch(&patch.starts_on)?,
-                due_on: optional_date_patch(&patch.due_on)?,
-                tags: string_list_patch(&patch.tags)?,
-                parent_task_id: optional_uuid_patch(&patch.parent_task_id)?,
-                dependency_task_ids: uuid_list_patch(&patch.dependency_task_ids)?,
-            }),
+            patch: Some(task_patch_to_proto(patch)?),
         }),
         Command::DeleteTask {
             task_id,
@@ -890,10 +871,13 @@ fn command_envelope_to_proto(value: &CommandEnvelope) -> Result<v1::CommandEnvel
             task_id: task_id.to_string(),
             expected_entity_version: *expected_entity_version,
         }),
-        Command::BatchUpdateTasks => {
-            return Err(ClientError::InvalidArgument(
-                "batch_update_tasks is not enabled".to_owned(),
-            ));
+        Command::BatchUpdateTasks { mutations } => {
+            v1::command_envelope::Command::BatchUpdateTasks(v1::BatchUpdateTasksCommand {
+                mutations: mutations
+                    .iter()
+                    .map(task_mutation_to_proto)
+                    .collect::<Result<Vec<_>, _>>()?,
+            })
         }
     };
     Ok(v1::CommandEnvelope {
@@ -902,6 +886,81 @@ fn command_envelope_to_proto(value: &CommandEnvelope) -> Result<v1::CommandEnvel
         project_id: value.project_id.to_string(),
         expected_project_revision: value.expected_revision,
         command: Some(command),
+    })
+}
+
+fn task_mutation_to_proto(value: &TaskMutation) -> Result<v1::TaskMutation, ClientError> {
+    let mutation = match value {
+        TaskMutation::CreateTask {
+            task_id: _,
+            title,
+            description_markdown,
+            status,
+            priority,
+            assignee_ids,
+            planned_on,
+            starts_on,
+            due_on,
+            tags,
+            parent_task_id,
+            dependency_task_ids,
+        } => v1::task_mutation::Mutation::CreateTask(v1::CreateTaskCommand {
+            draft: Some(v1::TaskDraft {
+                title: title.clone(),
+                description_markdown: description_markdown.clone(),
+                status: task_status_to_proto(*status) as i32,
+                priority: task_priority_to_proto(*priority) as i32,
+                assignee_ids: assignee_ids.iter().map(ToString::to_string).collect(),
+                planned_on: planned_on.format("%Y-%m-%d").to_string(),
+                starts_on: starts_on.map(|value| value.format("%Y-%m-%d").to_string()),
+                due_on: due_on.map(|value| value.format("%Y-%m-%d").to_string()),
+                tags: tags.clone(),
+                parent_task_id: parent_task_id.map(|value| value.to_string()),
+                dependency_task_ids: dependency_task_ids
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect(),
+            }),
+        }),
+        TaskMutation::UpdateTask {
+            task_id,
+            expected_entity_version,
+            patch,
+        } => v1::task_mutation::Mutation::UpdateTask(v1::UpdateTaskCommand {
+            task_id: task_id.to_string(),
+            expected_entity_version: *expected_entity_version,
+            patch: Some(task_patch_to_proto(patch)?),
+        }),
+        TaskMutation::DeleteTask {
+            task_id,
+            expected_entity_version,
+        } => v1::task_mutation::Mutation::DeleteTask(v1::DeleteTaskCommand {
+            task_id: task_id.to_string(),
+            expected_entity_version: *expected_entity_version,
+        }),
+    };
+    Ok(v1::TaskMutation {
+        mutation: Some(mutation),
+    })
+}
+
+fn task_patch_to_proto(patch: &TaskPatch) -> Result<v1::TaskPatch, ClientError> {
+    Ok(v1::TaskPatch {
+        title: maybe_value(&patch.title, "title")?,
+        description_markdown: maybe_value(&patch.description_markdown, "description_markdown")?,
+        status: maybe_mapped(&patch.status, "status", |value| {
+            task_status_to_proto(*value) as i32
+        })?,
+        priority: maybe_mapped(&patch.priority, "priority", |value| {
+            task_priority_to_proto(*value) as i32
+        })?,
+        assignee_ids: uuid_list_patch(&patch.assignee_ids)?,
+        planned_on: required_date_patch(&patch.planned_on, "planned_on")?,
+        starts_on: optional_date_patch(&patch.starts_on)?,
+        due_on: optional_date_patch(&patch.due_on)?,
+        tags: string_list_patch(&patch.tags)?,
+        parent_task_id: optional_uuid_patch(&patch.parent_task_id)?,
+        dependency_task_ids: uuid_list_patch(&patch.dependency_task_ids)?,
     })
 }
 

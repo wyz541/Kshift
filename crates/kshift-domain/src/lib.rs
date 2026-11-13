@@ -17,6 +17,7 @@ pub const MAX_ASSIGNEES: usize = 20;
 pub const MAX_TAGS: usize = 30;
 pub const MAX_TAG_CHARS: usize = 32;
 pub const MAX_DEPENDENCIES: usize = 50;
+pub const MAX_BATCH_MUTATIONS: usize = 100;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -178,7 +179,9 @@ pub enum Command {
         task_id: Uuid,
         expected_entity_version: u64,
     },
-    BatchUpdateTasks,
+    BatchUpdateTasks {
+        mutations: Vec<TaskMutation>,
+    },
 }
 
 impl Command {
@@ -189,7 +192,7 @@ impl Command {
             Self::CreateTask { .. } => "create_task",
             Self::UpdateTask { .. } => "update_task",
             Self::DeleteTask { .. } => "delete_task",
-            Self::BatchUpdateTasks => "batch_update_tasks",
+            Self::BatchUpdateTasks { .. } => "batch_update_tasks",
         }
     }
 }
@@ -269,9 +272,10 @@ impl CommandEnvelope {
                 }
                 Ok(())
             }
-            Command::BatchUpdateTasks => Err(DomainError::Unsupported(
-                "batch_update_tasks is not enabled in R1".to_owned(),
-            )),
+            Command::BatchUpdateTasks { mutations } => {
+                require_project_revision(self.expected_revision, "batch_update_tasks")?;
+                validate_batch_mutations(mutations)
+            }
         }?;
 
         if self.project_id.is_nil() {
@@ -285,6 +289,122 @@ impl CommandEnvelope {
         }
         Ok(())
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum TaskMutation {
+    CreateTask {
+        task_id: Uuid,
+        title: String,
+        description_markdown: String,
+        status: TaskStatus,
+        priority: TaskPriority,
+        assignee_ids: Vec<Uuid>,
+        planned_on: NaiveDate,
+        starts_on: Option<NaiveDate>,
+        due_on: Option<NaiveDate>,
+        tags: Vec<String>,
+        parent_task_id: Option<Uuid>,
+        dependency_task_ids: Vec<Uuid>,
+    },
+    UpdateTask {
+        task_id: Uuid,
+        expected_entity_version: u64,
+        patch: TaskPatch,
+    },
+    DeleteTask {
+        task_id: Uuid,
+        expected_entity_version: u64,
+    },
+}
+
+impl TaskMutation {
+    fn task_id(&self) -> Uuid {
+        match self {
+            Self::CreateTask { task_id, .. }
+            | Self::UpdateTask { task_id, .. }
+            | Self::DeleteTask { task_id, .. } => *task_id,
+        }
+    }
+}
+
+fn validate_batch_mutations(mutations: &[TaskMutation]) -> Result<(), DomainError> {
+    if mutations.is_empty() {
+        return Err(validation(
+            "batch_update_tasks must contain at least one mutation",
+        ));
+    }
+    if mutations.len() > MAX_BATCH_MUTATIONS {
+        return Err(validation(format!(
+            "batch_update_tasks must contain at most {MAX_BATCH_MUTATIONS} mutations"
+        )));
+    }
+    let mut seen = std::collections::HashSet::with_capacity(mutations.len());
+    for mutation in mutations {
+        let task_id = mutation.task_id();
+        if task_id.is_nil() {
+            return Err(validation("batch_update_tasks task_id must not be nil"));
+        }
+        if !seen.insert(task_id) {
+            return Err(validation(
+                "batch_update_tasks must not mutate the same task twice",
+            ));
+        }
+        match mutation {
+            TaskMutation::CreateTask {
+                task_id,
+                title,
+                description_markdown,
+                assignee_ids,
+                planned_on,
+                starts_on,
+                due_on,
+                tags,
+                parent_task_id,
+                dependency_task_ids,
+                ..
+            } => {
+                validate_task_title(title)?;
+                validate_description(description_markdown)?;
+                validate_finite_date(*planned_on, starts_on, due_on)?;
+                validate_collection_invariants(
+                    task_id,
+                    assignee_ids,
+                    tags,
+                    parent_task_id,
+                    dependency_task_ids,
+                )?;
+            }
+            TaskMutation::UpdateTask {
+                expected_entity_version,
+                patch,
+                ..
+            } => {
+                if *expected_entity_version == 0 {
+                    return Err(validation(
+                        "batch_update_tasks entity version must be nonzero",
+                    ));
+                }
+                if patch.is_empty() {
+                    return Err(validation(
+                        "batch_update_tasks patch must contain at least one field",
+                    ));
+                }
+                validate_patch(patch)?;
+            }
+            TaskMutation::DeleteTask {
+                expected_entity_version,
+                ..
+            } => {
+                if *expected_entity_version == 0 {
+                    return Err(validation(
+                        "batch_update_tasks entity version must be nonzero",
+                    ));
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -303,7 +423,7 @@ pub struct ChangeEvent {
     pub schema_version: u32,
     pub command_id: Uuid,
     pub occurred_at: DateTime<Utc>,
-    pub change: Change,
+    pub changes: Vec<Change>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

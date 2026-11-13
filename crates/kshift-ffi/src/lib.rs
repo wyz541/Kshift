@@ -605,13 +605,15 @@ fn command_outcome_json(outcome: &kshift_client::CommandOutcome) -> Result<Vec<u
 }
 
 fn change_event_value(event: &domain::ChangeEvent) -> serde_json::Value {
+    let changes = event.changes.iter().map(change_json).collect::<Vec<_>>();
     json!({
         "project_id": event.project_id,
         "revision": event.revision,
         "schema_version": event.schema_version,
         "command_id": event.command_id,
         "occurred_at": event.occurred_at,
-        "change": change_json(&event.change),
+        "changes": changes,
+        "change": changes.first().cloned().unwrap_or(serde_json::Value::Null),
     })
 }
 

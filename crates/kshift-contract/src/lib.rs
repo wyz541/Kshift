@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
     Change, ChangeEvent, Command, CommandEnvelope, DomainError, Maybe, ProjectMember, ProjectRole,
-    ProjectSnapshot, ResetReason, Task, TaskPatch, TaskPriority, TaskStatus,
+    ProjectSnapshot, ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
 };
 use prost::Message;
 use sha2::{Digest, Sha256};
@@ -304,66 +304,23 @@ pub fn parse_execute_command(
                 )?,
             }
         }
-        v1::command_envelope::Command::UpdateTask(command) => {
-            let patch = command.patch.as_ref().ok_or_else(|| {
-                ApiError::InvalidArgument("update_task patch is required".to_owned())
-            })?;
-            Command::UpdateTask {
-                task_id: parse_uuid(&command.task_id, "task_id")?,
-                expected_entity_version: command.expected_entity_version,
-                patch: TaskPatch {
-                    title: patch.title.clone().map_or(Maybe::Unset, Maybe::Value),
-                    description_markdown: patch
-                        .description_markdown
-                        .clone()
-                        .map_or(Maybe::Unset, Maybe::Value),
-                    status: patch
-                        .status
-                        .map(task_status_from_proto)
-                        .transpose()?
-                        .map_or(Maybe::Unset, Maybe::Value),
-                    priority: patch
-                        .priority
-                        .map(task_priority_from_proto)
-                        .transpose()?
-                        .map_or(Maybe::Unset, Maybe::Value),
-                    assignee_ids: patch
-                        .assignee_ids
-                        .as_ref()
-                        .map(|value| parse_uuid_list(&value.values, "assignee_ids"))
-                        .transpose()?
-                        .map_or(Maybe::Unset, Maybe::Value),
-                    planned_on: patch
-                        .planned_on
-                        .as_deref()
-                        .map(|value| parse_required_date(value, "planned_on"))
-                        .transpose()?
-                        .map_or(Maybe::Unset, Maybe::Value),
-                    starts_on: parse_optional_date_patch(patch.starts_on.as_deref(), "starts_on")?,
-                    due_on: parse_optional_date_patch(patch.due_on.as_deref(), "due_on")?,
-                    tags: patch
-                        .tags
-                        .as_ref()
-                        .map(|value| Maybe::Value(value.values.clone()))
-                        .unwrap_or_default(),
-                    parent_task_id: parse_optional_uuid_patch(
-                        patch.parent_task_id.as_deref(),
-                        "parent_task_id",
-                    )?,
-                    dependency_task_ids: patch
-                        .dependency_task_ids
-                        .as_ref()
-                        .map(|value| parse_uuid_list(&value.values, "dependency_task_ids"))
-                        .transpose()?
-                        .map_or(Maybe::Unset, Maybe::Value),
-                },
-            }
-        }
+        v1::command_envelope::Command::UpdateTask(command) => Command::UpdateTask {
+            task_id: parse_uuid(&command.task_id, "task_id")?,
+            expected_entity_version: command.expected_entity_version,
+            patch: parse_task_patch(command.patch.as_ref())?,
+        },
         v1::command_envelope::Command::DeleteTask(command) => Command::DeleteTask {
             task_id: parse_uuid(&command.task_id, "task_id")?,
             expected_entity_version: command.expected_entity_version,
         },
-        v1::command_envelope::Command::BatchUpdateTasks(_) => Command::BatchUpdateTasks,
+        v1::command_envelope::Command::BatchUpdateTasks(command) => Command::BatchUpdateTasks {
+            mutations: command
+                .mutations
+                .iter()
+                .cloned()
+                .map(parse_task_mutation)
+                .collect::<Result<Vec<_>, _>>()?,
+        },
     };
 
     let envelope = CommandEnvelope {
@@ -379,6 +336,98 @@ pub fn parse_execute_command(
         envelope,
         request_digest,
     })
+}
+
+fn parse_task_patch(patch: Option<&v1::TaskPatch>) -> Result<TaskPatch, ApiError> {
+    let patch = patch
+        .ok_or_else(|| ApiError::InvalidArgument("update task patch is required".to_owned()))?;
+    Ok(TaskPatch {
+        title: patch.title.clone().map_or(Maybe::Unset, Maybe::Value),
+        description_markdown: patch
+            .description_markdown
+            .clone()
+            .map_or(Maybe::Unset, Maybe::Value),
+        status: patch
+            .status
+            .map(task_status_from_proto)
+            .transpose()?
+            .map_or(Maybe::Unset, Maybe::Value),
+        priority: patch
+            .priority
+            .map(task_priority_from_proto)
+            .transpose()?
+            .map_or(Maybe::Unset, Maybe::Value),
+        assignee_ids: patch
+            .assignee_ids
+            .as_ref()
+            .map(|value| parse_uuid_list(&value.values, "assignee_ids"))
+            .transpose()?
+            .map_or(Maybe::Unset, Maybe::Value),
+        planned_on: patch
+            .planned_on
+            .as_deref()
+            .map(|value| parse_required_date(value, "planned_on"))
+            .transpose()?
+            .map_or(Maybe::Unset, Maybe::Value),
+        starts_on: parse_optional_date_patch(patch.starts_on.as_deref(), "starts_on")?,
+        due_on: parse_optional_date_patch(patch.due_on.as_deref(), "due_on")?,
+        tags: patch
+            .tags
+            .as_ref()
+            .map(|value| Maybe::Value(value.values.clone()))
+            .unwrap_or_default(),
+        parent_task_id: parse_optional_uuid_patch(
+            patch.parent_task_id.as_deref(),
+            "parent_task_id",
+        )?,
+        dependency_task_ids: patch
+            .dependency_task_ids
+            .as_ref()
+            .map(|value| parse_uuid_list(&value.values, "dependency_task_ids"))
+            .transpose()?
+            .map_or(Maybe::Unset, Maybe::Value),
+    })
+}
+
+fn parse_task_mutation(value: v1::TaskMutation) -> Result<TaskMutation, ApiError> {
+    match value.mutation.ok_or_else(|| {
+        ApiError::InvalidArgument("batch_update_tasks mutation is required".to_owned())
+    })? {
+        v1::task_mutation::Mutation::CreateTask(command) => {
+            let draft = command.draft.ok_or_else(|| {
+                ApiError::InvalidArgument("batch create_task draft is required".to_owned())
+            })?;
+            Ok(TaskMutation::CreateTask {
+                task_id: Uuid::new_v4(),
+                title: draft.title,
+                description_markdown: draft.description_markdown,
+                status: task_status_from_proto_or_default(draft.status)?,
+                priority: task_priority_from_proto_or_default(draft.priority)?,
+                assignee_ids: parse_uuid_list(&draft.assignee_ids, "assignee_ids")?,
+                planned_on: parse_required_date(&draft.planned_on, "planned_on")?,
+                starts_on: parse_optional_date(draft.starts_on.as_deref(), "starts_on")?,
+                due_on: parse_optional_date(draft.due_on.as_deref(), "due_on")?,
+                tags: draft.tags,
+                parent_task_id: parse_optional_uuid(
+                    draft.parent_task_id.as_deref(),
+                    "parent_task_id",
+                )?,
+                dependency_task_ids: parse_uuid_list(
+                    &draft.dependency_task_ids,
+                    "dependency_task_ids",
+                )?,
+            })
+        }
+        v1::task_mutation::Mutation::UpdateTask(command) => Ok(TaskMutation::UpdateTask {
+            task_id: parse_uuid(&command.task_id, "task_id")?,
+            expected_entity_version: command.expected_entity_version,
+            patch: parse_task_patch(command.patch.as_ref())?,
+        }),
+        v1::task_mutation::Mutation::DeleteTask(command) => Ok(TaskMutation::DeleteTask {
+            task_id: parse_uuid(&command.task_id, "task_id")?,
+            expected_entity_version: command.expected_entity_version,
+        }),
+    }
 }
 
 pub fn project_to_proto(value: &domain::Project) -> v1::Project {
@@ -451,7 +500,24 @@ pub fn task_to_proto(value: &Task) -> v1::Task {
 }
 
 pub fn change_event_to_proto(value: &ChangeEvent) -> v1::ProjectChangeEvent {
-    let change = match &value.change {
+    v1::ProjectChangeEvent {
+        schema_version: value.schema_version.to_string(),
+        project_id: value.project_id.to_string(),
+        revision: value.revision,
+        command_id: value.command_id.to_string(),
+        changes: value
+            .changes
+            .iter()
+            .map(|change| v1::Change {
+                change: Some(change_to_proto(change)),
+            })
+            .collect(),
+        committed_at: Some(datetime_to_timestamp(value.occurred_at)),
+    }
+}
+
+fn change_to_proto(value: &Change) -> v1::change::Change {
+    match value {
         Change::ProjectUpserted { project } => {
             v1::change::Change::ProjectUpserted(v1::ProjectUpserted {
                 project: Some(project_to_proto(project)),
@@ -470,17 +536,6 @@ pub fn change_event_to_proto(value: &ChangeEvent) -> v1::ProjectChangeEvent {
         Change::TaskDeleted { task_id } => v1::change::Change::TaskDeleted(v1::TaskDeleted {
             task_id: task_id.to_string(),
         }),
-    };
-
-    v1::ProjectChangeEvent {
-        schema_version: value.schema_version.to_string(),
-        project_id: value.project_id.to_string(),
-        revision: value.revision,
-        command_id: value.command_id.to_string(),
-        changes: vec![v1::Change {
-            change: Some(change),
-        }],
-        committed_at: Some(datetime_to_timestamp(value.occurred_at)),
     }
 }
 
@@ -504,41 +559,16 @@ pub fn collapse_change_event(
         .as_ref()
         .and_then(timestamp_to_datetime)
         .ok_or_else(|| ApiError::FailedPrecondition("event timestamp is invalid".to_owned()))?;
-    if value.changes.len() != 1 {
+    if value.changes.is_empty() {
         return Err(ApiError::FailedPrecondition(
-            "R1 stream events must contain exactly one change".to_owned(),
+            "event must contain at least one change".to_owned(),
         ));
     }
-    let change = match value
+    let changes = value
         .changes
         .into_iter()
-        .next()
-        .and_then(|value| value.change)
-    {
-        Some(v1::change::Change::ProjectUpserted(change)) => Change::ProjectUpserted {
-            project: project_from_proto(change.project.ok_or_else(|| {
-                ApiError::FailedPrecondition("event project is missing".to_owned())
-            })?)?,
-        },
-        Some(v1::change::Change::MemberUpserted(change)) => Change::ProjectMemberUpserted {
-            member: project_member_from_proto(change.member.ok_or_else(|| {
-                ApiError::FailedPrecondition("event member is missing".to_owned())
-            })?)?,
-        },
-        Some(v1::change::Change::TaskUpserted(change)) => Change::TaskUpdated {
-            task: task_from_proto(change.task.ok_or_else(|| {
-                ApiError::FailedPrecondition("event task is missing".to_owned())
-            })?)?,
-        },
-        Some(v1::change::Change::TaskDeleted(change)) => Change::TaskDeleted {
-            task_id: parse_uuid(&change.task_id, "event.task_deleted.task_id")?,
-        },
-        Some(v1::change::Change::MemberDeleted(_)) | None => {
-            return Err(ApiError::FailedPrecondition(
-                "event does not contain a supported change".to_owned(),
-            ));
-        }
-    };
+        .map(change_from_proto)
+        .collect::<Result<Vec<_>, _>>()?;
 
     Ok(ChangeEvent {
         project_id,
@@ -546,8 +576,34 @@ pub fn collapse_change_event(
         schema_version,
         command_id,
         occurred_at,
-        change,
+        changes,
     })
+}
+
+fn change_from_proto(value: v1::Change) -> Result<Change, ApiError> {
+    match value.change {
+        Some(v1::change::Change::ProjectUpserted(change)) => Ok(Change::ProjectUpserted {
+            project: project_from_proto(change.project.ok_or_else(|| {
+                ApiError::FailedPrecondition("event project is missing".to_owned())
+            })?)?,
+        }),
+        Some(v1::change::Change::MemberUpserted(change)) => Ok(Change::ProjectMemberUpserted {
+            member: project_member_from_proto(change.member.ok_or_else(|| {
+                ApiError::FailedPrecondition("event member is missing".to_owned())
+            })?)?,
+        }),
+        Some(v1::change::Change::TaskUpserted(change)) => Ok(Change::TaskUpdated {
+            task: task_from_proto(change.task.ok_or_else(|| {
+                ApiError::FailedPrecondition("event task is missing".to_owned())
+            })?)?,
+        }),
+        Some(v1::change::Change::TaskDeleted(change)) => Ok(Change::TaskDeleted {
+            task_id: parse_uuid(&change.task_id, "event.task_deleted.task_id")?,
+        }),
+        Some(v1::change::Change::MemberDeleted(_)) | None => Err(ApiError::FailedPrecondition(
+            "event contains an unsupported change".to_owned(),
+        )),
+    }
 }
 
 fn project_from_proto(value: v1::Project) -> Result<domain::Project, ApiError> {

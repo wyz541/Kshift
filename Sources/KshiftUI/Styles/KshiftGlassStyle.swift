@@ -25,12 +25,17 @@ public struct KshiftInteractiveGlassCard<Content: View>: View {
     self.content = content()
   }
 
+  @Environment(\.colorSchemeContrast) private var colorSchemeContrast
+  @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+  @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
+
   public var body: some View {
+    let shouldReduceTransparency = reduceTransparency || forceReduceTransparency
     Button(action: action) {
       content
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: shape)
+        .background(shouldReduceTransparency ? AnyShapeStyle(.background) : AnyShapeStyle(.regularMaterial), in: shape)
         .overlay {
           shape.strokeBorder(borderColor, lineWidth: borderWidth)
         }
@@ -39,8 +44,6 @@ public struct KshiftInteractiveGlassCard<Content: View>: View {
     .buttonStyle(.plain)
     .modifier(KshiftGlassSurfaceModifier(shape: shape))
   }
-
-  @Environment(\.colorSchemeContrast) private var colorSchemeContrast
 
   private var shape: RoundedRectangle {
     RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -59,12 +62,16 @@ private struct KshiftGlassSurfaceModifier<S: Shape>: ViewModifier {
   let shape: S
 
   @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+  @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
 
   @ViewBuilder
   func body(content: Content) -> some View {
-    if reduceTransparency {
+    if reduceTransparency || forceReduceTransparency {
       content
-        .background(.regularMaterial, in: shape)
+        .background(.background, in: shape)
+        .overlay {
+          shape.stroke(.separator, lineWidth: 1)
+        }
         .clipShape(shape)
     } else {
       content

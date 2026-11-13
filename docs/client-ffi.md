@@ -1,3 +1,18 @@
+---
+slug: /docs/client-ffi
+title: Kshift Rust Client 与 C ABI
+type: reference
+status: review
+updated: "2026-11-13"
+keywords:
+  - Rust client
+  - C ABI
+  - FFI
+  - TLS gRPC
+  - Swift
+description: 说明 Kshift Rust client、C ABI、缓存、重试和 Swift 边界。
+---
+
 # Kshift Rust Client 与 C ABI
 
 本文记录 Issue #5 的实现边界。Transport 和业务类型由 R1 workspace 提供。
@@ -58,6 +73,32 @@ Command envelope 使用 UUID、`expected_project_revision` 和 tagged command。
       "due_on": "2026-11-20",
       "tags": ["client"],
       "dependency_task_ids": []
+    }
+  }
+}
+```
+
+包含 `mutations` 的 `batch_update_tasks` 使用同一 project revision 提交。server 在一个事务内应用全部 mutation。任一版本冲突会回滚整批：
+
+```json
+{
+  "client_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+  "command_id": "88888888-7777-4666-8555-444444444444",
+  "project_id": "11111111-2222-4333-8444-555555555555",
+  "expected_project_revision": 3,
+  "command": {
+    "type": "batch_update_tasks",
+    "value": {
+      "mutations": [
+        {
+          "type": "update_task",
+          "value": {
+            "task_id": "22222222-2222-4222-8222-222222222222",
+            "expected_entity_version": 1,
+            "status": "done"
+          }
+        }
+      ]
     }
   }
 }

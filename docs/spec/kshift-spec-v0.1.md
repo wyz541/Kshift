@@ -264,10 +264,10 @@ flowchart TB
 - `UI-A11Y-002`：必须支持 Increase Contrast。
 - `UI-A11Y-003`：必须支持 Reduce Motion。
 - `UI-A11Y-004`：必须支持 Dark Mode 和系统文字大小。
-- `UI-A11Y-005`：macOS 必须通过键盘导航和 VoiceOver 检查。
-- `UI-A11Y-006`：iOS 必须通过 VoiceOver、触控目标和动态文字检查。
-- `UI-PERF-001`：滚动、拖拽、Sheet 切换和窗口缩放必须有性能读数。
-- `UI-PERF-002`：性能结论必须来自实际设备或同规格设备。
+- `UI-A11Y-005`：无障碍验收必须使用可重复的自动 UI 测试。
+- `UI-A11Y-006`：iOS 必须通过自动无障碍审计、触控目标和动态文字测试。
+- `UI-PERF-001`：iOS 滚动、拖拽和 Sheet 切换必须有 XCUITest 性能读数。
+- `UI-PERF-002`：性能读数必须记录设备、系统、测试名称和指标。
 
 ## 7. 架构
 
@@ -480,8 +480,8 @@ sequenceDiagram
 - `QA-UI-003`：AppKit 和 UIKit 只出现在 adapter 或系统集成边界。
 - `QA-UI-004`：Liquid Glass 使用符合第 6.3 节。
 - `QA-UI-005`：Reduce Transparency、Increase Contrast 和 Reduce Motion 检查通过。
-- `QA-UI-006`：VoiceOver、键盘导航、触控目标和系统文字大小检查通过。
-- `QA-UI-007`：滚动、拖拽、Sheet 切换和窗口缩放有性能读数。
+- `QA-UI-006`：自动无障碍审计、触控目标和系统文字大小测试通过。
+- `QA-UI-007`：iOS 滚动、拖拽和 Sheet 切换有 XCUITest 性能读数。
 
 ### 13.3 Release 门禁
 

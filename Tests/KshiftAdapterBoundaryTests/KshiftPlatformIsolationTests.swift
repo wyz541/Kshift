@@ -5,6 +5,7 @@ final class KshiftPlatformIsolationTests: XCTestCase {
   func testSharedTargetsDoNotImportPlatformOrTransportFrameworks() throws {
     let root = repositoryRoot()
     let sharedDirectories = [
+      root.appending(path: "Sources/KshiftCore"),
       root.appending(path: "Sources/KshiftPresentation"),
       root.appending(path: "Sources/KshiftFFI"),
       root.appending(path: "Sources/KshiftUI"),
@@ -65,17 +66,16 @@ final class KshiftPlatformIsolationTests: XCTestCase {
     let root = repositoryRoot()
     let macEntry = root.appending(path: "Apps/KshiftMacOS/KshiftMacOSApp.swift")
     let iosEntry = root.appending(path: "Apps/KshiftIOS/KshiftIOSApp.swift")
-    let sharedFeature = root.appending(
-      path: "Sources/KshiftUI/Feature/KshiftDayPlanFeatureView.swift")
+    let sharedFeature = root.appending(path: "Sources/KshiftUI/KshiftRootView.swift")
 
     let macSource = try String(contentsOf: macEntry, encoding: .utf8)
     let iosSource = try String(contentsOf: iosEntry, encoding: .utf8)
 
-    XCTAssertTrue(macSource.contains("KshiftDayPlanFeatureView(capabilities:"))
-    XCTAssertTrue(iosSource.contains("KshiftDayPlanFeatureView(capabilities:"))
+    XCTAssertTrue(macSource.contains("KshiftRootView(model: model)"))
+    XCTAssertTrue(iosSource.contains("KshiftRootView(model: model)"))
 
     let featureFiles = try swiftFiles(in: root.appending(path: "Sources/KshiftUI"))
-      .filter { $0.lastPathComponent == "KshiftDayPlanFeatureView.swift" }
+      .filter { $0.lastPathComponent == "KshiftRootView.swift" }
     XCTAssertEqual(featureFiles.map(\.standardizedFileURL), [sharedFeature.standardizedFileURL])
   }
 
