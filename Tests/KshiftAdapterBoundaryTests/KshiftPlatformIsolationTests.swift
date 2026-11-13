@@ -66,16 +66,16 @@ final class KshiftPlatformIsolationTests: XCTestCase {
     let macEntry = root.appending(path: "Apps/KshiftMacOS/KshiftMacOSApp.swift")
     let iosEntry = root.appending(path: "Apps/KshiftIOS/KshiftIOSApp.swift")
     let sharedFeature = root.appending(
-      path: "Sources/KshiftUI/Feature/KshiftDayPlanFeatureView.swift")
+      path: "Sources/KshiftUI/PlanDepth/KshiftPlanDepthFeatureView.swift")
 
     let macSource = try String(contentsOf: macEntry, encoding: .utf8)
     let iosSource = try String(contentsOf: iosEntry, encoding: .utf8)
 
-    XCTAssertTrue(macSource.contains("KshiftDayPlanFeatureView(capabilities:"))
-    XCTAssertTrue(iosSource.contains("KshiftDayPlanFeatureView(capabilities:"))
+    XCTAssertTrue(macSource.contains("KshiftPlanDepthFeatureView(capabilities:"))
+    XCTAssertTrue(iosSource.contains("KshiftPlanDepthFeatureView(capabilities:"))
 
     let featureFiles = try swiftFiles(in: root.appending(path: "Sources/KshiftUI"))
-      .filter { $0.lastPathComponent == "KshiftDayPlanFeatureView.swift" }
+      .filter { $0.lastPathComponent == "KshiftPlanDepthFeatureView.swift" }
     XCTAssertEqual(featureFiles.map(\.standardizedFileURL), [sharedFeature.standardizedFileURL])
   }
 

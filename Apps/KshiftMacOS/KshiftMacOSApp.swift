@@ -18,8 +18,8 @@
     private let capabilities = AppKitPlatformCapabilities()
 
     var body: some View {
-      KshiftDayPlanFeatureView(capabilities: capabilities)
-        .tint(.accentColor)
+      KshiftPlanDepthFeatureView(capabilities: capabilities)
+        .tint(Color.kshift(.accent))
         .background {
           AppKitWindowAccessor { window in
             window?.isMovableByWindowBackground = true

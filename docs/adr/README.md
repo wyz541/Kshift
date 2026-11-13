@@ -35,6 +35,7 @@ description: 列出 Kshift v1 的架构决策记录、状态和关联章节。
 | [0005](0005-revisioned-snapshot-outbox.md) | revision snapshot 和 outbox | `accepted` | `DEC-009`、`DEC-010`、`DEC-012` |
 | [0006](0006-grpc-protobuf-ffi.md) | gRPC、protobuf 和 C ABI | `accepted` | `DEC-007`、`DEC-008` |
 | [0007](0007-github-release-orchestrator.md) | GitHub Release orchestrator | `accepted` | `DEC-013` |
+| [0008](0008-plan-depth-snapshot-history.md) | R3 计划深度快照和历史状态 | `accepted` | Issue #8 |
 
 ## 3. 模板
 

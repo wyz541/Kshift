@@ -13,7 +13,7 @@ public struct KshiftSemanticBadge: View {
   public var body: some View {
     Text(text)
       .font(.caption.weight(.semibold))
-      .foregroundStyle(Color.kshift(role))
+      .foregroundStyle(.primary)
       .padding(.horizontal, 9)
       .padding(.vertical, 5)
       .background(Color.kshift(role).opacity(0.12), in: Capsule())

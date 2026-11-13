@@ -16,8 +16,8 @@
     private let capabilities = UIKitPlatformCapabilities()
 
     var body: some View {
-      KshiftDayPlanFeatureView(capabilities: capabilities)
-        .tint(.accentColor)
+      KshiftPlanDepthFeatureView(capabilities: capabilities)
+        .tint(Color.kshift(.accent))
         .background {
           UIKitSceneAccessor { _ in }
             .frame(width: 0, height: 0)

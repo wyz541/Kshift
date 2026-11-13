@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 pub const MAX_PROJECT_NAME_CHARS: usize = 120;
 pub const MAX_TASK_TITLE_CHARS: usize = 200;
 pub const MAX_TASK_DESCRIPTION_CHARS: usize = 20_000;

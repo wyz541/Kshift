@@ -1,0 +1,82 @@
+name: Kshift
+options:
+  bundleIdPrefix: com.wyz541.kshift
+  deploymentTarget:
+    macOS: "26.0"
+    iOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    CLANG_ENABLE_MODULES: YES
+    ENABLE_USER_SCRIPT_SANDBOXING: NO
+packages:
+  Kshift:
+    path: .
+targets:
+  KshiftMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: Apps/KshiftMacOS
+    dependencies:
+      - package: Kshift
+        product: KshiftUI
+      - package: Kshift
+        product: KshiftAppKitAdapter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.mac
+        PRODUCT_NAME: Kshift
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Kshift
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
+        ENABLE_HARDENED_RUNTIME: NO
+        CODE_SIGN_IDENTITY: "-"
+  KshiftIOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Apps/KshiftIOS
+    dependencies:
+      - package: Kshift
+        product: KshiftUI
+      - package: Kshift
+        product: KshiftUIKitAdapter
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.ios
+        PRODUCT_NAME: Kshift
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Kshift
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_IDENTITY: "-"
+  KshiftIOSUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: Apps/KshiftIOSUITests
+    dependencies:
+      - target: KshiftIOS
+schemes:
+  Kshift-macOS:
+    build:
+      targets:
+        KshiftMac: all
+    run:
+      config: Debug
+  Kshift-iOS:
+    build:
+      targets:
+        KshiftIOS: all
+        KshiftIOSUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - name: KshiftIOSUITests
+          parallelizable: false

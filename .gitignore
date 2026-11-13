@@ -30,3 +30,8 @@ xcuserdata/
 
 # Node tooling used for documentation checks
 node_modules/
+
+# Test and build evidence
+*.xcresult
+
+/Kshift.xcodeproj/project.xcworkspace/

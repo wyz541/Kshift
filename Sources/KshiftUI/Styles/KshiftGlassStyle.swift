@@ -85,12 +85,24 @@ public struct KshiftPrimaryGlassButton<Label: View>: View {
   public var body: some View {
     Button(action: action) {
       label
-        .frame(minHeight: 28)
+        .font(.headline.weight(.semibold))
+        .foregroundStyle(.primary)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(minHeight: 44)
+        .background(.regularMaterial, in: shape)
+        .overlay {
+          shape.strokeBorder(Color.primary.opacity(0.12), lineWidth: 1)
+        }
+        .contentShape(shape)
     }
-    .buttonStyle(.glassProminent)
-    .tint(.accentColor)
-    .controlSize(.large)
+    .buttonStyle(.plain)
+    .modifier(KshiftGlassSurfaceModifier(shape: shape))
     .frame(minHeight: 44)
+  }
+
+  private var shape: Capsule {
+    Capsule(style: .continuous)
   }
 }
 
