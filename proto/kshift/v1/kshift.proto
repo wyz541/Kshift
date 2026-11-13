@@ -52,6 +52,8 @@ enum ErrorCode {
   ERROR_CODE_SCHEMA_MISMATCH = 7;
   ERROR_CODE_INVALID_STATE = 8;
   ERROR_CODE_INTERNAL = 9;
+  ERROR_CODE_ALREADY_EXISTS = 10;
+  ERROR_CODE_FAILED_PRECONDITION = 11;
 }
 
 // StringList preserves presence for repeated values in a patch.
@@ -68,6 +70,7 @@ message ErrorDetail {
   string entity_id = 5;
   optional uint64 current_project_revision = 6;
   optional uint64 current_entity_version = 7;
+  optional uint64 minimum_retained_revision = 8;
 }
 
 // Project is the top-level isolation boundary.
@@ -145,6 +148,18 @@ message TaskPatch {
   optional StringList dependency_task_ids = 11;
 }
 
+// CreateProjectCommand creates one project.
+message CreateProjectCommand {
+  string name = 1;
+  string time_zone = 2;
+}
+
+// AddProjectMemberCommand adds or changes one project member.
+message AddProjectMemberCommand {
+  string user_id = 1;
+  ProjectRole role = 2;
+}
+
 // CreateTaskCommand creates one task.
 message CreateTaskCommand {
   TaskDraft draft = 1;
@@ -189,6 +204,8 @@ message CommandEnvelope {
     UpdateTaskCommand update_task = 11;
     DeleteTaskCommand delete_task = 12;
     BatchUpdateTasksCommand batch_update_tasks = 13;
+    CreateProjectCommand create_project = 14;
+    AddProjectMemberCommand add_project_member = 15;
   }
 }
 
@@ -295,6 +312,7 @@ message Heartbeat {
 message ResetRequired {
   uint64 current_revision = 1;
   string reason = 2;
+  uint64 minimum_retained_revision = 3;
 }
 
 // WatchProjectChangesResponse is one event, heartbeat, or reset instruction.

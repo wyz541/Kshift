@@ -1,16 +1,15 @@
 # Kshift
 
-结论：Kshift 是只在内网运行的 macOS/iOS 共享任务工作台。
+结论：Kshift 是只在内网运行的 macOS/iOS 共享任务工作台。Rust server 是业务状态唯一写入权威。
 
 ## 当前状态
 
-- 阶段：R2 共享 SwiftUI 基座已实现。
+- 阶段：R1 Rust 服务核心和 R2 共享 SwiftUI 基座。
 - Spec 版本：`0.1`。
-- 实现状态：共享 UI 基座可构建；P0 日计划 MVP 尚未实现。
+- 实现状态：Rust server、PostgreSQL schema 和共享 UI 基座可构建；正式 Rust client、FFI 和 P0 日计划 MVP 尚未完成。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
-- 下一个任务：[Issue #7](https://github.com/wyz541/Kshift/issues/7)。
 
 ## 首版边界
 
@@ -38,6 +37,104 @@ flowchart LR
   SV -->|"snapshot / events"| CL
 ```
 
+## R1 服务核心
+
+- protobuf 契约使用 `kshift.v1` package。
+- gRPC 提供 `ListProjects`、`GetProjectSnapshot`、`ExecuteCommand` 和 `WatchProjectChanges`。
+- PostgreSQL 18 保存业务数据、审计、幂等结果和 transactional outbox。
+- 每个成功写入只增加一个 project revision，并生成一个 outbox event。
+- `expected_project_revision` 和 `expected_entity_version` 阻止静默覆盖。
+- revision gap 返回 `ResetRequired`。
+- Bearer token 先映射用户，再由数据库检查项目成员关系。
+- 标准 gRPC health、JSON 日志、TLS、有界队列和 graceful shutdown 已接入。
+
+| 路径 | 作用 |
+| --- | --- |
+| `crates/kshift-domain` | 纯业务类型、校验和不变量 |
+| `crates/kshift-contract` | protobuf 生成代码、wire 转换和 typed error |
+| `crates/kshift-server` | gRPC、auth、SQLx 事务、outbox 和健康检查 |
+| `migrations` | PostgreSQL schema migration |
+| `proto` | `buf` 管理的 protobuf source |
+| `scripts/recovery-test.sh` | migration rollback 和 restore 演练 |
+
+### 服务启动
+
+1. 创建 PostgreSQL 18 数据库。
+2. 设置 `KSHIFT_DATABASE_URL`。
+3. 执行 migration。
+
+```sh
+export KSHIFT_DATABASE_URL='postgres://kshift_owner@127.0.0.1:5432/kshift'
+cargo run -p kshift-server -- migrate
+```
+
+4. 从 stdin 创建 Admin 用户。
+
+```sh
+printf '%s\n' '{"id":"11111111-1111-4111-8111-111111111111","display_name":"Kshift Admin","is_admin":true}' \
+  | cargo run -p kshift-server -- bootstrap-user
+```
+
+5. 从 stdin 计算 bearer token 的 SHA-256。
+
+```sh
+printf '%s\n' 'replace-with-a-random-token' \
+  | cargo run -p kshift-server -- hash-token
+```
+
+6. 创建 auth JSON 文件。
+
+```json
+{
+  "tokens": [
+    {
+      "sha256": "replace-with-hash-token-output",
+      "user_id": "11111111-1111-4111-8111-111111111111"
+    }
+  ]
+}
+```
+
+7. 限制 auth 文件权限。
+
+```sh
+chmod 600 /absolute/path/to/kshift-auth.json
+```
+
+8. 启动 TLS server。
+
+```sh
+export KSHIFT_AUTH_FILE='/absolute/path/to/kshift-auth.json'
+export KSHIFT_TLS_CERT_PATH='/absolute/path/to/server.crt'
+export KSHIFT_TLS_KEY_PATH='/absolute/path/to/server.key'
+cargo run -p kshift-server -- serve
+```
+
+本地测试可以显式禁用 TLS。禁止在内网 Stable 环境禁用 TLS。
+
+```sh
+export KSHIFT_ALLOW_INSECURE=true
+```
+
+### Rust 验证
+
+```sh
+cargo fmt --all -- --check
+buf format -d
+buf lint
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' cargo test --workspace
+```
+
+`TEST_DATABASE_URL` 必须允许创建临时数据库。测试会为每个 case 创建独立测试库。
+
+恢复演练：
+
+```sh
+KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
+  ./scripts/recovery-test.sh
+```
+
 ## 共享 SwiftUI 基座
 
 | 路径 | 职责 |
@@ -60,7 +157,7 @@ flowchart LR
 - `InMemoryKshiftFFIBoundary` 只提供界面基座样例。Issue #5 接入正式 `kshift-ffi`。
 - 当前构建使用 Xcode 27.2 SDK。部署目标为 macOS 26.0 和 iOS 26.0。
 
-## 构建
+### Swift 验证
 
 1. 检查共享边界。
 
@@ -96,16 +193,29 @@ flowchart LR
 | 未决项、owner 和截止日期 | [Open Questions](docs/decisions/open-questions.md) |
 | 架构决策记录 | [ADR Index](docs/adr/README.md) |
 | 协议和 Release 合同 | [Contracts](docs/contracts/README.md) |
+| R1 事务和同步 | [Architecture](docs/architecture.md) |
+| R1 运维和恢复 | [Operations](docs/operations.md) |
+| R1 验收证据 | [Acceptance](docs/r1-acceptance.md) |
 | 贡献与评审流程 | [CONTRIBUTING](CONTRIBUTING.md) |
 
 ## 当前限制
 
-- 身份认证方式尚未确认。
+- 身份认证数据源尚未最终确认。R1 使用可控 bearer token hash。
+- 正式 Rust client 和 FFI 尚未完成。
 - macOS 和 iOS 分发方式尚未确认。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
-- 真实 `kshift-ffi` 和产品服务尚未接入。
 - P0 日计划流程、无障碍证据和性能读数尚未完成。
+- PostgreSQL 高可用集群不在首版范围。
+
+## 安全边界
+
+- 数据库凭据只从 server 环境读取。
+- 客户端 token 只放在 gRPC `authorization: Bearer ...` metadata。
+- server 日志不记录 token、数据库 URL、密码或完整 command body。
+- auth 文件保存 token hash，不保存 raw token。
+- auth 文件必须为 `0600`。
+- server 默认拒绝无 TLS 启动。
 
 ## 来源
 
