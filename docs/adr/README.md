@@ -2,7 +2,7 @@
 slug: /adr
 title: Kshift ADR 索引
 type: reference
-status: review
+status: active
 updated: "2026-11-13"
 keywords:
   - ADR

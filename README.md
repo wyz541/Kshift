@@ -5,7 +5,8 @@
 ## 当前状态
 
 - 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
-- Spec 版本：`0.1`。
+- Spec 版本：`0.1`，状态 `active`。
+- 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
 - 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；本地真实 server E2E 已验证。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
