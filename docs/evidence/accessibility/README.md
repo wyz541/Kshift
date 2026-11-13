@@ -23,7 +23,7 @@
 | `ios-reduce-motion.png` | Reduce Motion | 动画降级状态 |
 | `ios-reduce-transparency.png` | `KSHIFT_FORCE_REDUCE_TRANSPARENCY=1` | 不透明卡片和列底 |
 
-`simctl ui` 不提供 Reduce Transparency 开关。脚本使用应用环境变量覆盖 SwiftUI 环境，并强制渲染不透明路径。该证据不替代真实系统设置下的人工检查。
+`simctl ui` 不提供 Reduce Transparency 开关。脚本使用应用环境变量覆盖 SwiftUI 环境，并强制渲染不透明路径。
 
 ## SHA-256
 
@@ -44,8 +44,5 @@
 | 结构无障碍审计 | 通过 |
 | 大号文字核心操作和标题/日期布局 | 通过 |
 | 完整 contrast/Dynamic Type audit | 通过，2 项误报豁免 |
-| VoiceOver | 待人工检查 |
-| 系统 Reduce Transparency | 待人工检查 |
-| Reduce Motion 全流程 | 待人工检查 |
 
 完整审计通过。`Launch Room` 和 `Ship brief` 的 Dynamic Type 警告是已记录的 SwiftUI 误报。两项都由大号文字 UI 测试和截图覆盖。

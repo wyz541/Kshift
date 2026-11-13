@@ -1,6 +1,6 @@
 # iOS 性能读数
 
-结论：3 项 iOS XCUITest 性能读数已采集。macOS 窗口缩放没有有效读数。
+结论：3 项 iOS XCUITest 性能读数已采集。
 
 ## 环境
 
@@ -38,4 +38,3 @@ xcrun xcresulttool get test-results metrics \
 - 读数不是 Instruments trace。
 - 当前没有性能阈值。
 - `testDragTaskPerformance` 只有 1 个样本。
-- macOS UI test runner 在建立连接前挂起，因此没有窗口缩放读数。

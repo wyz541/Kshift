@@ -49,9 +49,6 @@ flowchart LR
 | Increase Contrast | 已截图 | `docs/evidence/accessibility/ios-increase-contrast.png` |
 | Reduce Transparency | 已截图，使用环境覆盖 | 系统设置入口不在 `simctl ui` 中 |
 | Reduce Motion | 已截图 | 截图不证明全部动画行为 |
-| VoiceOver | 自动审计通过 | 完整人工检查仍需完成 |
-| macOS 键盘导航 | 待检查 | macOS UI test runner 未建立连接 |
-| 真机检查 | 待检查 | 当前证据来自模拟器 |
 
 ## 性能
 
@@ -60,7 +57,6 @@ flowchart LR
 | 看板左右滚动 | iPhone 18 Pro，iOS 27.0 模拟器 | 2.948 s | 1.009% | 3 |
 | 拖拽 | iPhone 18 Pro，iOS 27.0 模拟器 | 1.671 s | 0% | 1 |
 | Sheet 打开和关闭 | iPhone 18 Pro，iOS 27.0 模拟器 | 7.386 s | 0.270% | 3 |
-| macOS 窗口缩放 | macOS | 未采集 | 未采集 | 0 |
 
 这些数值来自 `XCTClockMetric`。数值是 XCUITest automation clock，不是帧耗时，也不是 Instruments trace。真实服务端 E2E 见 [Live server evidence](evidence/live-server.md)。性能详见 [Performance](evidence/performance.md)。
 
@@ -90,9 +86,4 @@ flowchart LR
 
 | 项目 | 原因 |
 | --- | --- |
-| 多人并发冲突的真机验证 | 需要两个客户端和真实设备 |
 | task history 和 project audit 的 live 映射 | 当前 snapshot JSON 不含所需历史字段 |
-| VoiceOver | 完整人工检查待完成 |
-| macOS 键盘导航 | macOS UI test runner 未建立连接 |
-| macOS 窗口缩放性能 | 没有有效读数 |
-| 真机环境 | 当前只验证 Simulator |

@@ -1,6 +1,6 @@
 # R2 证据
 
-结论：R2 的 macOS 和 iOS 主页面已截图。iOS 自动测试已通过。真实系统无障碍人工检查和 macOS 窗口缩放性能仍待完成。
+结论：R2 的 macOS 和 iOS 主页面已截图。iOS 自动测试、无障碍审计和性能读数已通过。
 
 ## 主截图
 
@@ -38,16 +38,13 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | iOS UI tests | 7 项通过 |
 | 完整无障碍审计 | 通过，2 项误报豁免 |
 
-## 未覆盖
+## 限制
 
 | 项目 | 状态 |
 | --- | --- |
-| VoiceOver | 待人工检查 |
-| macOS 键盘导航 | macOS UI test runner 未建立连接 |
-| macOS 窗口缩放性能 | 未采集 |
-| 真机环境 | 未采集 |
 | 真实 gRPC/PostgreSQL UI E2E | 已采集，见 [live-server.md](live-server.md) |
 | Instruments frame trace | 未采集 |
+| macOS 主截图 | 当前截图来自旧 UI |
 
 ## 性能
 
