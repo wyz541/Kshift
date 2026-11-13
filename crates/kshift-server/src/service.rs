@@ -3,7 +3,7 @@ use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
 use chrono::{DateTime, NaiveDate, Utc};
 use contract::{
     change_event_to_proto, collapse_change_event, parse_execute_command, project_snapshot_to_proto,
-    project_to_proto, reset_reason_to_string, v1, ApiError, ParsedCommand,
+    project_to_proto, reset_reason_to_string, v1, ApiError, ParsedCommand, MAX_EVENT_BYTES,
 };
 use domain::{
     Change, ChangeEvent, Command, ProjectMember, ProjectRole, ProjectSnapshot, ResetReason, Task,
@@ -26,7 +26,6 @@ use crate::{
 };
 
 const IDEMPOTENCY_RETENTION_DAYS: i32 = 7;
-const MAX_EVENT_BYTES: usize = 256 * 1024;
 
 #[derive(Clone, Debug)]
 pub struct ApiSettings {
@@ -885,7 +884,7 @@ async fn apply_create_task(
         draft.dependency_task_ids,
     )
     .await?;
-    validate_assignees(tx, draft.assignee_ids).await?;
+    validate_assignees(tx, project_id, draft.assignee_ids).await?;
 
     sqlx::query(
         r#"
@@ -1029,7 +1028,7 @@ async fn apply_update_task(
         &updated.dependency_task_ids,
     )
     .await?;
-    validate_assignees(tx, &updated.assignee_ids).await?;
+    validate_assignees(tx, project_id, &updated.assignee_ids).await?;
 
     sqlx::query(
         r#"
@@ -1693,21 +1692,29 @@ async fn replace_task_relations(
 
 async fn validate_assignees(
     tx: &mut Transaction<'_, Postgres>,
+    project_id: Uuid,
     assignee_ids: &[Uuid],
 ) -> Result<(), ApiError> {
     if assignee_ids.is_empty() {
         return Ok(());
     }
     let rows = sqlx::query_scalar::<_, Uuid>(
-        "SELECT id FROM kshift.app_user WHERE id = ANY($1) AND is_active = true FOR SHARE",
+        r#"
+        SELECT u.id
+        FROM kshift.app_user u
+        JOIN kshift.project_member pm ON pm.user_id = u.id
+        WHERE pm.project_id = $1 AND u.id = ANY($2) AND u.is_active = true
+        FOR SHARE OF u, pm
+        "#,
     )
+    .bind(project_id)
     .bind(assignee_ids)
     .fetch_all(&mut **tx)
     .await
     .map_err(|error| database_error(error, "validate assignees"))?;
     if rows.len() != assignee_ids.len() {
         return Err(ApiError::InvalidArgument(
-            "assignee_ids contains an inactive or unknown user".to_owned(),
+            "assignee_ids contains an inactive user or a non-project member".to_owned(),
         ));
     }
     Ok(())

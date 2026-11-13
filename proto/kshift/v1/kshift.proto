@@ -4,7 +4,8 @@
 // - Package kshift.v1 is compatible-only. A breaking change needs a new major package.
 // - Field numbers and names are permanent once released.
 // - IDs are opaque strings. Clients must not parse them.
-// - Dates use YYYY-MM-DD. Timestamps use UTC RFC 3339 values.
+// - Dates use YYYY-MM-DD in the project time zone.
+// - Timestamps use UTC RFC 3339 values and may be displayed in the user time zone.
 syntax = "proto3";
 
 package kshift.v1;
@@ -77,6 +78,7 @@ message ErrorDetail {
 message Project {
   string id = 1;
   string name = 2;
+  // IANA time zone that defines natural-date semantics for this project.
   string time_zone = 3;
   uint64 revision = 4;
   google.protobuf.Timestamp created_at = 5;
@@ -104,6 +106,7 @@ message Task {
   string description_markdown = 4;
   TaskStatus status = 5;
   TaskPriority priority = 6;
+  // Unique active project-member IDs, sorted by user ID. Empty means unassigned.
   repeated string assignee_ids = 7;
   string planned_on = 8;
   optional string starts_on = 9;
@@ -124,6 +127,7 @@ message TaskDraft {
   string description_markdown = 2;
   TaskStatus status = 3;
   TaskPriority priority = 4;
+  // Replacement set of at most 20 unique active project-member IDs.
   repeated string assignee_ids = 5;
   string planned_on = 6;
   optional string starts_on = 7;
@@ -139,6 +143,7 @@ message TaskPatch {
   optional string description_markdown = 2;
   optional TaskStatus status = 3;
   optional TaskPriority priority = 4;
+  // Absent keeps the current set. A present empty list clears all assignees.
   optional StringList assignee_ids = 5;
   optional string planned_on = 6;
   optional string starts_on = 7;

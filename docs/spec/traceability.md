@@ -41,6 +41,7 @@ source: https://github.com/wyz541/Kshift/discussions/1
 | UI 验收门禁 | [6.4 无障碍与性能](kshift-spec-v0.1.md#64-无障碍与性能) | `DEC-005`、`DEC-016` | [0003](../adr/0003-native-liquid-glass-boundary.md) |
 | 产品路线 | [4. 产品路线](kshift-spec-v0.1.md#4-产品路线) | `DEC-015` | [0002](../adr/0002-macos-ios-first.md) |
 | R2 日计划 MVP | [5. 功能规范](kshift-spec-v0.1.md#5-功能规范) | `DEC-015` | [0002](../adr/0002-macos-ios-first.md) |
+| 负责人和时区语义 | [5.1 项目与成员](kshift-spec-v0.1.md#51-项目与成员)、[5.2 任务](kshift-spec-v0.1.md#52-任务) | `DEC-028` 至 `DEC-030` | [0008](../adr/0008-task-ownership-and-time-zones.md) |
 | 跨阶段门禁 | [13. 质量与发布](kshift-spec-v0.1.md#13-质量与发布) | `DEC-008`、`DEC-016` | [0001](../adr/0001-rust-authority-and-swiftui-host.md) |
 | 技术决策摘要 | [7.3 服务与数据库](kshift-spec-v0.1.md#73-服务与数据库) | `DEC-006` 至 `DEC-009` | [0004](../adr/0004-postgresql18-single-host.md) |
 | 组件边界 | [7.2 Rust workspace](kshift-spec-v0.1.md#72-rust-workspace) | `DEC-007`、`DEC-008` | [0006](../adr/0006-grpc-protobuf-ffi.md) |

@@ -1,7 +1,10 @@
 use std::{fs, str::FromStr, time::Duration};
 
 use anyhow::{bail, Context};
-use contract::v1::kshift_service_server::KshiftServiceServer;
+use contract::{
+    v1::kshift_service_server::KshiftServiceServer, MAX_UNARY_REQUEST_BYTES,
+    MAX_UNARY_RESPONSE_BYTES,
+};
 use sqlx::PgPool;
 use tokio_util::sync::CancellationToken;
 use tonic::transport::{Identity, Server, ServerTlsConfig};
@@ -19,8 +22,6 @@ use crate::{
 };
 
 pub const SERVICE_NAME: &str = "kshift.v1.KshiftService";
-const MAX_REQUEST_BYTES: usize = 1_048_576;
-const MAX_RESPONSE_BYTES: usize = 16_777_216;
 
 pub async fn serve(
     config: ServerConfig,
@@ -76,8 +77,8 @@ pub async fn serve(
     };
     let api = KshiftApi::new(pool, auth, notifications, settings, shutdown.clone());
     let service = KshiftServiceServer::new(api)
-        .max_decoding_message_size(MAX_REQUEST_BYTES)
-        .max_encoding_message_size(MAX_RESPONSE_BYTES);
+        .max_decoding_message_size(MAX_UNARY_REQUEST_BYTES)
+        .max_encoding_message_size(MAX_UNARY_RESPONSE_BYTES);
 
     let mut builder = Server::builder();
     if let Some(tls) = &config.tls {

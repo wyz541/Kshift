@@ -72,7 +72,7 @@ public struct TaskDraft: Identifiable {
     public var notes: String
     public var status: TaskStatus
     public var priority: TaskPriority
-    public var assigneeID: String?
+    public var assigneeIDs: [String]
     public var dueDate: Date
     public var position: Int64
 
@@ -84,7 +84,7 @@ public struct TaskDraft: Identifiable {
         notes: String = "",
         status: TaskStatus = .todo,
         priority: TaskPriority = .medium,
-        assigneeID: String?,
+        assigneeIDs: [String],
         dueDate: Date,
         position: Int64 = 1024
     ) {
@@ -95,7 +95,7 @@ public struct TaskDraft: Identifiable {
         self.notes = notes
         self.status = status
         self.priority = priority
-        self.assigneeID = assigneeID
+        self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
     }
@@ -159,8 +159,20 @@ public final class AppModel: ObservableObject {
         return projects.first(where: { $0.id == selectedProjectID }) ?? snapshot?.project
     }
 
+    public var projectTimeZone: TimeZone {
+        TimeZone(identifier: selectedProject?.timeZone ?? "UTC") ?? .gmt
+    }
+
+    public var projectCalendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = projectTimeZone
+        return calendar
+    }
+
+    public var userTimeZone: TimeZone { .current }
+
     public var selectedDateString: String {
-        KshiftDate.isoString(from: selectedDate)
+        KshiftDate.isoString(from: selectedDate, calendar: projectCalendar)
     }
 
     public var filteredTasks: [TaskItem] {
@@ -171,7 +183,9 @@ public final class AppModel: ObservableObject {
                 guard haystack.localizedCaseInsensitiveContains(query) else { return false }
             }
             if !filter.assigneeIDs.isEmpty {
-                let matches = task.assigneeID.map(filter.assigneeIDs.contains) ?? filter.assigneeIDs.contains("unassigned")
+                let matches = task.assigneeIDs.isEmpty
+                    ? filter.assigneeIDs.contains("unassigned")
+                    : !filter.assigneeIDs.isDisjoint(with: task.assigneeIDs)
                 guard matches else { return false }
             }
             if !filter.statuses.isEmpty, !filter.statuses.contains(task.status) {
@@ -195,11 +209,11 @@ public final class AppModel: ObservableObject {
                 id: person.id,
                 person: person,
                 tasks: selectedDateTasks
-                    .filter { $0.assigneeID == person.id }
+                    .filter { $0.assigneeIDs.contains(person.id) }
                     .sorted(by: manualSort)
             )
         }
-        let unassigned = selectedDateTasks.filter { $0.assigneeID == nil }.sorted(by: manualSort)
+        let unassigned = selectedDateTasks.filter(\.assigneeIDs.isEmpty).sorted(by: manualSort)
         if !unassigned.isEmpty || filter.assigneeIDs.isEmpty {
             result.append(PersonColumn(id: "unassigned", person: nil, tasks: unassigned))
         }
@@ -239,6 +253,9 @@ public final class AppModel: ObservableObject {
             }
             if let selectedProjectID {
                 snapshot = try await client.snapshot(projectID: selectedProjectID)
+                if !hasLoaded {
+                    alignSelectedDateToProject()
+                }
                 hasLoaded = true
             }
         } catch {
@@ -253,6 +270,7 @@ public final class AppModel: ObservableObject {
         do {
             selectedProjectID = projectID
             snapshot = try await client.snapshot(projectID: projectID)
+            alignSelectedDateToProject()
             selectedTaskIDs.removeAll()
             selectedTasksChanged()
             conflict = nil
@@ -279,17 +297,21 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    public func presentNewTask(assigneeID: String?, date: Date? = nil) {
+    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
         guard let projectID = selectedProjectID else { return }
         let position = selectedDateTasks
-            .filter { $0.assigneeID == assigneeID }
+            .filter { task in
+                assigneeIDs.isEmpty
+                    ? task.assigneeIDs.isEmpty
+                    : !Set(task.assigneeIDs).isDisjoint(with: assigneeIDs)
+            }
             .map(\.position)
             .max()
             .map { $0 + 1024 } ?? 1024
         editorDraft = TaskDraft(
             projectID: projectID,
-            assigneeID: assigneeID,
-            dueDate: KshiftDate.startOfDay(date ?? selectedDate),
+            assigneeIDs: assigneeIDs,
+            dueDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
             position: position
         )
     }
@@ -309,7 +331,7 @@ public final class AppModel: ObservableObject {
 
     @discardableResult
     public func saveTask(_ draft: TaskDraft) async -> Bool {
-        let dueDate = KshiftDate.isoString(from: draft.dueDate)
+        let dueDate = KshiftDate.isoString(from: draft.dueDate, calendar: projectCalendar)
         let command: TaskCommand
         if let taskID = draft.taskID {
             command = .update(
@@ -320,7 +342,7 @@ public final class AppModel: ObservableObject {
                     notes: draft.notes,
                     status: draft.status,
                     priority: draft.priority,
-                    assigneeID: draft.assigneeID,
+                    assigneeIDs: draft.assigneeIDs,
                     dueDate: dueDate,
                     position: draft.position
                 )
@@ -332,7 +354,7 @@ public final class AppModel: ObservableObject {
                     notes: draft.notes,
                     status: draft.status,
                     priority: draft.priority,
-                    assigneeID: draft.assigneeID,
+                    assigneeIDs: draft.assigneeIDs,
                     dueDate: dueDate,
                     position: draft.position
                 )
@@ -364,7 +386,7 @@ public final class AppModel: ObservableObject {
 
     public func moveTask(
         taskID: String,
-        assigneeID: String?,
+        assigneeIDs: [String],
         date: Date = .now,
         position: Int64
     ) async {
@@ -374,8 +396,8 @@ public final class AppModel: ObservableObject {
                 MoveTaskCommand(
                     taskID: taskID,
                     expectedTaskVersion: task.version,
-                    assigneeID: assigneeID,
-                    dueDate: KshiftDate.isoString(from: date),
+                    assigneeIDs: assigneeIDs,
+                    dueDate: KshiftDate.isoString(from: date, calendar: projectCalendar),
                     position: position
                 )
             )
@@ -502,8 +524,8 @@ public final class AppModel: ObservableObject {
             notes: task.notes,
             status: task.status,
             priority: task.priority,
-            assigneeID: task.assigneeID,
-            dueDate: KshiftDate.date(from: task.dueDate) ?? selectedDate,
+            assigneeIDs: task.assigneeIDs,
+            dueDate: KshiftDate.date(from: task.dueDate, calendar: projectCalendar) ?? selectedDate,
             position: task.position
         )
     }
@@ -512,6 +534,19 @@ public final class AppModel: ObservableObject {
         if let index = projects.firstIndex(where: { $0.id == summary.id }) {
             projects[index] = summary
         }
+    }
+
+    public func assigneeNames(for task: TaskItem) -> String {
+        guard !task.assigneeIDs.isEmpty else { return "未分配" }
+        return task.assigneeIDs.map(actorName).joined(separator: "、")
+    }
+
+    public func displayTimestamp(_ value: String) -> String {
+        KshiftTime.formatTimestamp(value, timeZone: userTimeZone)
+    }
+
+    private func alignSelectedDateToProject() {
+        selectedDate = KshiftDate.startOfDay(.now, calendar: projectCalendar)
     }
 
     private func sorted(_ tasks: [TaskItem]) -> [TaskItem] {

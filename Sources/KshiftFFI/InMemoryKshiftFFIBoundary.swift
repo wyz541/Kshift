@@ -42,7 +42,7 @@ public actor InMemoryKshiftFFIBoundary: KshiftFFIBoundary {
         details: current.details,
         status: status,
         priority: current.priority,
-        assigneeID: current.assigneeID,
+        assigneeIDs: current.assigneeIDs,
         dueDate: current.dueDate,
         revision: nextRevision
       )
@@ -51,6 +51,7 @@ public actor InMemoryKshiftFFIBoundary: KshiftFFIBoundary {
       snapshot = KshiftDayPlanSnapshot(
         projectID: snapshot.projectID,
         projectName: snapshot.projectName,
+        projectTimeZoneIdentifier: snapshot.projectTimeZoneIdentifier,
         workDate: snapshot.workDate,
         revision: nextRevision,
         viewerID: snapshot.viewerID,
@@ -83,7 +84,7 @@ public enum KshiftSampleData {
         details: "macOS 和 iOS 使用同一份 SwiftUI 页面。",
         status: .inProgress,
         priority: .high,
-        assigneeID: viewerID,
+        assigneeIDs: [viewerID, memberIDs[0]],
         dueDate: now,
         revision: 1
       ),
@@ -92,7 +93,7 @@ public enum KshiftSampleData {
         title: "补齐 adapter 边界测试",
         status: .todo,
         priority: .high,
-        assigneeID: memberIDs[0],
+        assigneeIDs: [memberIDs[0]],
         dueDate: now,
         revision: 1
       ),
@@ -101,7 +102,7 @@ public enum KshiftSampleData {
         title: "核对 Liquid Glass 验收项",
         status: .todo,
         priority: .medium,
-        assigneeID: memberIDs[1],
+        assigneeIDs: [memberIDs[1]],
         dueDate: now,
         revision: 1
       ),
@@ -110,7 +111,7 @@ public enum KshiftSampleData {
         title: "确认最小启动入口",
         status: .done,
         priority: .low,
-        assigneeID: viewerID,
+        assigneeIDs: [viewerID],
         dueDate: now,
         revision: 1
       ),
@@ -118,6 +119,7 @@ public enum KshiftSampleData {
     return KshiftDayPlanSnapshot(
       projectID: projectID,
       projectName: "Kshift 基座",
+      projectTimeZoneIdentifier: "Asia/Shanghai",
       workDate: now,
       revision: 7,
       viewerID: viewerID,

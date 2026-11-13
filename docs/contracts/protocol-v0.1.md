@@ -52,8 +52,30 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 - `command_id` 标识一次幂等命令。
 - 时间戳使用 UTC RFC 3339。
 - 自然日期使用 `YYYY-MM-DD`。
-- `time_zone` 使用 IANA 时区名称。
+- 项目 `time_zone` 使用 IANA 时区名称。项目时区决定所有自然日期语义。
+- 用户时区只影响 UTC 时间戳的显示。用户时区不改变 `planned_on`、`starts_on` 或 `due_on`。
+- 用户时区缺失或非法时，客户端回退到项目时区。
+- 客户端不得按用户时区移动自然日期，也不得把自然日期转换为 UTC 时间。
+- 服务端按用户 ID 升序输出 `assignee_ids`。列表顺序不表示主负责人。
+- 空 `assignee_ids` 表示未分配。非空列表最多包含 20 个唯一项目成员。
 - 金额和二进制数据不进入 v1 任务合同。
+
+### 3.1 负责人集合
+
+- 任务负责人是无序集合。集合元素是项目成员用户 ID。
+- 新建和更新使用替换语义。`TaskPatch.assignee_ids` 缺失表示不变，空 `StringList` 表示清空。
+- 服务端拒绝重复 ID、nil ID、非项目成员、停用用户和超过 20 项的列表。
+- 多负责人任务在人员看板中出现在每个负责人的人员列。
+- 人员筛选使用交集判断。任务命中任一已选负责人时显示。
+- 拖到人员列时，负责人集合替换为目标人员。拖到未分配列时，负责人集合清空。
+
+### 3.2 时区
+
+- 项目时区在项目创建时写入，首版不支持修改。
+- 项目时区决定看板人员列日期、日历分桶、报告范围、今天和逾期判断。
+- 用户时区由当前设备提供，不作为业务数据持久化。
+- 用户时区用于显示 `created_at`、`updated_at`、`occurred_at` 等绝对时间戳。
+- 同一任务在不同用户时区下必须保持相同 `planned_on`、`starts_on` 和 `due_on`。
 
 ## 4. 写入
 
@@ -109,7 +131,8 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | `users` | 只包含项目成员身份 |
 | `members` | 只包含当前项目成员 |
 | `tasks` | 只包含当前项目任务 |
-| `generated_at` | UTC 时间 |
+| `project.time_zone` | 项目 IANA 时区；决定自然日期 |
+| `generated_at` | UTC 时间；客户端按用户时区显示 |
 
 - `PROTO-101`：Snapshot 必须通过 `project_id` 隔离。
 - `PROTO-102`：Snapshot 不得包含数据库凭据。
@@ -163,6 +186,7 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | Attachment cache item | 256 MiB |
 
 - 超过上限时返回 `RESOURCE_EXHAUSTED`。
+- Server、Rust client 和 FFI 必须使用同一组上限常量。
 - 长度检查必须在分配大缓冲前完成。
 - FFI 必须传递 buffer length。
 - FFI 不得依赖 NUL 终止符。

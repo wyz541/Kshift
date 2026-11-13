@@ -5,6 +5,7 @@ public struct ProjectSummary: Codable, Identifiable, Hashable, Sendable {
     public let name: String
     public let code: String
     public let colorHex: String
+    public let timeZone: String
     public let memberIDs: [String]
     public let revision: UInt64
 
@@ -13,6 +14,7 @@ public struct ProjectSummary: Codable, Identifiable, Hashable, Sendable {
         name: String,
         code: String,
         colorHex: String,
+        timeZone: String,
         memberIDs: [String],
         revision: UInt64
     ) {
@@ -20,6 +22,7 @@ public struct ProjectSummary: Codable, Identifiable, Hashable, Sendable {
         self.name = name
         self.code = code
         self.colorHex = colorHex
+        self.timeZone = timeZone
         self.memberIDs = memberIDs
         self.revision = revision
     }
@@ -29,6 +32,7 @@ public struct ProjectSummary: Codable, Identifiable, Hashable, Sendable {
         case name
         case code
         case colorHex = "color_hex"
+        case timeZone = "time_zone"
         case memberIDs = "member_ids"
         case revision
     }
@@ -188,7 +192,7 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
     public let notes: String
     public let status: TaskStatus
     public let priority: TaskPriority
-    public let assigneeID: String?
+    public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64
     public let version: UInt64
@@ -203,7 +207,7 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
         notes: String,
         status: TaskStatus,
         priority: TaskPriority,
-        assigneeID: String?,
+        assigneeIDs: [String],
         dueDate: String,
         position: Int64,
         version: UInt64,
@@ -217,7 +221,7 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
         self.notes = notes
         self.status = status
         self.priority = priority
-        self.assigneeID = assigneeID
+        self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
         self.version = version
@@ -233,7 +237,7 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
         case notes
         case status
         case priority
-        case assigneeID = "assignee_id"
+        case assigneeIDs = "assignee_ids"
         case dueDate = "due_date"
         case position
         case version
@@ -282,7 +286,7 @@ public struct CreateTaskCommand: Sendable {
     public let notes: String
     public let status: TaskStatus
     public let priority: TaskPriority
-    public let assigneeID: String?
+    public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64?
 
@@ -291,7 +295,7 @@ public struct CreateTaskCommand: Sendable {
         notes: String,
         status: TaskStatus,
         priority: TaskPriority,
-        assigneeID: String?,
+        assigneeIDs: [String],
         dueDate: String,
         position: Int64? = nil
     ) {
@@ -299,7 +303,7 @@ public struct CreateTaskCommand: Sendable {
         self.notes = notes
         self.status = status
         self.priority = priority
-        self.assigneeID = assigneeID
+        self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
     }
@@ -312,7 +316,7 @@ public struct UpdateTaskCommand: Sendable {
     public let notes: String
     public let status: TaskStatus
     public let priority: TaskPriority
-    public let assigneeID: String?
+    public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64
 
@@ -323,7 +327,7 @@ public struct UpdateTaskCommand: Sendable {
         notes: String,
         status: TaskStatus,
         priority: TaskPriority,
-        assigneeID: String?,
+        assigneeIDs: [String],
         dueDate: String,
         position: Int64
     ) {
@@ -333,7 +337,7 @@ public struct UpdateTaskCommand: Sendable {
         self.notes = notes
         self.status = status
         self.priority = priority
-        self.assigneeID = assigneeID
+        self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
     }
@@ -342,20 +346,20 @@ public struct UpdateTaskCommand: Sendable {
 public struct MoveTaskCommand: Sendable {
     public let taskID: String
     public let expectedTaskVersion: UInt64
-    public let assigneeID: String?
+    public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64
 
     public init(
         taskID: String,
         expectedTaskVersion: UInt64,
-        assigneeID: String?,
+        assigneeIDs: [String],
         dueDate: String,
         position: Int64
     ) {
         self.taskID = taskID
         self.expectedTaskVersion = expectedTaskVersion
-        self.assigneeID = assigneeID
+        self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
     }
@@ -422,7 +426,7 @@ extension TaskCommand: Encodable {
         case notes
         case status
         case priority
-        case assigneeID = "assignee_id"
+        case assigneeIDs = "assignee_ids"
         case dueDate = "due_date"
         case position
         case items
@@ -437,7 +441,7 @@ extension TaskCommand: Encodable {
             try container.encode(command.notes, forKey: .notes)
             try container.encode(command.status, forKey: .status)
             try container.encode(command.priority, forKey: .priority)
-            try container.encodeIfPresent(command.assigneeID, forKey: .assigneeID)
+            try container.encode(command.assigneeIDs, forKey: .assigneeIDs)
             try container.encode(command.dueDate, forKey: .dueDate)
             try container.encodeIfPresent(command.position, forKey: .position)
         case let .update(command):
@@ -448,7 +452,7 @@ extension TaskCommand: Encodable {
             try container.encode(command.notes, forKey: .notes)
             try container.encode(command.status, forKey: .status)
             try container.encode(command.priority, forKey: .priority)
-            try container.encodeIfPresent(command.assigneeID, forKey: .assigneeID)
+            try container.encode(command.assigneeIDs, forKey: .assigneeIDs)
             try container.encode(command.dueDate, forKey: .dueDate)
             try container.encode(command.position, forKey: .position)
         case let .delete(taskID, expectedTaskVersion):
@@ -459,7 +463,7 @@ extension TaskCommand: Encodable {
             try container.encode("move_task", forKey: .kind)
             try container.encode(command.taskID, forKey: .taskID)
             try container.encode(command.expectedTaskVersion, forKey: .expectedTaskVersion)
-            try container.encodeIfPresent(command.assigneeID, forKey: .assigneeID)
+            try container.encode(command.assigneeIDs, forKey: .assigneeIDs)
             try container.encode(command.dueDate, forKey: .dueDate)
             try container.encode(command.position, forKey: .position)
         case let .setStatus(command):
@@ -576,5 +580,28 @@ public enum KshiftDate {
 
     public static func startOfDay(_ date: Date, calendar: Calendar = .current) -> Date {
         calendar.startOfDay(for: date)
+    }
+}
+
+public enum KshiftTime {
+    public static func formatTimestamp(
+        _ value: String,
+        timeZone: TimeZone,
+        locale: Locale = .current,
+        format: String? = nil
+    ) -> String {
+        let parser = ISO8601DateFormatter()
+        parser.timeZone = TimeZone(secondsFromGMT: 0)
+        guard let date = parser.date(from: value) else { return value }
+        let formatter = DateFormatter()
+        formatter.locale = locale
+        formatter.timeZone = timeZone
+        if let format {
+            formatter.dateFormat = format
+        } else {
+            formatter.dateStyle = .medium
+            formatter.timeStyle = .short
+        }
+        return formatter.string(from: date)
     }
 }

@@ -18,6 +18,7 @@ use std::ptr;
 use std::sync::Arc;
 use std::time::Duration;
 
+use contract::{MAX_ATTACHMENT_BYTES, MAX_UNARY_REQUEST_BYTES, MAX_UNARY_RESPONSE_BYTES};
 use domain::Change;
 use kshift_client::{
     AuthToken, ClientConfig, ClientEvent, KshiftClient, ReconnectNotice, ResetNotice,
@@ -36,12 +37,11 @@ use registry::{ClientSlot, SubscriptionSlot};
 const MAX_ENDPOINT_BYTES: usize = 2048;
 const MAX_CA_BYTES: usize = 1024 * 1024;
 const MAX_TOKEN_BYTES: usize = 8192;
-const MAX_COMMAND_BYTES: usize = 2 * 1024 * 1024;
-const MAX_SNAPSHOT_BYTES: usize = 16 * 1024 * 1024;
-const MAX_LIST_BYTES: usize = 2 * 1024 * 1024;
-const MAX_EXECUTE_BYTES: usize = 2 * 1024 * 1024;
-const MAX_STREAM_ITEM_BYTES: usize = 16 * 1024 * 1024;
-const MAX_ATTACHMENT_BYTES: usize = 256 * 1024 * 1024;
+const MAX_COMMAND_BYTES: usize = MAX_UNARY_REQUEST_BYTES;
+const MAX_SNAPSHOT_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
+const MAX_LIST_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
+const MAX_EXECUTE_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
+const MAX_STREAM_ITEM_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
 const EVENT_QUEUE_ITEMS: usize = 64;
 const EVENT_QUEUE_BYTES: usize = 32 * 1024 * 1024;
 

@@ -45,6 +45,9 @@ flowchart LR
 - PostgreSQL 18 保存业务数据、审计、幂等结果和 transactional outbox。
 - 每个成功写入只增加一个 project revision，并生成一个 outbox event。
 - `expected_project_revision` 和 `expected_entity_version` 阻止静默覆盖。
+- 任务支持 0 至 20 个项目成员作为共同负责人。
+- 项目 IANA 时区决定自然日期。用户时区只显示绝对时间戳。
+- 协议上限固定为 request 1 MiB、response 和 snapshot 16 MiB、event 256 KiB、attachment 256 MiB。
 - revision gap 返回 `ResetRequired`。
 - Bearer token 先映射用户，再由数据库检查项目成员关系。
 - 标准 gRPC health、JSON 日志、TLS、有界队列和 graceful shutdown 已接入。

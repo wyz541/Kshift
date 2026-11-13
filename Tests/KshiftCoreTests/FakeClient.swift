@@ -61,6 +61,7 @@ enum Fixture {
         name: "Launch Room",
         code: "FOCUS",
         colorHex: "#0A84FF",
+        timeZone: "Asia/Shanghai",
         memberIDs: people.map(\.id),
         revision: 8
     )
@@ -70,6 +71,7 @@ enum Fixture {
         name: "Customer Follow-up",
         code: "CUSTOMER",
         colorHex: "#FF9F0A",
+        timeZone: "Asia/Shanghai",
         memberIDs: people.map(\.id),
         revision: 3
     )
@@ -82,7 +84,7 @@ enum Fixture {
         title: String,
         status: TaskStatus = .todo,
         priority: TaskPriority = .medium,
-        assigneeID: String? = "person-mia",
+        assigneeIDs: [String] = ["person-mia"],
         dateValue: String = date,
         position: Int64 = 1024
     ) -> TaskItem {
@@ -93,7 +95,7 @@ enum Fixture {
             notes: "",
             status: status,
             priority: priority,
-            assigneeID: assigneeID,
+            assigneeIDs: assigneeIDs,
             dueDate: dateValue,
             position: position,
             version: 1,
@@ -108,9 +110,9 @@ enum Fixture {
         people: people,
         tasks: [
             task(id: "task-1", projectID: focus.id, title: "Ship brief", priority: .high),
-            task(id: "task-2", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeID: "person-noah", position: 2048),
+            task(id: "task-2", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeIDs: ["person-noah"], position: 2048),
             task(id: "task-3", projectID: focus.id, title: "Done item", status: .done, position: 3072),
-            task(id: "task-4", projectID: focus.id, title: "Tomorrow", assigneeID: nil, dateValue: "2026-11-14"),
+            task(id: "task-4", projectID: focus.id, title: "Tomorrow", assigneeIDs: [], dateValue: "2026-11-14"),
         ],
         audit: []
     )
