@@ -32,7 +32,7 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | `cargo fmt --all -- --check` | 通过 |
 | `cargo clippy --offline --workspace --all-targets -- -D warnings` | 通过 |
 | `cargo test --offline --workspace` | 32 项通过 |
-| `swift test` | 21 项通过，1 项 live server test 跳过 |
+| `swift test` | 21 项执行，20 项通过，1 项 live server test 跳过 |
 | macOS `xcodebuild build` | 通过 |
 | iOS `xcodebuild test` | 8 项通过 |
 | iOS UI tests | 7 项通过 |
