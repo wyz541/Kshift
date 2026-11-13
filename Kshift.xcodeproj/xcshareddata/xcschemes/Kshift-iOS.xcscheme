@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1600"
-   version = "1.3">
+   LastUpgradeVersion = "1430"
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,9 +15,37 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "C80DBC0CB194C8CEF18ABB99"
+               BlueprintIdentifier = "8D362D403EEDAEB4549A976A"
                BuildableName = "Kshift-iOS.app"
                BlueprintName = "Kshift-iOS"
+               ReferencedContainer = "container:Kshift.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "F44D296DBA90AC84DB285CEA"
+               BuildableName = "Kshift-iOS-PlannerTests.xctest"
+               BlueprintName = "Kshift-iOS-PlannerTests"
+               ReferencedContainer = "container:Kshift.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0BCD83917B91500C7DFF38F4"
+               BuildableName = "Kshift-iOS-PlannerUITests.xctest"
+               BlueprintName = "Kshift-iOS-PlannerUITests"
                ReferencedContainer = "container:Kshift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -26,11 +55,13 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      codeCoverageEnabled = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C80DBC0CB194C8CEF18ABB99"
+            BlueprintIdentifier = "8D362D403EEDAEB4549A976A"
             BuildableName = "Kshift-iOS.app"
             BlueprintName = "Kshift-iOS"
             ReferencedContainer = "container:Kshift.xcodeproj">
@@ -38,16 +69,30 @@
       </MacroExpansion>
       <Testables>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "609D61062C933CC5BD98514B"
-               BuildableName = "Kshift-iOS-AdapterTests.xctest"
-               BlueprintName = "Kshift-iOS-AdapterTests"
+               BlueprintIdentifier = "F44D296DBA90AC84DB285CEA"
+               BuildableName = "Kshift-iOS-PlannerTests.xctest"
+               BlueprintName = "Kshift-iOS-PlannerTests"
+               ReferencedContainer = "container:Kshift.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "0BCD83917B91500C7DFF38F4"
+               BuildableName = "Kshift-iOS-PlannerUITests.xctest"
+               BlueprintName = "Kshift-iOS-PlannerUITests"
                ReferencedContainer = "container:Kshift.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -63,12 +108,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C80DBC0CB194C8CEF18ABB99"
+            BlueprintIdentifier = "8D362D403EEDAEB4549A976A"
             BuildableName = "Kshift-iOS.app"
             BlueprintName = "Kshift-iOS"
             ReferencedContainer = "container:Kshift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -80,7 +127,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "C80DBC0CB194C8CEF18ABB99"
+            BlueprintIdentifier = "8D362D403EEDAEB4549A976A"
             BuildableName = "Kshift-iOS.app"
             BlueprintName = "Kshift-iOS"
             ReferencedContainer = "container:Kshift.xcodeproj">

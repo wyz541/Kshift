@@ -9,6 +9,7 @@ let package = Package(
     .iOS("26.0"),
   ],
   products: [
+    .library(name: "KshiftCore", targets: ["KshiftCore"]),
     .library(name: "KshiftPresentation", targets: ["KshiftPresentation"]),
     .library(name: "KshiftFFI", targets: ["KshiftFFI"]),
     .library(name: "KshiftUI", targets: ["KshiftUI"]),
@@ -16,6 +17,7 @@ let package = Package(
     .library(name: "KshiftUIKitAdapter", targets: ["KshiftUIKitAdapter"]),
   ],
   targets: [
+    .target(name: "KshiftCore"),
     .target(name: "KshiftPresentation"),
     .target(
       name: "KshiftFFI",
@@ -23,7 +25,7 @@ let package = Package(
     ),
     .target(
       name: "KshiftUI",
-      dependencies: ["KshiftPresentation", "KshiftFFI"]
+      dependencies: ["KshiftCore", "KshiftPresentation", "KshiftFFI"]
     ),
     .target(
       name: "KshiftAppKitAdapter",
@@ -32,6 +34,10 @@ let package = Package(
     .target(
       name: "KshiftUIKitAdapter",
       dependencies: ["KshiftPresentation"]
+    ),
+    .testTarget(
+      name: "KshiftCoreTests",
+      dependencies: ["KshiftCore", "KshiftUI"]
     ),
     .testTarget(
       name: "KshiftPresentationTests",

@@ -4,9 +4,13 @@ import SwiftUI
 struct BoardView: View {
     @ObservedObject var model: AppModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var columnWidth: CGFloat {
-        horizontalSizeClass == .compact ? 286 : 304
+        if dynamicTypeSize.isAccessibilitySize {
+            return horizontalSizeClass == .compact ? 352 : 340
+        }
+        return horizontalSizeClass == .compact ? 286 : 304
     }
 
     var body: some View {

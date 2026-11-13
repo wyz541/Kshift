@@ -9,7 +9,7 @@ fail() {
   exit 1
 }
 
-for file in $(find Sources/KshiftPresentation Sources/KshiftFFI Sources/KshiftUI -name '*.swift' -type f); do
+for file in $(find Sources/KshiftCore Sources/KshiftPresentation Sources/KshiftFFI Sources/KshiftUI -name '*.swift' -type f); do
   for framework in AppKit UIKit Network FoundationNetworking GRPC NIO PostgresNIO SQLKit SwiftProtobuf; do
     if grep -q "import ${framework}" "$file"; then
       fail "$file imports $framework"

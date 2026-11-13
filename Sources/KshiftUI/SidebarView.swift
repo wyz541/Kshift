@@ -63,7 +63,7 @@ struct SidebarView: View {
                 }
                 Spacer()
                 Button {
-                    model.openAccessibilitySettings()
+                    Swift.Task { await model.openAccessibilitySettings() }
                 } label: {
                     Image(systemName: "accessibility")
                 }

@@ -6,6 +6,8 @@ struct TaskCard: View {
     let task: TaskItem
     let isSelected: Bool
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top, spacing: 8) {
@@ -21,19 +23,20 @@ struct TaskCard: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(task.status == .done ? "标记为待处理" : "标记为已完成")
                 .accessibilityHint("更新共享任务状态")
+                .accessibilityIdentifier("toggle-task-\(task.id)")
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text(task.title)
                         .font(.headline)
                         .strikethrough(task.status == .done)
                         .foregroundStyle(task.status == .done ? .secondary : .primary)
-                        .lineLimit(2)
+                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
 
                     if !task.notes.isEmpty {
                         Text(task.notes)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
                     }
                 }
 

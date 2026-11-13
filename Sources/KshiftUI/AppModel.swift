@@ -1,4 +1,5 @@
 import KshiftCore
+import KshiftPresentation
 import Combine
 import Foundation
 
@@ -137,10 +138,10 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var hasLoaded = false
 
     public let client: any KshiftClientProtocol
-    private let platform: any PlatformServices
+    private let platform: any KshiftPlatformCapabilities
     private var hasBootstrapped = false
 
-    public init(client: any KshiftClientProtocol, platform: any PlatformServices) {
+    public init(client: any KshiftClientProtocol, platform: any KshiftPlatformCapabilities) {
         self.client = client
         self.platform = platform
     }
@@ -446,8 +447,13 @@ public final class AppModel: ObservableObject {
         errorMessage = nil
     }
 
-    public func openAccessibilitySettings() {
-        platform.openAccessibilitySettings()
+    public func openAccessibilitySettings() async {
+        let urlString =
+            platform.platform == .macOS
+            ? "x-apple.systempreferences:com.apple.Accessibility-Settings.extension"
+            : "app-settings:"
+        guard let url = URL(string: urlString) else { return }
+        _ = await platform.openExternalURL(url)
     }
 
     private func send(_ command: TaskCommand) async -> CommandResponse? {
@@ -468,7 +474,7 @@ public final class AppModel: ObservableObject {
                 snapshot = nextSnapshot
                 replaceProjectSummary(nextSnapshot.project)
                 conflict = nil
-                platform.successHaptic()
+                platform.perform(.success)
             } else if let error = response.error {
                 if error.code == "version_conflict" || error.code == "revision_conflict" {
                     conflict = ConflictNotice(

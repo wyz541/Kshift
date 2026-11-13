@@ -4,6 +4,9 @@ members = [
     "crates/kshift-domain",
     "crates/kshift-contract",
     "crates/kshift-server",
+    "crates/kshift-core",
+    "crates/kshift-client",
+    "crates/kshift-ffi",
 ]
 
 [workspace.package]

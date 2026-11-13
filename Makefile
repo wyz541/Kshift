@@ -34,13 +34,13 @@ project:
 	xcodegen generate
 
 mac-build: ffi project
-	xcodebuild -project Kshift.xcodeproj -scheme KshiftMac -configuration Debug -destination 'platform=macOS' build
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -configuration Debug -destination 'platform=macOS' build
 
 ios-build: ffi project
-	xcodebuild -project Kshift.xcodeproj -scheme KshiftIOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
 
 ios-test: ffi project
-	xcodebuild -project Kshift.xcodeproj -scheme KshiftIOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
 
 test: rust-fmt rust-lint rust-test swift-test
 	KSHIFT_SKIP_XCODE_TESTS=1 ./scripts/verify.sh

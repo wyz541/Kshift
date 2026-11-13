@@ -857,6 +857,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "kshift-client"
+version = "0.1.0"
+dependencies = [
+ "kshift-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "kshift-contract"
 version = "0.1.0"
 dependencies = [
@@ -873,6 +882,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "kshift-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "kshift-domain"
 version = "0.1.0"
 dependencies = [
@@ -881,6 +899,14 @@ dependencies = [
  "serde",
  "thiserror",
  "uuid",
+]
+
+[[package]]
+name = "kshift-ffi"
+version = "0.1.0"
+dependencies = [
+ "kshift-client",
+ "serde_json",
 ]
 
 [[package]]

@@ -4,7 +4,16 @@ import SwiftUI
 struct PlannerView: View {
     @ObservedObject var model: AppModel
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShowingFilters = false
+
+    private var usesAccessibilityLayout: Bool {
+        dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var projectTitleFont: Font {
+        usesAccessibilityLayout ? .title2.weight(.bold) : .largeTitle.weight(.bold)
+    }
 
     private var selectedDateTitle: String {
         model.selectedDate.formatted(.dateTime.weekday(.wide).month(.wide).day())
@@ -45,8 +54,17 @@ struct PlannerView: View {
                     Button {
                         model.presentNewTask(assigneeID: nil)
                     } label: {
-                        Label("添加任务", systemImage: "plus")
-                            .font(.headline)
+                        if usesAccessibilityLayout {
+                            Image(systemName: "plus")
+                                .font(.title3.weight(.semibold))
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        } else {
+                            Label("添加任务", systemImage: "plus")
+                                .font(.headline)
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
+                        }
                     }
                     .buttonStyle(.glassProminent)
                     .padding(20)
@@ -54,7 +72,6 @@ struct PlannerView: View {
                     .accessibilityIdentifier("add-task")
                 }
             }
-            .accessibilityIdentifier("planner-root")
         }
     }
 
@@ -64,8 +81,8 @@ struct PlannerView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     if horizontalSizeClass == .regular {
                         Text(model.selectedProject?.name ?? "Kshift")
-                            .font(.largeTitle.weight(.bold))
-                            .lineLimit(1)
+                            .font(projectTitleFont)
+                            .lineLimit(usesAccessibilityLayout ? 2 : 1)
                     } else {
                         Menu {
                             ForEach(model.projects) { project in
@@ -82,14 +99,17 @@ struct PlannerView: View {
                         } label: {
                             HStack(spacing: 8) {
                                 Text(model.selectedProject?.name ?? "Kshift")
-                                    .font(.largeTitle.weight(.bold))
-                                    .lineLimit(1)
+                                    .font(projectTitleFont)
+                                    .lineLimit(usesAccessibilityLayout ? 2 : 1)
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.headline)
                                     .foregroundStyle(.secondary)
                             }
+                            .frame(minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .frame(minHeight: 44, alignment: .leading)
                         .accessibilityLabel("切换项目，当前 \(model.selectedProject?.name ?? "Kshift")")
                         .accessibilityIdentifier("project-switcher")
                     }
@@ -111,7 +131,9 @@ struct PlannerView: View {
 
     @ViewBuilder
     private var plannerControls: some View {
-        if horizontalSizeClass == .regular {
+        if usesAccessibilityLayout {
+            accessibilityControls
+        } else if horizontalSizeClass == .regular {
             HStack(spacing: 10) {
                 dateNavigation
                 Spacer()
@@ -129,38 +151,74 @@ struct PlannerView: View {
                 }
                 .pickerStyle(.segmented)
 
-                HStack(spacing: 8) {
-                    Button {
-                        isShowingFilters.toggle()
-                    } label: {
-                        Image(systemName: model.filter.isActive
-                            ? "line.3.horizontal.decrease.circle.fill"
-                            : "line.3.horizontal.decrease.circle")
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel("筛选任务")
-                    .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
-                        FilterPopover(model: model)
-                    }
-
-                    Button {
-                        Swift.Task { await model.refresh() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.glass)
-                    .accessibilityLabel("刷新共享快照")
-
-                    Spacer()
-                    utilityControls
-                }
+                compactActionBar
             }
         }
     }
 
+    private var accessibilityControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            dateStepButtons
+            datePickerControl
+
+            Picker("规划视图", selection: $model.viewMode) {
+                ForEach(PlannerViewMode.allCases) { mode in
+                    Label(mode.title, systemImage: mode.symbol)
+                        .tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            compactActionBar
+        }
+    }
+
+    private var compactActionBar: some View {
+        HStack(spacing: 8) {
+            filterButton
+            refreshButton
+            Spacer()
+            utilityControls
+        }
+    }
+
+    private var filterButton: some View {
+        Button {
+            isShowingFilters.toggle()
+        } label: {
+            Image(systemName: model.filter.isActive
+                ? "line.3.horizontal.decrease.circle.fill"
+                : "line.3.horizontal.decrease.circle")
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.glass)
+        .accessibilityLabel("筛选任务")
+        .accessibilityIdentifier("filter-button")
+        .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
+            FilterPopover(model: model)
+        }
+    }
+
+    private var refreshButton: some View {
+        Button {
+            Swift.Task { await model.refresh() }
+        } label: {
+            Image(systemName: "arrow.clockwise")
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.glass)
+        .accessibilityLabel("刷新共享快照")
+        .accessibilityIdentifier("refresh-button")
+    }
+
     private var dateNavigation: some View {
+        HStack(spacing: 8) {
+            dateStepButtons
+            datePickerControl
+        }
+    }
+
+    private var dateStepButtons: some View {
         HStack(spacing: 8) {
             Button {
                 model.selectedDate = KshiftDate.addingDays(-1, to: model.selectedDate)
@@ -188,15 +246,17 @@ struct PlannerView: View {
             }
             .buttonStyle(.glass)
             .accessibilityLabel("后一天")
-
-            DatePicker(
-                "选择日期",
-                selection: $model.selectedDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
-            .fixedSize()
         }
+    }
+
+    private var datePickerControl: some View {
+        DatePicker(
+            "选择日期",
+            selection: $model.selectedDate,
+            displayedComponents: .date
+        )
+        .labelsHidden()
+        .fixedSize()
     }
 
     private var utilityControls: some View {
@@ -214,6 +274,7 @@ struct PlannerView: View {
             .menuStyle(.button)
             .buttonStyle(.glass)
             .accessibilityLabel("排序")
+            .accessibilityIdentifier("sort-menu")
 
             Button {
                 model.clearSelection()
@@ -225,6 +286,7 @@ struct PlannerView: View {
             .disabled(model.selectedTaskIDs.isEmpty)
             .help("清除任务选择")
             .accessibilityLabel("清除选择")
+            .accessibilityIdentifier("clear-selection")
         }
     }
 }

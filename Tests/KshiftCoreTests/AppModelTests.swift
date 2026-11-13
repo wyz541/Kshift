@@ -1,12 +1,13 @@
 import XCTest
 @testable import KshiftCore
 @testable import KshiftUI
+import KshiftPresentation
 
 @MainActor
 final class AppModelTests: XCTestCase {
     private func makeModel() -> (AppModel, FakeKshiftClient) {
         let client = Fixture.client()
-        let model = AppModel(client: client, platform: PreviewPlatformServices())
+        let model = AppModel(client: client, platform: KshiftNoopPlatformCapabilities(platform: .macOS))
         return (model, client)
     }
 

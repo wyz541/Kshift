@@ -14,54 +14,55 @@ packages:
   Kshift:
     path: .
 targets:
-  KshiftMac:
+  Kshift-macOS:
     type: application
     platform: macOS
     sources:
-      - path: Apps/KshiftMac
+      - path: Apps/KshiftMacOS
     dependencies:
+      - package: Kshift
+        product: KshiftCore
       - package: Kshift
         product: KshiftUI
       - package: Kshift
-        product: KshiftPlatform
+        product: KshiftAppKitAdapter
     preBuildScripts:
       - name: Build Rust FFI
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          "$SRCROOT/scripts/build-ffi.sh" macos
+          "$SRCROOT/Scripts/build-ffi.sh" macos
           destination="$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH"
           mkdir -p "$destination"
           cp "$SRCROOT/.build/ffi/macos/libkshift_ffi.dylib" "$destination/"
-          if [[ "${CODE_SIGNING_ALLOWED:-YES}" == "YES" ]]; then
-            /usr/bin/codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" --timestamp=none "$destination/libkshift_ffi.dylib"
-          fi
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.mac
-        PRODUCT_NAME: Kshift
+        PRODUCT_NAME: Kshift-macOS
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Kshift
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.productivity
         ENABLE_HARDENED_RUNTIME: NO
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
-  KshiftIOS:
+  Kshift-iOS:
     type: application
     platform: iOS
     sources:
       - path: Apps/KshiftIOS
     dependencies:
       - package: Kshift
+        product: KshiftCore
+      - package: Kshift
         product: KshiftUI
       - package: Kshift
-        product: KshiftPlatform
+        product: KshiftUIKitAdapter
     preBuildScripts:
       - name: Build Rust FFI
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          "$SRCROOT/scripts/build-ffi.sh" ios-simulator
+          "$SRCROOT/Scripts/build-ffi.sh" ios-simulator
           destination="$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH"
           mkdir -p "$destination"
           cp "$SRCROOT/.build/ffi/ios-simulator/libkshift_ffi.dylib" "$destination/"
@@ -71,7 +72,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.ios
-        PRODUCT_NAME: KshiftIOS
+        PRODUCT_NAME: Kshift-iOS
         PRODUCT_MODULE_NAME: Kshift
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Kshift
@@ -79,47 +80,47 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_IDENTITY: "-"
-  KshiftIOSTests:
+  Kshift-iOS-PlannerTests:
     type: bundle.unit-test
     platform: iOS
     sources:
       - path: Apps/KshiftIOSTests
     dependencies:
-      - target: KshiftIOS
+      - target: Kshift-iOS
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-  KshiftIOSUITests:
+  Kshift-iOS-PlannerUITests:
     type: bundle.ui-testing
     platform: iOS
     sources:
       - path: Apps/KshiftIOSUITests
     dependencies:
-      - target: KshiftIOS
+      - target: Kshift-iOS
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        TEST_TARGET_NAME: KshiftIOS
+        TEST_TARGET_NAME: Kshift-iOS
 schemes:
-  KshiftMac:
+  Kshift-macOS:
     build:
       targets:
-        KshiftMac: all
+        Kshift-macOS: all
     run:
       config: Debug
-  KshiftIOS:
+  Kshift-iOS:
     build:
       targets:
-        KshiftIOS: all
-        KshiftIOSTests: [test]
-        KshiftIOSUITests: [test]
+        Kshift-iOS: all
+        Kshift-iOS-PlannerTests: [test]
+        Kshift-iOS-PlannerUITests: [test]
     run:
       config: Debug
     test:
       config: Debug
       gatherCoverageData: true
       targets:
-        - name: KshiftIOSTests
+        - name: Kshift-iOS-PlannerTests
           parallelizable: false
-        - name: KshiftIOSUITests
+        - name: Kshift-iOS-PlannerUITests
           parallelizable: false
