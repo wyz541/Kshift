@@ -1,0 +1,333 @@
+// Kshift v1 public contract.
+//
+// Rules:
+// - Package kshift.v1 is compatible-only. A breaking change needs a new major package.
+// - Field numbers and names are permanent once released.
+// - IDs are opaque strings. Clients must not parse them.
+// - Dates use YYYY-MM-DD. Timestamps use UTC RFC 3339 values.
+syntax = "proto3";
+
+package kshift.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/wyz541/Kshift/gen/go/kshift/v1;kshiftv1";
+
+// ProjectRole is the server-authoritative project access level.
+enum ProjectRole {
+  PROJECT_ROLE_UNSPECIFIED = 0;
+  PROJECT_ROLE_VIEWER = 1;
+  PROJECT_ROLE_EDITOR = 2;
+  PROJECT_ROLE_ADMIN = 3;
+}
+
+// TaskStatus is the workflow state of a task.
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_TODO = 1;
+  TASK_STATUS_IN_PROGRESS = 2;
+  TASK_STATUS_BLOCKED = 3;
+  TASK_STATUS_DONE = 4;
+}
+
+// TaskPriority is the planning priority of a task.
+enum TaskPriority {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_NONE = 1;
+  TASK_PRIORITY_LOW = 2;
+  TASK_PRIORITY_MEDIUM = 3;
+  TASK_PRIORITY_HIGH = 4;
+  TASK_PRIORITY_URGENT = 5;
+}
+
+// ErrorCode identifies the stable application reason inside a gRPC status.
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_AUTH_REQUIRED = 1;
+  ERROR_CODE_FORBIDDEN = 2;
+  ERROR_CODE_INVALID_INPUT = 3;
+  ERROR_CODE_CONFLICT = 4;
+  ERROR_CODE_RESET_REQUIRED = 5;
+  ERROR_CODE_LIMIT_EXCEEDED = 6;
+  ERROR_CODE_SCHEMA_MISMATCH = 7;
+  ERROR_CODE_INVALID_STATE = 8;
+  ERROR_CODE_INTERNAL = 9;
+  ERROR_CODE_ALREADY_EXISTS = 10;
+  ERROR_CODE_FAILED_PRECONDITION = 11;
+}
+
+// StringList preserves presence for repeated values in a patch.
+message StringList {
+  repeated string values = 1;
+}
+
+// ErrorDetail is encoded in gRPC status details.
+message ErrorDetail {
+  ErrorCode code = 1;
+  string message = 2;
+  string request_id = 3;
+  string project_id = 4;
+  string entity_id = 5;
+  optional uint64 current_project_revision = 6;
+  optional uint64 current_entity_version = 7;
+  optional uint64 minimum_retained_revision = 8;
+}
+
+// Project is the top-level isolation boundary.
+message Project {
+  string id = 1;
+  string name = 2;
+  string time_zone = 3;
+  uint64 revision = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+// User is a project member identity. The authentication source is resolved later.
+message User {
+  string id = 1;
+  string display_name = 2;
+  optional string email = 3;
+}
+
+// ProjectMember binds a user to one role in one project.
+message ProjectMember {
+  string user_id = 1;
+  ProjectRole role = 2;
+}
+
+// Task is the shared planning unit.
+message Task {
+  string id = 1;
+  string project_id = 2;
+  string title = 3;
+  string description_markdown = 4;
+  TaskStatus status = 5;
+  TaskPriority priority = 6;
+  repeated string assignee_ids = 7;
+  string planned_on = 8;
+  optional string starts_on = 9;
+  optional string due_on = 10;
+  repeated string tags = 11;
+  optional string parent_task_id = 12;
+  repeated string dependency_task_ids = 13;
+  uint64 version = 14;
+  string created_by = 15;
+  string updated_by = 16;
+  google.protobuf.Timestamp created_at = 17;
+  google.protobuf.Timestamp updated_at = 18;
+}
+
+// TaskDraft is the input for a new task.
+message TaskDraft {
+  string title = 1;
+  string description_markdown = 2;
+  TaskStatus status = 3;
+  TaskPriority priority = 4;
+  repeated string assignee_ids = 5;
+  string planned_on = 6;
+  optional string starts_on = 7;
+  optional string due_on = 8;
+  repeated string tags = 9;
+  optional string parent_task_id = 10;
+  repeated string dependency_task_ids = 11;
+}
+
+// TaskPatch changes only fields with presence.
+message TaskPatch {
+  optional string title = 1;
+  optional string description_markdown = 2;
+  optional TaskStatus status = 3;
+  optional TaskPriority priority = 4;
+  optional StringList assignee_ids = 5;
+  optional string planned_on = 6;
+  optional string starts_on = 7;
+  optional string due_on = 8;
+  optional StringList tags = 9;
+  optional string parent_task_id = 10;
+  optional StringList dependency_task_ids = 11;
+}
+
+// CreateProjectCommand creates one project.
+message CreateProjectCommand {
+  string name = 1;
+  string time_zone = 2;
+}
+
+// AddProjectMemberCommand adds or changes one project member.
+message AddProjectMemberCommand {
+  string user_id = 1;
+  ProjectRole role = 2;
+}
+
+// CreateTaskCommand creates one task.
+message CreateTaskCommand {
+  TaskDraft draft = 1;
+}
+
+// UpdateTaskCommand updates one task with optimistic concurrency.
+message UpdateTaskCommand {
+  string task_id = 1;
+  uint64 expected_entity_version = 2;
+  TaskPatch patch = 3;
+}
+
+// DeleteTaskCommand removes one task with optimistic concurrency.
+message DeleteTaskCommand {
+  string task_id = 1;
+  uint64 expected_entity_version = 2;
+}
+
+// TaskMutation is one item in an atomic batch.
+message TaskMutation {
+  oneof mutation {
+    CreateTaskCommand create_task = 1;
+    UpdateTaskCommand update_task = 2;
+    DeleteTaskCommand delete_task = 3;
+  }
+}
+
+// BatchUpdateTasksCommand applies all mutations or none.
+message BatchUpdateTasksCommand {
+  repeated TaskMutation mutations = 1;
+}
+
+// CommandEnvelope is the only write request shape.
+message CommandEnvelope {
+  string client_id = 1;
+  string command_id = 2;
+  string project_id = 3;
+  optional uint64 expected_project_revision = 4;
+
+  oneof command {
+    CreateTaskCommand create_task = 10;
+    UpdateTaskCommand update_task = 11;
+    DeleteTaskCommand delete_task = 12;
+    BatchUpdateTasksCommand batch_update_tasks = 13;
+    CreateProjectCommand create_project = 14;
+    AddProjectMemberCommand add_project_member = 15;
+  }
+}
+
+// TaskUpserted carries the complete task after a task change.
+message TaskUpserted {
+  Task task = 1;
+}
+
+// TaskDeleted identifies a removed task.
+message TaskDeleted {
+  string task_id = 1;
+}
+
+// ProjectUpserted carries the complete project after a project change.
+message ProjectUpserted {
+  Project project = 1;
+}
+
+// ProjectMemberUpserted carries the complete member after a member change.
+message ProjectMemberUpserted {
+  ProjectMember member = 1;
+}
+
+// ProjectMemberDeleted identifies a removed member.
+message ProjectMemberDeleted {
+  string user_id = 1;
+}
+
+// Change is one entity delta inside a project event.
+message Change {
+  oneof change {
+    TaskUpserted task_upserted = 1;
+    TaskDeleted task_deleted = 2;
+    ProjectUpserted project_upserted = 3;
+    ProjectMemberUpserted member_upserted = 4;
+    ProjectMemberDeleted member_deleted = 5;
+  }
+}
+
+// ProjectChangeEvent is the durable outbox payload.
+message ProjectChangeEvent {
+  string schema_version = 1;
+  string project_id = 2;
+  uint64 revision = 3;
+  string command_id = 4;
+  repeated Change changes = 5;
+  google.protobuf.Timestamp committed_at = 6;
+}
+
+// GetProjectSnapshotResponse returns an immutable full project view.
+message GetProjectSnapshotResponse {
+  string schema_version = 1;
+  uint64 revision = 2;
+  Project project = 3;
+  repeated User users = 4;
+  repeated ProjectMember members = 5;
+  repeated Task tasks = 6;
+  google.protobuf.Timestamp generated_at = 7;
+}
+
+// CommandResult is the committed outcome of a write.
+message CommandResult {
+  string command_id = 1;
+  uint64 project_revision = 2;
+  ProjectChangeEvent event = 3;
+}
+
+// ListProjectsRequest has no filters in v1.
+message ListProjectsRequest {}
+
+// ListProjectsResponse returns projects visible to the authenticated user.
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+// GetProjectSnapshotRequest starts or refreshes a project view.
+message GetProjectSnapshotRequest {
+  string project_id = 1;
+}
+
+// ExecuteCommandRequest wraps one idempotent typed command.
+message ExecuteCommandRequest {
+  CommandEnvelope command = 1;
+}
+
+// ExecuteCommandResponse returns the committed result.
+message ExecuteCommandResponse {
+  CommandResult result = 1;
+}
+
+// WatchProjectChangesRequest replays events after since_revision.
+message WatchProjectChangesRequest {
+  string project_id = 1;
+  uint64 since_revision = 2;
+}
+
+// Heartbeat keeps idle streams alive and reports the current revision.
+message Heartbeat {
+  uint64 project_revision = 1;
+  google.protobuf.Timestamp sent_at = 2;
+}
+
+// ResetRequired tells the client to discard deltas and fetch a snapshot.
+message ResetRequired {
+  uint64 current_revision = 1;
+  string reason = 2;
+  uint64 minimum_retained_revision = 3;
+}
+
+// WatchProjectChangesResponse is one event, heartbeat, or reset instruction.
+message WatchProjectChangesResponse {
+  oneof payload {
+    ProjectChangeEvent event = 1;
+    Heartbeat heartbeat = 2;
+    ResetRequired reset_required = 3;
+  }
+}
+
+// KshiftService is the only server API used by kshift-client.
+service KshiftService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc GetProjectSnapshot(GetProjectSnapshotRequest) returns (GetProjectSnapshotResponse);
+  rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse);
+  rpc WatchProjectChanges(WatchProjectChangesRequest) returns (stream WatchProjectChangesResponse);
+}

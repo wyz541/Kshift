@@ -1,0 +1,42 @@
+{
+  "schema_version": "1",
+  "product": "Kshift",
+  "version": "0.1.0-preview.1",
+  "channel": "preview",
+  "source_commit": "0123456789abcdef0123456789abcdef01234567",
+  "platform": "server",
+  "architecture": "arm64",
+  "generated_at": "2026-11-13T00:00:00Z",
+  "assets": [
+    {
+      "name": "kshift-0.1.0-preview.1-server-macos-arm64.tar.gz",
+      "platform": "server",
+      "architecture": "arm64",
+      "role": "server-bundle",
+      "size_bytes": 2048,
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "signing_status": "unsigned"
+    }
+  ],
+  "signing": {
+    "status": "unsigned",
+    "identity": null,
+    "notarization": "not-requested"
+  },
+  "provenance": {
+    "workflow": ".github/workflows/release-server.yml",
+    "run_id": "10000000002",
+    "run_attempt": 1,
+    "artifact_id": "20000000002"
+  },
+  "gates": [
+    {
+      "name": "schema-validation",
+      "status": "passed",
+      "evidence": "schemas/examples/release-fragment.example.json"
+    }
+  ],
+  "limitations": [
+    "Preview fixture only. It does not represent an installable server."
+  ]
+}

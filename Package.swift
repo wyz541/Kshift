@@ -1,36 +1,53 @@
-// swift-tools-version: 6.2
+// swift-tools-version: 6.1
 import PackageDescription
 
 let package = Package(
-    name: "Kshift",
-    platforms: [
-        .macOS(.v26),
-        .iOS(.v26),
-    ],
-    products: [
-        .library(name: "KshiftCore", targets: ["KshiftCore"]),
-        .library(name: "KshiftUI", targets: ["KshiftUI"]),
-        .library(name: "KshiftPlatform", targets: ["KshiftPlatform"]),
-    ],
-    targets: [
-        .target(
-            name: "KshiftCore",
-            path: "Sources/KshiftCore"
-        ),
-        .target(
-            name: "KshiftUI",
-            dependencies: ["KshiftCore"],
-            path: "Sources/KshiftUI"
-        ),
-        .target(
-            name: "KshiftPlatform",
-            dependencies: ["KshiftUI"],
-            path: "Sources/KshiftPlatform"
-        ),
-        .testTarget(
-            name: "KshiftCoreTests",
-            dependencies: ["KshiftCore", "KshiftUI"],
-            path: "Tests/KshiftCoreTests"
-        ),
-    ]
+  name: "Kshift",
+  defaultLocalization: "zh-Hans",
+  platforms: [
+    .macOS("26.0"),
+    .iOS("26.0"),
+  ],
+  products: [
+    .library(name: "KshiftPresentation", targets: ["KshiftPresentation"]),
+    .library(name: "KshiftFFI", targets: ["KshiftFFI"]),
+    .library(name: "KshiftUI", targets: ["KshiftUI"]),
+    .library(name: "KshiftAppKitAdapter", targets: ["KshiftAppKitAdapter"]),
+    .library(name: "KshiftUIKitAdapter", targets: ["KshiftUIKitAdapter"]),
+  ],
+  targets: [
+    .target(name: "KshiftPresentation"),
+    .target(
+      name: "KshiftFFI",
+      dependencies: ["KshiftPresentation"]
+    ),
+    .target(
+      name: "KshiftUI",
+      dependencies: ["KshiftPresentation", "KshiftFFI"]
+    ),
+    .target(
+      name: "KshiftAppKitAdapter",
+      dependencies: ["KshiftPresentation"]
+    ),
+    .target(
+      name: "KshiftUIKitAdapter",
+      dependencies: ["KshiftPresentation"]
+    ),
+    .testTarget(
+      name: "KshiftPresentationTests",
+      dependencies: ["KshiftPresentation"]
+    ),
+    .testTarget(
+      name: "KshiftFeatureTests",
+      dependencies: ["KshiftPresentation", "KshiftFFI", "KshiftUI"]
+    ),
+    .testTarget(
+      name: "KshiftAdapterBoundaryTests",
+      dependencies: [
+        "KshiftPresentation",
+        "KshiftAppKitAdapter",
+        "KshiftUIKitAdapter",
+      ]
+    ),
+  ]
 )

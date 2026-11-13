@@ -1,0 +1,60 @@
+name: R1 service
+
+on:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "buf.yaml"
+      - "proto/**"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-server/**"
+      - "migrations/**"
+      - ".github/workflows/r1-service.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "buf.yaml"
+      - "proto/**"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-server/**"
+      - "migrations/**"
+      - ".github/workflows/r1-service.yml"
+
+jobs:
+  service:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: kshift_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d kshift_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: bufbuild/buf-setup-action@v1
+      - run: cargo fmt --check
+      - run: buf format -d
+      - run: buf lint
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace

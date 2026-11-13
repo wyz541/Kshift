@@ -1,18 +1,28 @@
-import KshiftCore
-import KshiftPlatform
-import KshiftUI
-import SwiftUI
+#if os(iOS)
+  import KshiftUI
+  import KshiftUIKitAdapter
+  import SwiftUI
 
-@main
-struct KshiftIOSApp: App {
-    @StateObject private var model = AppModel(
-        client: RustClient(),
-        platform: IOSPlatformServices()
-    )
-
+  @main
+  struct KshiftIOSApp: App {
     var body: some Scene {
-        WindowGroup {
-            KshiftRootView(model: model)
+      WindowGroup {
+        KshiftIOSRoot()
+      }
+    }
+  }
+
+  private struct KshiftIOSRoot: View {
+    private let capabilities = UIKitPlatformCapabilities()
+
+    var body: some View {
+      KshiftDayPlanFeatureView(capabilities: capabilities)
+        .tint(.accentColor)
+        .background {
+          UIKitSceneAccessor { _ in }
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
         }
     }
-}
+  }
+#endif
