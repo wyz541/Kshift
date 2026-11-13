@@ -29,6 +29,7 @@ description: 记录 Issue #4 的质量门禁、migration digest 和恢复演练�
 | 单元测试 | 8 个通过 |
 | PostgreSQL 集成测试 | 9 个通过 |
 | `kshift-server check` | `healthy=true` |
+| GitHub Actions `R1 service` | 通过 |
 
 集成测试覆盖以下验收项。
 
