@@ -1,0 +1,41 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/kshift-domain",
+    "crates/kshift-contract",
+    "crates/kshift-server",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+license = "UNLICENSED"
+authors = ["Kshift contributors"]
+
+[workspace.dependencies]
+anyhow = "1.0.104"
+async-trait = "0.1.89"
+chrono = { version = "0.4.45", features = ["serde"] }
+contract = { package = "kshift-contract", path = "crates/kshift-contract" }
+domain = { package = "kshift-domain", path = "crates/kshift-domain" }
+futures-util = "0.3.34"
+hex = "0.4.3"
+prost = "0.13.5"
+prost-types = "0.13.5"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+sha2 = "0.10.9"
+sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "chrono", "uuid", "json", "migrate", "macros", "derive"] }
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["macros", "net", "rt-multi-thread", "signal", "sync", "time"] }
+tokio-stream = { version = "0.1.19", features = ["sync"] }
+tokio-util = "0.7.20"
+tonic = { version = "0.13.1", features = ["tls-ring"] }
+tonic-build = "0.13.1"
+tonic-health = "0.13.1"
+tower = { version = "0.5.3", features = ["limit", "timeout", "util"] }
+tower-http = { version = "0.6.11", features = ["timeout", "trace"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "json"] }
+uuid = { version = "1.29.2", features = ["serde", "v4"] }

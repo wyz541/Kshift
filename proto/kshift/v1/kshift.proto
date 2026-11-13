@@ -1,0 +1,287 @@
+syntax = "proto3";
+
+package kshift.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// SchemaVersion is returned in every snapshot and event so clients can reject
+// incompatible wire semantics instead of guessing.
+message SchemaVersion {
+  uint32 value = 1;
+}
+
+enum TaskStatus {
+  TASK_STATUS_UNSPECIFIED = 0;
+  TASK_STATUS_TODO = 1;
+  TASK_STATUS_IN_PROGRESS = 2;
+  TASK_STATUS_BLOCKED = 3;
+  TASK_STATUS_DONE = 4;
+}
+
+enum TaskPriority {
+  TASK_PRIORITY_UNSPECIFIED = 0;
+  TASK_PRIORITY_LOW = 1;
+  TASK_PRIORITY_MEDIUM = 2;
+  TASK_PRIORITY_HIGH = 3;
+  TASK_PRIORITY_URGENT = 4;
+}
+
+enum ProjectRole {
+  PROJECT_ROLE_UNSPECIFIED = 0;
+  PROJECT_ROLE_VIEWER = 1;
+  PROJECT_ROLE_EDITOR = 2;
+  PROJECT_ROLE_OWNER = 3;
+}
+
+enum ResetReason {
+  RESET_REASON_UNSPECIFIED = 0;
+  RESET_REASON_RETENTION_GAP = 1;
+  RESET_REASON_AHEAD_OF_SERVER = 2;
+  RESET_REASON_SCHEMA_MISMATCH = 3;
+  RESET_REASON_CORRUPT_STREAM = 4;
+  RESET_REASON_BACKPRESSURE = 5;
+}
+
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+  ERROR_CODE_AUTH_REQUIRED = 1;
+  ERROR_CODE_FORBIDDEN = 2;
+  ERROR_CODE_INVALID_INPUT = 3;
+  ERROR_CODE_INVALID_STATE = 4;
+  ERROR_CODE_CONFLICT = 5;
+  ERROR_CODE_RESET_REQUIRED = 6;
+  ERROR_CODE_ALREADY_EXISTS = 7;
+  ERROR_CODE_LIMIT_EXCEEDED = 8;
+  ERROR_CODE_FAILED_PRECONDITION = 9;
+  ERROR_CODE_INTERNAL = 10;
+}
+
+message ErrorDetail {
+  ErrorCode code = 1;
+  string message = 2;
+  optional uint64 current_project_revision = 3;
+  optional string entity_id = 4;
+  optional uint64 current_entity_version = 5;
+  optional uint64 minimum_retained_revision = 6;
+  optional ResetReason reset_reason = 7;
+}
+
+message Project {
+  string id = 1;
+  string name = 2;
+  uint64 current_revision = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message ProjectUser {
+  string id = 1;
+  string display_name = 2;
+}
+
+message ProjectMember {
+  ProjectUser user = 1;
+  ProjectRole role = 2;
+}
+
+message ProjectSummary {
+  string id = 1;
+  string name = 2;
+  uint64 current_revision = 3;
+  ProjectRole role = 4;
+}
+
+message Task {
+  string id = 1;
+  string project_id = 2;
+  string title = 3;
+  string description = 4;
+  TaskStatus status = 5;
+  TaskPriority priority = 6;
+  optional string assignee_id = 7;
+  optional string due_date = 8;
+  uint64 version = 9;
+  string created_by = 10;
+  string updated_by = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message ProjectSnapshot {
+  uint32 schema_version = 1;
+  uint64 revision = 2;
+  Project project = 3;
+  repeated ProjectUser users = 4;
+  repeated ProjectMember members = 5;
+  repeated Task tasks = 6;
+  google.protobuf.Timestamp generated_at = 7;
+}
+
+message GetProjectSnapshotResponse {
+  ProjectSnapshot snapshot = 1;
+}
+
+message ListProjectsRequest {}
+
+message ListProjectsResponse {
+  repeated ProjectSummary projects = 1;
+}
+
+message GetProjectSnapshotRequest {
+  string project_id = 1;
+}
+
+message CreateProjectCommand {
+  string name = 1;
+}
+
+message AddProjectMemberCommand {
+  string user_id = 1;
+  ProjectRole role = 2;
+}
+
+message CreateTaskCommand {
+  string task_id = 1;
+  string title = 2;
+  string description = 3;
+  TaskStatus status = 4;
+  TaskPriority priority = 5;
+  optional string assignee_id = 6;
+  optional string due_date = 7;
+}
+
+message UpdateTaskCommand {
+  string task_id = 1;
+  uint64 expected_entity_version = 2;
+  optional string title = 3;
+  optional string description = 4;
+  optional TaskStatus status = 5;
+  optional TaskPriority priority = 6;
+  // An absent field leaves the value unchanged. An empty string clears it.
+  optional string assignee_id = 7;
+  // An absent field leaves the value unchanged. An empty string clears it.
+  optional string due_date = 8;
+}
+
+message DeleteTaskCommand {
+  string task_id = 1;
+  uint64 expected_entity_version = 2;
+}
+
+message CommandEnvelope {
+  string client_id = 1;
+  string command_id = 2;
+  string project_id = 3;
+  optional uint64 expected_project_revision = 4;
+  oneof command {
+    CreateProjectCommand create_project = 10;
+    AddProjectMemberCommand add_project_member = 11;
+    CreateTaskCommand create_task = 12;
+    UpdateTaskCommand update_task = 13;
+    DeleteTaskCommand delete_task = 14;
+  }
+}
+
+message ExecuteCommandRequest {
+  CommandEnvelope envelope = 1;
+}
+
+message CreateProjectResult {
+  ProjectSnapshot snapshot = 1;
+}
+
+message AddProjectMemberResult {
+  ProjectMember member = 1;
+}
+
+message CreateTaskResult {
+  Task task = 1;
+}
+
+message UpdateTaskResult {
+  Task task = 1;
+}
+
+message DeleteTaskResult {
+  string task_id = 1;
+  uint64 version = 2;
+}
+
+message ExecuteCommandResponse {
+  uint64 revision = 1;
+  oneof result {
+    CreateProjectResult create_project = 10;
+    AddProjectMemberResult add_project_member = 11;
+    CreateTaskResult create_task = 12;
+    UpdateTaskResult update_task = 13;
+    DeleteTaskResult delete_task = 14;
+  }
+}
+
+message WatchProjectChangesRequest {
+  string project_id = 1;
+  uint64 since_revision = 2;
+}
+
+message ProjectCreated {
+  string project_id = 1;
+  string name = 2;
+}
+
+message ProjectMemberUpserted {
+  ProjectMember member = 1;
+}
+
+message TaskCreated {
+  Task task = 1;
+}
+
+message TaskUpdated {
+  Task task = 1;
+}
+
+message TaskDeleted {
+  string task_id = 1;
+  uint64 version = 2;
+}
+
+message ProjectChangeEvent {
+  string project_id = 1;
+  uint64 revision = 2;
+  uint32 schema_version = 3;
+  string command_id = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  oneof change {
+    ProjectCreated project_created = 10;
+    ProjectMemberUpserted project_member_upserted = 11;
+    TaskCreated task_created = 12;
+    TaskUpdated task_updated = 13;
+    TaskDeleted task_deleted = 14;
+  }
+}
+
+message Heartbeat {
+  uint64 revision = 1;
+  google.protobuf.Timestamp sent_at = 2;
+}
+
+message ResetRequired {
+  uint64 current_revision = 1;
+  uint64 minimum_retained_revision = 2;
+  ResetReason reason = 3;
+}
+
+message WatchProjectChangesResponse {
+  oneof payload {
+    ProjectChangeEvent change = 1;
+    Heartbeat heartbeat = 2;
+    ResetRequired reset_required = 3;
+  }
+}
+
+service KshiftService {
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc GetProjectSnapshot(GetProjectSnapshotRequest) returns (GetProjectSnapshotResponse);
+  rpc ExecuteCommand(ExecuteCommandRequest) returns (ExecuteCommandResponse);
+  rpc WatchProjectChanges(WatchProjectChangesRequest) returns (stream WatchProjectChangesResponse);
+}
