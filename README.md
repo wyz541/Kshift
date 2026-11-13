@@ -8,6 +8,7 @@
 - Spec 版本：`0.1`，状态 `active`。
 - 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
 - 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；macOS/iOS live P0 E2E 已验证。
+- R4/R5 基座：备份、恢复、RBAC、部署和 Release 合同已加入。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
@@ -233,6 +234,26 @@ Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只�
 - Token 不进入日志、URL、error projection 或 Release asset。
 - `unsafe` 只出现在 `kshift-ffi` 的适配层。
 
+## R4/R5 运维与发布
+
+| 内容 | 入口 |
+| --- | --- |
+| 运维工具 | [`ops/README.md`](ops/README.md) |
+| 服务部署 | [`deploy/README.md`](deploy/README.md) |
+| Release 合同 | [`release/README.md`](release/README.md) |
+| 验收状态 | [`docs/r4-r5/acceptance.md`](docs/r4-r5/acceptance.md) |
+| 常用问题 | [`docs/r4-r5/faq.md`](docs/r4-r5/faq.md) |
+
+R4/R5 基座不能替代 R1 至 R3 的产品运行证据。Stable Release 保持关闭。
+
+检查命令：
+
+```bash
+./scripts/check-r4-r5.sh
+```
+
+PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
+
 ## 文档入口
 
 | 内容 | 入口 |
@@ -260,6 +281,8 @@ Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只�
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
 - PostgreSQL 高可用集群不在首版范围。
+- R4/R5 的 2 倍负载、服务重启和平台安装证据尚未运行。
+- Stable 签名和分发策略仍为 `pending`。
 
 ## 安全边界
 

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.wyz541.kshift.health</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__KSHIFT_HOME__/current/bin/kshift-ops-run</string>
+    <string>health</string>
+    <string>--server-bin</string>
+    <string>__KSHIFT_HOME__/current/bin/kshift-server</string>
+    <string>--database-url-env</string>
+    <string>KSHIFT_DATABASE_URL</string>
+    <string>--disk-path</string>
+    <string>__KSHIFT_DATA_DIR__</string>
+    <string>--minimum-free-gib</string>
+    <string>__KSHIFT_MIN_FREE_GIB__</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>KSHIFT_ENV_FILE</key>
+    <string>__KSHIFT_HOME__/etc/kshift.env</string>
+  </dict>
+  <key>UserName</key>
+  <string>__KSHIFT_SERVICE_USER__</string>
+  <key>StartInterval</key>
+  <integer>300</integer>
+  <key>StandardOutPath</key>
+  <string>__KSHIFT_LOG_DIR__/health.log</string>
+  <key>StandardErrorPath</key>
+  <string>__KSHIFT_LOG_DIR__/health.error.log</string>
+</dict>
+</plist>

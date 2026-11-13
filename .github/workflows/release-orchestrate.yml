@@ -1,0 +1,299 @@
+name: Release orchestrator
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'prepare, verify-draft or promote'
+        required: true
+        type: choice
+        options: [prepare, verify-draft, promote]
+        default: verify-draft
+      channel:
+        description: 'Release channel'
+        required: true
+        type: choice
+        options: [preview, stable, hotfix]
+        default: stable
+      version:
+        description: 'SemVer core MAJOR.MINOR.PATCH'
+        required: true
+        default: '0.1.0'
+      tag:
+        description: 'Release tag, for example v0.1.0'
+        required: true
+        default: 'v0.1.0'
+      candidate_run_id:
+        description: 'Completed release-candidates run id; required for prepare'
+        required: false
+        default: ''
+      source_commit:
+        description: 'Source commit; required for prepare'
+        required: false
+        default: ''
+      postgres_exact_version:
+        description: 'PostgreSQL 18 exact version; required for prepare'
+        required: false
+        default: '18.6'
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: release-orchestrator-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: prepare-draft
+    if: ${{ github.ref == 'refs/heads/main' && inputs.operation == 'prepare' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      contents: write
+      actions: read
+      id-token: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CHANNEL: ${{ inputs.channel }}
+      VERSION: ${{ inputs.version }}
+      TAG: ${{ inputs.tag }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      POSTGRES_EXACT_VERSION: ${{ inputs.postgres_exact_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.source_commit }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Validate prepare inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$CANDIDATE_RUN_ID"
+          test -n "$SOURCE_COMMIT"
+          if [[ ! "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo 'source_commit must be 40 lowercase hexadecimal characters' >&2
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release or draft already exists: $TAG" >&2
+            exit 1
+          fi
+          CANDIDATE_SHA="$(gh run view "$CANDIDATE_RUN_ID" --json headSha --jq .headSha)"
+          CANDIDATE_RESULT="$(gh run view "$CANDIDATE_RUN_ID" --json conclusion --jq .conclusion)"
+          CANDIDATE_WORKFLOW="$(gh run view "$CANDIDATE_RUN_ID" --json workflowName --jq .workflowName)"
+          test "$CANDIDATE_SHA" = "$SOURCE_COMMIT"
+          test "$CANDIDATE_RESULT" = success
+          test "$CANDIDATE_WORKFLOW" = "Release candidates"
+      - name: Download candidate fragments
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/candidate" "$RUNNER_TEMP/release"
+          gh run download "$CANDIDATE_RUN_ID" --dir "$RUNNER_TEMP/candidate"
+          node release/tools/kshift-release.mjs collect \
+            --artifacts-dir "$RUNNER_TEMP/candidate" \
+            --output-dir "$RUNNER_TEMP/release"
+      - name: Build candidate and manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          candidate="$RUNNER_TEMP/candidate.json"
+          database_context="$RUNNER_TEMP/database-context.json"
+          node release/tools/compute-database-context.mjs \
+            --migrations-dir migrations \
+            --exact-version "$POSTGRES_EXACT_VERSION" \
+            --output "$database_context"
+          jq -n \
+            --arg version "$VERSION" \
+            --arg channel "$CHANNEL" \
+            --arg source "$SOURCE_COMMIT" \
+            --arg tag "$TAG" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --argjson run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --slurpfile database "$database_context" \
+            '{
+              schema_version: "1",
+              product: "Kshift",
+              version: $version,
+              channel: $channel,
+              source_commit: $source,
+              tag: $tag,
+              minimum_os: {macos: "26.0", ios: "26.0"},
+              database: $database[0],
+              provenance: {
+                workflow: "release-orchestrate.yml",
+                run_id: $run_id,
+                run_attempt: $run_attempt,
+                artifact_id: ("release-candidate-" + $run_id)
+              },
+              rollback: {
+                strategy: "new-patch-release",
+                notes: "Publish a new patch release and keep the original Stable release unchanged."
+              },
+              required_platforms: ["server", "macos", "ios", "source"],
+              limitations: ["Internal network only.", "External platform import is not supported."]
+            }' > "$candidate"
+          notes="release/notes/$TAG.md"
+          test -f "$notes"
+          cp "$notes" "$RUNNER_TEMP/release/release-notes.md"
+          node release/tools/generate-sbom.mjs \
+            --root "$GITHUB_WORKSPACE" \
+            --output "$RUNNER_TEMP/release/sbom.spdx.json" \
+            --version "$VERSION" \
+            --source-commit "$SOURCE_COMMIT"
+          manifest="$RUNNER_TEMP/release/release-manifest.json"
+          if [[ "$CHANNEL" == "stable" || "$CHANNEL" == "hotfix" ]]; then
+            mode="stable"
+          else
+            mode="draft"
+          fi
+          node release/tools/kshift-release.mjs merge \
+            --candidate "$candidate" \
+            --fragments-dir "$RUNNER_TEMP/release" \
+            --sbom "$RUNNER_TEMP/release/sbom.spdx.json" \
+            --notes "$RUNNER_TEMP/release/release-notes.md" \
+            --output "$manifest" \
+            --mode "$mode"
+          node release/tools/kshift-release.mjs verify-assets \
+            --manifest "$manifest" \
+            --assets-dir "$RUNNER_TEMP/release"
+      - name: Create validated draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_dir="$RUNNER_TEMP/release"
+          gh release create "$TAG" \
+            "$release_dir"/kshift-* \
+            "$release_dir/release-manifest.json" \
+            "$release_dir/release-notes.md" \
+            "$release_dir/sbom.spdx.json" \
+            --draft \
+            --prerelease \
+            --title "Kshift $TAG" \
+            --notes-file "$release_dir/release-notes.md" \
+            --target "$SOURCE_COMMIT"
+          url="$(gh release view "$TAG" --json url --jq .url)"
+          node release/tools/kshift-release.mjs evidence \
+            --manifest "$release_dir/release-manifest.json" \
+            --output "$release_dir/release-evidence.json" \
+            --release-url "$url" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+          node release/tools/kshift-release.mjs checksums \
+            --dir "$release_dir" \
+            --output "$release_dir/SHA256SUMS"
+          gh release upload "$TAG" "$release_dir/release-evidence.json" "$release_dir/SHA256SUMS"
+          echo "draft=$url" >> "$GITHUB_STEP_SUMMARY"
+
+  verify-draft:
+    name: verify-draft
+    if: ${{ github.ref == 'refs/heads/main' && (inputs.operation == 'verify-draft' || inputs.operation == 'promote') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CHANNEL: ${{ inputs.channel }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Download draft and verify bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/verify"
+          gh release download "$TAG" --dir "$RUNNER_TEMP/verify" --clobber
+          (cd "$RUNNER_TEMP/verify" && sha256sum -c SHA256SUMS)
+          node release/tools/kshift-release.mjs validate \
+            --manifest "$RUNNER_TEMP/verify/release-manifest.json" \
+            --mode "$([[ "$CHANNEL" == stable ]] && echo stable || echo draft)"
+          node release/tools/kshift-release.mjs verify-assets \
+            --manifest "$RUNNER_TEMP/verify/release-manifest.json" \
+            --assets-dir "$RUNNER_TEMP/verify"
+          test "$(jq -r '.release_status' "$RUNNER_TEMP/verify/release-manifest.json")" = draft
+      - name: Verify attestations for platform assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -r '.assets[].name' "$RUNNER_TEMP/verify/release-manifest.json" | while read -r name; do
+            test -f "$RUNNER_TEMP/verify/$name"
+            gh attestation verify "$RUNNER_TEMP/verify/$name" --repo "$GITHUB_REPOSITORY"
+          done
+      - name: Confirm release is still a draft
+        shell: bash
+        run: test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+
+  promote:
+    name: promote-same-draft
+    if: ${{ github.ref == 'refs/heads/main' && inputs.operation == 'promote' }}
+    needs: verify-draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: release
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      CHANNEL: ${{ inputs.channel }}
+      TAG: ${{ inputs.tag }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Mark the verified draft as promoted
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+          release_dir="$RUNNER_TEMP/promote"
+          mkdir -p "$release_dir"
+          gh release download "$TAG" --dir "$release_dir" --clobber
+          (cd "$release_dir" && sha256sum -c SHA256SUMS)
+          manifest="$release_dir/release-manifest.json"
+          test "$(jq -r '.release_status' "$manifest")" = draft
+          approved_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          jq \
+            --arg approved_by "$GITHUB_ACTOR" \
+            --arg approved_at "$approved_at" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            '.release_status = "promoted" | .promotion = {approved_by: $approved_by, approved_at: $approved_at, run_id: $run_id}' \
+            "$manifest" > "$manifest.tmp"
+          mv "$manifest.tmp" "$manifest"
+          manifest_sha256="$(sha256sum "$manifest" | awk '{print $1}')"
+          evidence="$release_dir/release-evidence.json"
+          jq \
+            --arg manifest_sha256 "$manifest_sha256" \
+            --arg approved_by "$GITHUB_ACTOR" \
+            --arg approved_at "$approved_at" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            '.manifest_sha256 = $manifest_sha256 | .promotion = {approved_by: $approved_by, approved_at: $approved_at, run_id: $run_id}' \
+            "$evidence" > "$evidence.tmp"
+          mv "$evidence.tmp" "$evidence"
+          node release/tools/kshift-release.mjs checksums \
+            --dir "$release_dir" \
+            --output "$release_dir/SHA256SUMS"
+          (cd "$release_dir" && sha256sum -c SHA256SUMS)
+          gh release upload "$TAG" "$manifest" "$evidence" "$release_dir/SHA256SUMS" --clobber
+          test "$(gh release download "$TAG" --pattern release-manifest.json --dir "$RUNNER_TEMP/promote-check" --clobber >/dev/null 2>&1; jq -r '.release_status' "$RUNNER_TEMP/promote-check/release-manifest.json")" = promoted
+      - name: Promote the same draft
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$CHANNEL" == "stable" || "$CHANNEL" == "hotfix" ]]; then
+            gh release edit "$TAG" --draft=false --prerelease=false
+          else
+            gh release edit "$TAG" --draft=false --prerelease=true
+          fi
+          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = false
+          echo "promoted=$TAG" >> "$GITHUB_STEP_SUMMARY"

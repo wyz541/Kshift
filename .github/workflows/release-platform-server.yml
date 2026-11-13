@@ -1,0 +1,112 @@
+name: Release platform - server
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      channel:
+        required: true
+        type: string
+      source_commit:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: server-macos
+    runs-on: macos-26
+    timeout-minutes: 45
+    env:
+      KSHIFT_VERSION: ${{ inputs.version }}
+      KSHIFT_CHANNEL: ${{ inputs.channel }}
+      KSHIFT_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      KSHIFT_OUTPUT_DIR: ${{ github.workspace }}/dist
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.source_commit }}
+          fetch-depth: 0
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.99.1
+      - name: Verify source commit
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$KSHIFT_SOURCE_COMMIT"
+      - name: Build server bundle
+        shell: bash
+        run: release/platform/build-server.sh
+      - name: Create server fragment
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-server-macos-arm64.tar.gz"
+          test -f "$archive"
+          jq -n \
+            --arg version "$KSHIFT_VERSION" \
+            --arg channel "$KSHIFT_CHANNEL" \
+            --arg source "$KSHIFT_SOURCE_COMMIT" \
+            --arg asset "$(basename "$archive")" \
+            --arg workflow "$GITHUB_WORKFLOW" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --argjson run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              schema_version: "1",
+              product: "Kshift",
+              version: $version,
+              channel: $channel,
+              source_commit: $source,
+              platform: "server",
+              architecture: "arm64",
+              generated_at: $generated,
+              signing: {status: "unsigned", identity: null, notarization: "not-applicable"},
+              provenance: {
+                workflow: $workflow,
+                run_id: $run_id,
+                run_attempt: $run_attempt,
+                artifact_id: "release-fragment-server"
+              },
+              assets: [{
+                name: $asset,
+                platform: "server",
+                architecture: "arm64",
+                role: "server-bundle",
+                signing_status: "not-applicable"
+              }],
+              gates: [
+                {name: "build", status: "passed", evidence: "cargo build and archive creation"},
+                {name: "health", status: "skipped", evidence: "requires target host runtime"},
+                {name: "migration", status: "skipped", evidence: "requires PostgreSQL 18 target host"},
+                {name: "backup-restore", status: "skipped", evidence: "requires PostgreSQL 18 target host"},
+                {name: "startup-recovery", status: "skipped", evidence: "requires launchd target host"},
+                {name: "logs", status: "skipped", evidence: "requires installed newsyslog configuration"}
+              ],
+              limitations: ["Stable promotion remains blocked until runtime gates run on the internal host."]
+            }' > "$KSHIFT_OUTPUT_DIR/server.fragment.spec.json"
+          node release/tools/kshift-release.mjs fragment \
+            --spec "$KSHIFT_OUTPUT_DIR/server.fragment.spec.json" \
+            --assets-dir "$KSHIFT_OUTPUT_DIR" \
+            --output "$KSHIFT_OUTPUT_DIR/server.fragment.json"
+      - name: Attest server artifact
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45
+        with:
+          subject-path: ${{ github.workspace }}/dist/kshift-*-server-macos-*.tar.gz
+      - name: Upload server fragment
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-fragment-server-macos
+          path: |
+            ${{ github.workspace }}/dist/kshift-*-server-macos-*.tar.gz
+            ${{ github.workspace }}/dist/server.fragment.json
+          if-no-files-found: error
