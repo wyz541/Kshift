@@ -59,4 +59,4 @@ description: 记录 Kshift v1 尚未决定的问题、负责人、截止日期�
 
 | ID | 结论 | Decision | 证据 |
 | --- | --- | --- | --- |
-| `OQ-011` | request 1 MiB；response/snapshot 16 MiB；event 256 KiB；附件缓存项 256 MiB | `DEC-027` | [R0 Spec Review](../reviews/2026-11-13-r0-spec-review.md) |
+| `OQ-011` | request 1 MiB；response/snapshot 16 MiB；event 256 KiB；附件缓存项 256 MiB | `DEC-027` | [R0 Spec Review](../reviews/2026-11-13-r0-spec-review.md)、[Issue #16](https://github.com/wyz541/Kshift/issues/16) |

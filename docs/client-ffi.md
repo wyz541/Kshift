@@ -40,6 +40,10 @@ description: 说明 Kshift Rust client、C ABI、缓存、重试和 Swift 边界
 | Gap | 清除项目 cache，发 `reset_required`，再取 snapshot |
 | Stream | 有界 queue、heartbeat timeout、jittered backoff |
 | Attachment budget | 256 MiB LRU 边界 |
+| Unary request | 1 MiB |
+| Unary response / snapshot | 16 MiB |
+| Single event | 256 KiB |
+| Attachment item | 256 MiB |
 
 ## C ABI 内存
 

@@ -75,8 +75,11 @@ idempotency row.
 | request timeout | 15 seconds |
 | write timeout | 10 seconds |
 | heartbeat | 15 seconds |
+| unary request size | 1 MiB |
+| unary response size | 16 MiB |
+| snapshot size | 16 MiB |
 | event size | 256 KiB |
-| response size | 16 MiB |
+| attachment cache item | 256 MiB |
 
 All queues and semaphores are bounded.
 

@@ -57,11 +57,28 @@ struct TaskEditorView: View {
 
                     HStack(alignment: .top, spacing: 16) {
                         fieldGroup("负责人") {
-                            Picker("负责人", selection: $draft.assigneeID) {
-                                Text("未分配").tag(Optional<String>.none)
-                                ForEach(model.people) { person in
-                                    Text(person.name).tag(Optional(person.id))
+                            Menu {
+                                Button {
+                                    draft.assigneeIDs.removeAll()
+                                } label: {
+                                    Label("未分配", systemImage: draft.assigneeIDs.isEmpty ? "checkmark" : "person.crop.circle.badge.questionmark")
                                 }
+                                ForEach(model.people) { person in
+                                    Button {
+                                        toggleAssignee(person.id)
+                                    } label: {
+                                        Label(
+                                            person.name,
+                                            systemImage: draft.assigneeIDs.contains(person.id)
+                                                ? "checkmark.circle.fill"
+                                                : "circle"
+                                        )
+                                    }
+                                }
+                            } label: {
+                                Text(assigneeSummary)
+                                    .lineLimit(1)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .pickerStyle(.menu)
                         }
@@ -72,6 +89,7 @@ struct TaskEditorView: View {
                                 displayedComponents: .date
                             )
                             .labelsHidden()
+                            .environment(\.timeZone, model.projectTimeZone)
                         }
                     }
 
@@ -160,6 +178,21 @@ struct TaskEditorView: View {
                 draft = submitted
                 dismiss()
             }
+        }
+    }
+
+    private var assigneeSummary: String {
+        guard !draft.assigneeIDs.isEmpty else { return "未分配" }
+        return draft.assigneeIDs
+            .compactMap { id in model.people.first(where: { $0.id == id })?.name }
+            .joined(separator: "、")
+    }
+
+    private func toggleAssignee(_ id: String) {
+        if draft.assigneeIDs.contains(id) {
+            draft.assigneeIDs.removeAll { $0 == id }
+        } else {
+            draft.assigneeIDs.append(id)
         }
     }
 }

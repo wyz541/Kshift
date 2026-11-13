@@ -101,6 +101,87 @@ async fn project_isolation_and_member_access_are_enforced() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn assignees_are_project_members_and_read_back_in_stable_order() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    let first_member = Uuid::new_v4();
+    let second_member = Uuid::new_v4();
+    let outsider = Uuid::new_v4();
+    db.seed_user(admin_id, "Admin", true).await;
+    db.seed_user(first_member, "First", false).await;
+    db.seed_user(second_member, "Second", false).await;
+    db.seed_user(outsider, "Outsider", false).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "admin-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Shared ownership"),
+            api.token(admin_id),
+        ))
+        .await
+        .unwrap();
+    for (revision, member_id) in [(1, first_member), (2, second_member)] {
+        api.api
+            .execute_command(request(
+                add_member(
+                    project_id,
+                    Uuid::new_v4(),
+                    member_id,
+                    v1::ProjectRole::Editor,
+                    revision,
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap();
+    }
+
+    let task = created_task(
+        api.api
+            .execute_command(request(
+                create_task_with_assignees(
+                    project_id,
+                    Uuid::new_v4(),
+                    "Two owners",
+                    3,
+                    vec![second_member, first_member],
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap()
+            .into_inner(),
+    );
+    let mut expected = vec![first_member.to_string(), second_member.to_string()];
+    expected.sort();
+    assert_eq!(task.assignee_ids, expected);
+
+    let error = api
+        .api
+        .execute_command(request(
+            create_task_with_assignees(
+                project_id,
+                Uuid::new_v4(),
+                "Invalid owner",
+                4,
+                vec![first_member, outsider],
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect_err("non-project members must not be assignees");
+    assert_eq!(error.code(), Code::InvalidArgument);
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn concurrent_writes_do_not_silently_overwrite() {
     let Some(db) = TestDatabase::create().await else {
         return;

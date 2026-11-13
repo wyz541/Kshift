@@ -160,6 +160,8 @@ flowchart LR
 - `FR-PRJ-002`：项目切换必须清除旧项目的可见任务。
 - `FR-PRJ-003`：服务端必须执行项目级授权。
 - `FR-PRJ-004`：身份来源状态为 `pending`。客户端提交的角色不得作为授权依据。
+- `FR-PRJ-005`：每个项目必须保存一个 IANA `time_zone`。
+- `FR-PRJ-006`：项目时区决定自然日期。用户时区只决定绝对时间戳的显示。
 
 ### 5.2 任务
 
@@ -169,6 +171,10 @@ flowchart LR
 - `FR-TSK-004`：看板拖拽必须作为 typed command 提交。
 - `FR-TSK-005`：批量处理必须原子提交；任一实体版本过期时整批拒绝。
 - `FR-TSK-006`：R3 的子任务、依赖、附件和 Markdown 描述必须使用 v1 合同扩展点。
+- `FR-TSK-007`：任务负责人是集合。集合包含 0 至 20 个唯一用户 ID。
+- `FR-TSK-008`：负责人必须是当前项目的活跃成员。空集合表示未分配。
+- `FR-TSK-009`：负责人写入替换完整集合。列表顺序不表示主负责人或排序优先级。
+- `FR-TSK-010`：服务端输出负责人时按用户 ID 升序排列，保证相同 revision 的 snapshot 稳定。
 
 ### 5.3 视图与查询
 
@@ -177,6 +183,9 @@ flowchart LR
 - `FR-VIEW-003`：搜索、筛选和排序必须在当前项目内执行。
 - `FR-VIEW-004`：基础统计必须基于同一 snapshot revision。
 - `FR-VIEW-005`：报告和导出必须记录使用的项目 revision。
+- `FR-VIEW-006`：人员看板、日历和自然日期筛选必须使用项目时区。
+- `FR-VIEW-007`：多负责人任务必须出现在每个负责人的人员列。筛选匹配任一负责人。
+- `FR-VIEW-008`：把任务拖到人员列时，负责人集合替换为目标人员。拖到未分配列时，负责人集合清空。
 
 ### 5.4 并发与冲突
 
@@ -324,7 +333,9 @@ flowchart LR
 | 获取连接超时 | 5 秒 |
 | 默认隔离级别 | `READ COMMITTED` |
 | 跨行不变量 | `SERIALIZABLE` |
-| 时间 | UTC `TIMESTAMPTZ` |
+| 绝对时间 | UTC `TIMESTAMPTZ` |
+| 自然日期 | `DATE`，按项目 IANA 时区解释 |
+| 用户时区 | 只用于显示绝对时间戳；缺失或非法时回退到项目时区 |
 | 密码来源 | Keychain 或 `launchd` 受限环境变量 |
 
 - `ARC-201`：数据库角色必须使用最小权限。
@@ -397,7 +408,7 @@ sequenceDiagram
 - `SEC-008`：客户端取消必须传递到服务端。
 - `SEC-009`：Stable 禁止启用 gRPC reflection。
 - `SEC-010`：健康检查继续启用。
-- `SEC-011`：所有 unary message、event、snapshot 和附件必须有显式大小上限。
+- `SEC-011`：所有 unary message、event、snapshot 和附件必须有显式大小上限。具体值见 `CTR-008` 至 `CTR-011`。
 - `SEC-012`：每个请求必须执行鉴权和项目级授权。
 - `SEC-013`：Server 必须拒绝客户端提供的 role 或 permission。
 - `SEC-014`：日志必须使用 request、project、client 和 command 标识。
@@ -454,7 +465,7 @@ sequenceDiagram
 - `CTR-002`：删除字段时，必须保留 field number 和 field name。
 - `CTR-003`：改变字段语义或删除字段时，必须新增 package major version。
 - `CTR-004`：所有 RPC 必须显式设置 deadline。
-- `CTR-005`：所有 snapshot、event 和附件必须有大小上限。
+- `CTR-005`：协议大小上限固定为 request 1 MiB、response 和 snapshot 16 MiB、event 256 KiB、attachment 256 MiB。
 - `CTR-006`：JSON Schema 只允许兼容扩展。
 - `CTR-007`：Release fixture 必须通过 schema 校验。
 - `CTR-008`：gRPC unary request 上限为 1 MiB。
@@ -545,6 +556,8 @@ flowchart TD
 | `OQ-008` | 首版是否支持应用内更新 | `@wyz541` | `2026-11-27` | 更新检查和回滚 |
 | `OQ-009` | 加密备份目标由谁提供 | `@wyz541` | `2026-11-27` | RPO、RTO 和恢复演练 |
 | `OQ-010` | 产品成功指标的具体数值 | `@wyz541` | `2026-12-11` | 首轮试用和发布评审 |
+
+`OQ-011` 已关闭。最终大小上限见第 9 节和第 12 节。决策记录见 `DEC-027`。
 
 ## 16. 正式评审结果
 

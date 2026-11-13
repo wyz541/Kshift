@@ -256,7 +256,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
                     descriptionMarkdown: value.notes,
                     status: value.status.rawValue,
                     priority: value.priority.rawValue,
-                    assigneeIDs: value.assigneeID.map { [$0] } ?? [],
+                    assigneeIDs: value.assigneeIDs,
                     plannedOn: value.dueDate,
                     dueOn: value.dueDate,
                     tags: [],
@@ -272,7 +272,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
                     descriptionMarkdown: value.notes,
                     status: value.status.rawValue,
                     priority: value.priority.rawValue,
-                    assigneeIDs: value.assigneeID.map { [$0] } ?? [],
+                    assigneeIDs: value.assigneeIDs,
                     plannedOn: value.dueDate,
                     dueOn: value.dueDate,
                     tags: nil,
@@ -291,7 +291,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
                 FFIUpdateTask(
                     taskID: value.taskID,
                     expectedEntityVersion: value.expectedTaskVersion,
-                    assigneeIDs: value.assigneeID.map { [$0] } ?? [],
+                    assigneeIDs: value.assigneeIDs,
                     plannedOn: value.dueDate,
                     dueOn: value.dueDate
                 )
@@ -354,6 +354,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
             name: value.name,
             code: projectCode(from: value.name),
             colorHex: projectColor(from: value.id),
+            timeZone: value.timeZone ?? "UTC",
             memberIDs: [],
             revision: value.currentRevision
         )
@@ -373,6 +374,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
             name: value.project.name,
             code: projectCode(from: value.project.name),
             colorHex: projectColor(from: value.project.id),
+            timeZone: value.project.timeZone ?? "UTC",
             memberIDs: members.map(\.id),
             revision: value.project.currentRevision
         )
@@ -384,7 +386,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
                 notes: task.descriptionMarkdown,
                 status: mapStatus(task.status),
                 priority: mapPriority(task.priority),
-                assigneeID: task.assigneeIDs.first,
+                assigneeIDs: task.assigneeIDs,
                 dueDate: task.dueOn ?? task.plannedOn,
                 position: Int64(index) * 1_024,
                 version: task.version,
@@ -448,11 +450,13 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
 private struct OfficialProjectSummary: Decodable {
     let id: String
     let name: String
+    let timeZone: String?
     let currentRevision: UInt64
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
+        case timeZone = "time_zone"
         case currentRevision = "current_revision"
     }
 }
@@ -466,11 +470,13 @@ private struct OfficialProjectSnapshot: Decodable {
 private struct OfficialProject: Decodable {
     let id: String
     let name: String
+    let timeZone: String?
     let currentRevision: UInt64
 
     enum CodingKeys: String, CodingKey {
         case id
         case name
+        case timeZone = "time_zone"
         case currentRevision = "current_revision"
     }
 }

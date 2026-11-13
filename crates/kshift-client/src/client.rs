@@ -2,7 +2,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, NaiveDate, Utc};
-use contract::v1;
+use contract::{v1, MAX_UNARY_REQUEST_BYTES};
 use domain::{
     ChangeEvent, Command, CommandEnvelope, Maybe, Project, ProjectMember, ProjectSnapshot,
     ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
@@ -122,7 +122,7 @@ impl KshiftClient {
         let channel = endpoint.connect_lazy();
         let service = contract::KshiftServiceClient::new(channel)
             .max_decoding_message_size(config.max_response_bytes())
-            .max_encoding_message_size(2 * 1024 * 1024);
+            .max_encoding_message_size(MAX_UNARY_REQUEST_BYTES);
         Ok(Self {
             config: Arc::new(config),
             service,

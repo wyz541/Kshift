@@ -48,7 +48,7 @@ struct TaskCard: View {
                 Image(systemName: task.status.symbol)
                     .foregroundStyle(task.status.tint)
                 Spacer()
-                PersonAvatar(person: person, size: 23)
+                AssigneeAvatarStack(people: assignees, size: 23)
             }
             .font(.callout)
             .accessibilityHidden(true)
@@ -106,14 +106,43 @@ struct TaskCard: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(task.title)，\(task.status.title)，\(task.priority.title)优先级")
-        .accessibilityValue("负责人 \(person.name)，版本 \(task.version)")
+        .accessibilityValue("负责人 \(assigneeNames)，版本 \(task.version)")
         .accessibilityHint("打开任务详情")
         .accessibilityIdentifier("task-\(task.id)")
     }
 
-    private var person: Person {
-        model.people.first(where: { $0.id == task.assigneeID })
-            ?? Person(id: "unassigned", name: "未分配", initials: "—", colorHex: "#8E8E93")
+    private var assignees: [Person] {
+        task.assigneeIDs.compactMap { id in model.people.first(where: { $0.id == id }) }
+    }
+
+    private var assigneeNames: String {
+        task.assigneeIDs.isEmpty ? "未分配" : model.assigneeNames(for: task)
+    }
+}
+
+struct AssigneeAvatarStack: View {
+    let people: [Person]
+    let size: CGFloat
+
+    var body: some View {
+        if people.isEmpty {
+            PersonAvatar(
+                person: Person(id: "unassigned", name: "未分配", initials: "—", colorHex: "#8E8E93"),
+                size: size
+            )
+        } else {
+            HStack(spacing: -6) {
+                ForEach(Array(people.prefix(3))) { person in
+                    PersonAvatar(person: person, size: size)
+                }
+                if people.count > 3 {
+                    Text("+\(people.count - 3)")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 8)
+                }
+            }
+        }
     }
 }
 

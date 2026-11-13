@@ -47,7 +47,7 @@ public struct KshiftRootView: View {
                 .help("刷新共享快照")
 
                 Button {
-                    model.presentNewTask(assigneeID: nil)
+                    model.presentNewTask(assigneeIDs: [])
                 } label: {
                     Label("新建任务", systemImage: "plus")
                 }

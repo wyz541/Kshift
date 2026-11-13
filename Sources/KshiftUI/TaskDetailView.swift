@@ -85,7 +85,7 @@ struct TaskDetailView: View {
                 }
 
                 HStack(spacing: 18) {
-                    DetailFact(title: "负责人", value: personName(task.assigneeID))
+                    DetailFact(title: "负责人", value: model.assigneeNames(for: task))
                     DetailFact(title: "日期", value: task.dueDate)
                     DetailFact(title: "版本", value: "v\(task.version)")
                 }
@@ -112,7 +112,7 @@ struct TaskDetailView: View {
                                     Text("\(model.actorName(for: entry.actorID)) · revision \(entry.revision)")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
-                                    Text(entry.occurredAt)
+                                    Text(model.displayTimestamp(entry.occurredAt))
                                         .font(.caption2.monospacedDigit())
                                         .foregroundStyle(.tertiary)
                                 }
@@ -146,10 +146,6 @@ struct TaskDetailView: View {
         }
     }
 
-    private func personName(_ id: String?) -> String {
-        guard let id else { return "未分配" }
-        return model.actorName(for: id)
-    }
 }
 
 private struct DetailFact: View {

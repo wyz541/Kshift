@@ -28,7 +28,7 @@ public struct KshiftTaskSnapshot: Identifiable, Hashable, Sendable {
   public let details: String?
   public let status: KshiftTaskStatus
   public let priority: KshiftPriority
-  public let assigneeID: UUID?
+  public let assigneeIDs: [UUID]
   public let dueDate: Date?
   public let revision: UInt64
 
@@ -38,7 +38,7 @@ public struct KshiftTaskSnapshot: Identifiable, Hashable, Sendable {
     details: String? = nil,
     status: KshiftTaskStatus,
     priority: KshiftPriority,
-    assigneeID: UUID? = nil,
+    assigneeIDs: [UUID] = [],
     dueDate: Date? = nil,
     revision: UInt64
   ) {
@@ -47,7 +47,7 @@ public struct KshiftTaskSnapshot: Identifiable, Hashable, Sendable {
     self.details = details
     self.status = status
     self.priority = priority
-    self.assigneeID = assigneeID
+    self.assigneeIDs = assigneeIDs
     self.dueDate = dueDate
     self.revision = revision
   }
@@ -56,6 +56,7 @@ public struct KshiftTaskSnapshot: Identifiable, Hashable, Sendable {
 public struct KshiftDayPlanSnapshot: Hashable, Sendable {
   public let projectID: UUID
   public let projectName: String
+  public let projectTimeZoneIdentifier: String
   public let workDate: Date
   public let revision: UInt64
   public let viewerID: UUID
@@ -65,6 +66,7 @@ public struct KshiftDayPlanSnapshot: Hashable, Sendable {
   public init(
     projectID: UUID,
     projectName: String,
+    projectTimeZoneIdentifier: String = TimeZone.current.identifier,
     workDate: Date,
     revision: UInt64,
     viewerID: UUID,
@@ -73,6 +75,7 @@ public struct KshiftDayPlanSnapshot: Hashable, Sendable {
   ) {
     self.projectID = projectID
     self.projectName = projectName
+    self.projectTimeZoneIdentifier = projectTimeZoneIdentifier
     self.workDate = workDate
     self.revision = revision
     self.viewerID = viewerID

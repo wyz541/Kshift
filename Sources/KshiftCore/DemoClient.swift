@@ -48,7 +48,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                 notes: command.notes,
                 status: command.status,
                 priority: command.priority,
-                assigneeID: command.assigneeID,
+                assigneeIDs: command.assigneeIDs,
                 dueDate: command.dueDate,
                 position: command.position ?? 1_024,
                 version: 1,
@@ -68,7 +68,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                     notes: command.notes,
                     status: command.status,
                     priority: command.priority,
-                    assigneeID: command.assigneeID,
+                    assigneeIDs: command.assigneeIDs,
                     dueDate: command.dueDate,
                     position: command.position,
                     version: task.version + 1,
@@ -96,7 +96,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                     notes: task.notes,
                     status: task.status,
                     priority: task.priority,
-                    assigneeID: command.assigneeID,
+                    assigneeIDs: command.assigneeIDs,
                     dueDate: command.dueDate,
                     position: command.position,
                     version: task.version + 1,
@@ -118,7 +118,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                     notes: task.notes,
                     status: command.status,
                     priority: task.priority,
-                    assigneeID: task.assigneeID,
+                    assigneeIDs: task.assigneeIDs,
                     dueDate: task.dueDate,
                     position: task.position,
                     version: task.version + 1,
@@ -154,6 +154,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             name: snapshot.project.name,
             code: snapshot.project.code,
             colorHex: snapshot.project.colorHex,
+            timeZone: snapshot.project.timeZone,
             memberIDs: snapshot.project.memberIDs,
             revision: revision
         )
@@ -179,6 +180,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             name: "Launch Room",
             code: "FOCUS",
             colorHex: "#0A84FF",
+            timeZone: "Asia/Shanghai",
             memberIDs: people.map(\.id),
             revision: 8
         )
@@ -187,14 +189,15 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             name: "Customer Follow-up",
             code: "CUSTOMER",
             colorHex: "#FF9F0A",
+            timeZone: "Asia/Shanghai",
             memberIDs: people.map(\.id),
             revision: 3
         )
         let focusTasks = [
             task(id: "task-launch-brief", projectID: focus.id, title: "Ship brief", priority: .high, date: today),
-            task(id: "task-voiceover", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeID: "person-noah", date: today, position: 2_048),
+            task(id: "task-voiceover", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeIDs: ["person-noah"], date: today, position: 2_048),
             task(id: "task-done", projectID: focus.id, title: "Done item", status: .done, date: today, position: 3_072),
-            task(id: "task-tomorrow", projectID: focus.id, title: "Tomorrow", assigneeID: nil, date: tomorrow),
+            task(id: "task-tomorrow", projectID: focus.id, title: "Tomorrow", assigneeIDs: [], date: tomorrow),
         ]
         let customerTasks = [
             task(id: "customer-task", projectID: customer.id, title: "Call customer", date: today),
@@ -214,7 +217,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
         title: String,
         status: TaskStatus = .todo,
         priority: TaskPriority = .medium,
-        assigneeID: String? = "person-mia",
+        assigneeIDs: [String] = ["person-mia"],
         date: String,
         position: Int64 = 1_024
     ) -> TaskItem {
@@ -225,7 +228,7 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             notes: "",
             status: status,
             priority: priority,
-            assigneeID: assigneeID,
+            assigneeIDs: assigneeIDs,
             dueDate: date,
             position: position,
             version: 1,

@@ -803,4 +803,28 @@ mod tests {
             Err(DomainError::Validation(_))
         ));
     }
+
+    #[test]
+    fn assignees_form_a_bounded_unique_set() {
+        let assignees = (0..MAX_ASSIGNEES)
+            .map(|_| Uuid::new_v4())
+            .collect::<Vec<_>>();
+        assert!(validate_assignee_ids(&assignees).is_ok());
+
+        let mut too_many = assignees.clone();
+        too_many.push(Uuid::new_v4());
+        assert!(validate_assignee_ids(&too_many).is_err());
+
+        let duplicate = assignees[0];
+        assert!(validate_assignee_ids(&[duplicate, duplicate]).is_err());
+        assert!(validate_assignee_ids(&[]).is_ok());
+    }
+
+    #[test]
+    fn time_zone_accepts_iana_names_only() {
+        assert!(validate_time_zone("Asia/Shanghai").is_ok());
+        assert!(validate_time_zone("UTC").is_ok());
+        assert!(validate_time_zone("Shanghai").is_err());
+        assert!(validate_time_zone("Mars/Olympus").is_err());
+    }
 }

@@ -143,8 +143,8 @@ private struct TaskTableRow: View {
                 .frame(minHeight: 44)
 
             HStack(spacing: 7) {
-                PersonAvatar(person: person, size: 24)
-                Text(person.name)
+                AssigneeAvatarStack(people: assignees, size: 24)
+                Text(model.assigneeNames(for: task))
                     .font(.caption)
                     .lineLimit(1)
             }
@@ -175,9 +175,8 @@ private struct TaskTableRow: View {
         model.selectedTaskIDs.contains(task.id)
     }
 
-    private var person: Person {
-        model.people.first(where: { $0.id == task.assigneeID })
-            ?? Person(id: "unassigned", name: "未分配", initials: "—", colorHex: "#8E8E93")
+    private var assignees: [Person] {
+        task.assigneeIDs.compactMap { id in model.people.first(where: { $0.id == id }) }
     }
 
     private func setStatus(_ status: TaskStatus) {

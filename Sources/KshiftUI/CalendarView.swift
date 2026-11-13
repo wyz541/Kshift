@@ -3,7 +3,7 @@ import SwiftUI
 
 struct CalendarView: View {
     @ObservedObject var model: AppModel
-    private let calendar = Calendar.current
+    private var calendar: Calendar { model.projectCalendar }
 
     var body: some View {
         ScrollView {
@@ -87,7 +87,7 @@ struct CalendarView: View {
                 }
                 Spacer()
                 Button {
-                    model.presentNewTask(assigneeID: nil, date: model.selectedDate)
+                    model.presentNewTask(assigneeIDs: [], date: model.selectedDate)
                 } label: {
                     Label("添加任务", systemImage: "plus")
                 }

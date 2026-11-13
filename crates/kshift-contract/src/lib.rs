@@ -13,6 +13,15 @@ use thiserror::Error;
 use tonic::{Code, Status};
 use uuid::Uuid;
 
+/// Maximum encoded size of one unary request.
+pub const MAX_UNARY_REQUEST_BYTES: usize = 1_048_576;
+/// Maximum encoded size of one unary response or project snapshot.
+pub const MAX_UNARY_RESPONSE_BYTES: usize = 16_777_216;
+/// Maximum encoded size of one project change event.
+pub const MAX_EVENT_BYTES: usize = 262_144;
+/// Maximum size of one attachment returned to a client.
+pub const MAX_ATTACHMENT_BYTES: usize = 268_435_456;
+
 #[allow(clippy::all)]
 pub mod v1 {
     tonic::include_proto!("kshift.v1");

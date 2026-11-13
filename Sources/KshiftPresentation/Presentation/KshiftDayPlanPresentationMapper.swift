@@ -29,7 +29,10 @@ public struct KshiftDayPlanPresentationMapper: Sendable {
     let hiddenCount = max(0, matchingTasks.count - visibleTasks.count)
 
     let taskPresentations = visibleTasks.map { task in
-      let assignee = snapshot.members.first(where: { $0.id == task.assigneeID })?.name ?? "未分配"
+      let assigneeNames = task.assigneeIDs.compactMap { id in
+        snapshot.members.first(where: { $0.id == id })?.name
+      }
+      let assignee = assigneeNames.isEmpty ? "未分配" : assigneeNames.joined(separator: "、")
       let status = statusLabel(task.status)
       let priority = priorityLabel(task.priority)
       let nextAction = task.status == .done ? "重新打开" : "完成任务"
@@ -50,7 +53,7 @@ public struct KshiftDayPlanPresentationMapper: Sendable {
 
     let dateFormatter = DateFormatter()
     dateFormatter.locale = locale
-    dateFormatter.timeZone = timeZone
+    dateFormatter.timeZone = TimeZone(identifier: snapshot.projectTimeZoneIdentifier) ?? timeZone
     dateFormatter.calendar = Calendar(identifier: .gregorian)
     dateFormatter.dateFormat = "yyyy-MM-dd"
 
@@ -100,7 +103,7 @@ public struct KshiftDayPlanPresentationMapper: Sendable {
     case .all:
       true
     case .mine:
-      task.assigneeID == viewerID
+      task.assigneeIDs.contains(viewerID)
     case .open:
       task.status != .done
     }

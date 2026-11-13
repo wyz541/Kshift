@@ -90,7 +90,7 @@ private struct BoardColumnView: View {
 
             Button {
                 model.presentNewTask(
-                    assigneeID: column.person?.id,
+                    assigneeIDs: column.person.map { [$0.id] } ?? [],
                     date: model.selectedDate
                 )
             } label: {
@@ -115,7 +115,7 @@ private struct BoardColumnView: View {
             Swift.Task {
                 await model.moveTask(
                     taskID: taskID,
-                    assigneeID: column.person?.id,
+                    assigneeIDs: column.person.map { [$0.id] } ?? [],
                     date: model.selectedDate,
                     position: positions.next
                 )

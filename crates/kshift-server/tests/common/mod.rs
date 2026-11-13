@@ -229,6 +229,35 @@ pub fn create_task(
     )
 }
 
+pub fn create_task_with_assignees(
+    project_id: Uuid,
+    command_id: Uuid,
+    title: &str,
+    expected_revision: u64,
+    assignee_ids: Vec<Uuid>,
+) -> v1::ExecuteCommandRequest {
+    execute_envelope(
+        project_id,
+        command_id,
+        expected_revision,
+        ProtoCommand::CreateTask(v1::CreateTaskCommand {
+            draft: Some(v1::TaskDraft {
+                title: title.to_owned(),
+                description_markdown: String::new(),
+                status: v1::TaskStatus::Todo as i32,
+                priority: v1::TaskPriority::Medium as i32,
+                assignee_ids: assignee_ids.into_iter().map(|id| id.to_string()).collect(),
+                planned_on: "2026-11-13".to_owned(),
+                starts_on: None,
+                due_on: None,
+                tags: Vec::new(),
+                parent_task_id: None,
+                dependency_task_ids: Vec::new(),
+            }),
+        }),
+    )
+}
+
 pub fn update_task_title(
     project_id: Uuid,
     command_id: Uuid,

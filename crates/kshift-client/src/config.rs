@@ -7,7 +7,7 @@ pub const DEFAULT_DEADLINE: Duration = Duration::from_secs(10);
 /// Largest accepted RPC deadline.
 pub const MAX_DEADLINE: Duration = Duration::from_secs(5 * 60);
 /// Default and maximum response budget used by the client channel.
-pub const MAX_RESPONSE_BYTES: usize = 16 * 1024 * 1024;
+pub const MAX_RESPONSE_BYTES: usize = contract::MAX_UNARY_RESPONSE_BYTES;
 
 const MAX_ENDPOINT_BYTES: usize = 2048;
 const MAX_CA_PEM_BYTES: usize = 1024 * 1024;

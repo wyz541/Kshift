@@ -46,7 +46,7 @@ final class KshiftDayPlanPresentationMapperTests: XCTestCase {
         title: "额外任务 \(index)",
         status: .todo,
         priority: .medium,
-        assigneeID: snapshot.viewerID,
+        assigneeIDs: [snapshot.viewerID],
         revision: 1
       )
     }
@@ -72,6 +72,25 @@ final class KshiftDayPlanPresentationMapperTests: XCTestCase {
     )
   }
 
+  func testNaturalDateLabelUsesProjectTimeZone() {
+    let source = makeSnapshot()
+    let snapshot = KshiftDayPlanSnapshot(
+      projectID: source.projectID,
+      projectName: source.projectName,
+      projectTimeZoneIdentifier: source.projectTimeZoneIdentifier,
+      workDate: Date(timeIntervalSince1970: 1_799_950_000),
+      revision: source.revision,
+      viewerID: source.viewerID,
+      members: source.members,
+      tasks: source.tasks
+    )
+    let mapper = KshiftDayPlanPresentationMapper(timeZone: TimeZone(secondsFromGMT: 0)!)
+    let presentation = mapper.makePresentation(
+      snapshot: snapshot, filter: .all, viewerID: snapshot.viewerID)
+
+    XCTAssertEqual(presentation.dateLabel, "2027-01-15")
+  }
+
   private func makeSnapshot() -> KshiftDayPlanSnapshot {
     let viewerID = UUID()
     let otherID = UUID()
@@ -82,6 +101,7 @@ final class KshiftDayPlanPresentationMapperTests: XCTestCase {
     return KshiftDayPlanSnapshot(
       projectID: UUID(),
       projectName: "示例项目",
+      projectTimeZoneIdentifier: "Asia/Shanghai",
       workDate: Date(timeIntervalSince1970: 1_800_000_000),
       revision: 5,
       viewerID: viewerID,
@@ -92,7 +112,7 @@ final class KshiftDayPlanPresentationMapperTests: XCTestCase {
           title: "高优先级任务",
           status: .inProgress,
           priority: .high,
-          assigneeID: viewerID,
+          assigneeIDs: [viewerID],
           revision: 5
         ),
         KshiftTaskSnapshot(
@@ -100,7 +120,7 @@ final class KshiftDayPlanPresentationMapperTests: XCTestCase {
           title: "他人任务",
           status: .todo,
           priority: .medium,
-          assigneeID: otherID,
+          assigneeIDs: [otherID],
           revision: 5
         ),
         KshiftTaskSnapshot(
@@ -108,7 +128,7 @@ final class KshiftDayPlanPresentationMapperTests: XCTestCase {
           title: "已完成任务",
           status: .done,
           priority: .low,
-          assigneeID: viewerID,
+          assigneeIDs: [viewerID],
           revision: 5
         ),
       ]

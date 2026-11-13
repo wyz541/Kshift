@@ -56,7 +56,7 @@ final class AppModelTests: XCTestCase {
         let draft = TaskDraft(
             projectID: Fixture.focus.id,
             title: "New task",
-            assigneeID: "person-mia",
+            assigneeIDs: ["person-mia"],
             dueDate: KshiftDate.date(from: Fixture.date) ?? .now
         )
 
@@ -98,7 +98,7 @@ final class AppModelTests: XCTestCase {
                 taskID: "task-1",
                 expectedVersion: 1,
                 title: "Locally edited",
-                assigneeID: "person-mia",
+                assigneeIDs: ["person-mia"],
                 dueDate: KshiftDate.date(from: Fixture.date) ?? .now
             )
         )
@@ -107,5 +107,32 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.conflict?.currentTaskVersion, 2)
         XCTAssertEqual(model.snapshot, before)
         XCTAssertEqual(model.task(withID: "task-1")?.title, "Ship brief")
+    }
+
+    func testMultiAssigneeFilterAndBoardColumnsUseAnyMatch() async {
+        let sharedTask = Fixture.task(
+            id: "shared-task",
+            projectID: Fixture.focus.id,
+            title: "Shared ownership",
+            assigneeIDs: ["person-mia", "person-noah"]
+        )
+        let snapshot = ProjectSnapshot(
+            project: Fixture.focus,
+            people: Fixture.people,
+            tasks: Fixture.focusSnapshot.tasks + [sharedTask],
+            audit: []
+        )
+        let client = FakeKshiftClient(
+            projects: [Fixture.focus],
+            snapshots: [Fixture.focus.id: snapshot]
+        )
+        let model = AppModel(client: client, platform: KshiftNoopPlatformCapabilities(platform: .macOS))
+        await model.bootstrap()
+        model.selectedDate = KshiftDate.date(from: Fixture.date) ?? .now
+
+        model.filter.assigneeIDs = ["person-noah"]
+        XCTAssertTrue(model.filteredTasks.contains(where: { $0.id == sharedTask.id }))
+        XCTAssertTrue(model.columns.first(where: { $0.id == "person-mia" })?.tasks.contains(where: { $0.id == sharedTask.id }) == true)
+        XCTAssertTrue(model.columns.first(where: { $0.id == "person-noah" })?.tasks.contains(where: { $0.id == sharedTask.id }) == true)
     }
 }

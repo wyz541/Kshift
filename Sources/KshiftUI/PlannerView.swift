@@ -53,7 +53,7 @@ struct PlannerView: View {
             .overlay(alignment: .bottomTrailing) {
                 if horizontalSizeClass != .regular, !usesAccessibilityLayout {
                     Button {
-                        model.presentNewTask(assigneeID: nil)
+                        model.presentNewTask(assigneeIDs: [])
                     } label: {
                         if usesAccessibilityLayout {
                             Image(systemName: "plus")
