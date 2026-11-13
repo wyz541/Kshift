@@ -76,8 +76,7 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
                 projectID: projectID,
                 deadlineMilliseconds: self.deadlineMilliseconds
             )
-            let value = try JSONDecoder().decode(OfficialProjectSnapshot.self, from: data)
-            return Self.mapSnapshot(value)
+            return try Self.decodeSnapshot(data)
         }.value
     }
 
@@ -360,6 +359,11 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
         )
     }
 
+    static func decodeSnapshot(_ data: Data) throws -> ProjectSnapshot {
+        let value = try JSONDecoder().decode(OfficialProjectSnapshot.self, from: data)
+        return mapSnapshot(value)
+    }
+
     private static func mapSnapshot(_ value: OfficialProjectSnapshot) -> ProjectSnapshot {
         let members = value.members.map { member in
             Person(
@@ -378,6 +382,20 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
             memberIDs: members.map(\.id),
             revision: value.project.currentRevision
         )
+        let audit = (value.audit ?? []).map { entry in
+            ProjectAuditEntry(
+                id: entry.id,
+                revision: entry.revision ?? 0,
+                action: entry.action,
+                summary: entry.summary,
+                taskID: entry.taskID,
+                actorID: entry.actorID,
+                occurredAt: entry.occurredAt
+            )
+        }
+        let historyByTask = Dictionary(grouping: audit.filter { $0.taskID != nil }) { entry in
+            entry.taskID ?? ""
+        }
         let tasks = value.tasks.enumerated().map { index, task in
             TaskItem(
                 id: task.id,
@@ -392,10 +410,19 @@ public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
                 version: task.version,
                 updatedAt: task.updatedAt,
                 updatedBy: task.updatedBy,
-                history: []
+                history: (historyByTask[task.id] ?? []).map { entry in
+                    TaskHistoryEntry(
+                        id: entry.id,
+                        revision: entry.revision,
+                        action: entry.action,
+                        summary: entry.summary,
+                        actorID: entry.actorID,
+                        occurredAt: entry.occurredAt
+                    )
+                }
             )
         }
-        return ProjectSnapshot(project: project, people: members, tasks: tasks, audit: [])
+        return ProjectSnapshot(project: project, people: members, tasks: tasks, audit: audit)
     }
 
     private static func mapStatus(_ value: String) -> TaskStatus {
@@ -465,6 +492,27 @@ private struct OfficialProjectSnapshot: Decodable {
     let project: OfficialProject
     let members: [OfficialProjectMember]
     let tasks: [OfficialTask]
+    let audit: [OfficialProjectAuditEntry]?
+}
+
+private struct OfficialProjectAuditEntry: Decodable {
+    let id: String
+    let revision: UInt64?
+    let action: String
+    let summary: String
+    let taskID: String?
+    let actorID: String
+    let occurredAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case revision
+        case action
+        case summary
+        case taskID = "task_id"
+        case actorID = "actor_id"
+        case occurredAt = "occurred_at"
+    }
 }
 
 private struct OfficialProject: Decodable {

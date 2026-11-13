@@ -4,8 +4,9 @@ use std::collections::HashSet;
 
 use chrono::{DateTime, NaiveDate, Utc};
 use domain::{
-    Change, ChangeEvent, Command, CommandEnvelope, DomainError, Maybe, ProjectMember, ProjectRole,
-    ProjectSnapshot, ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
+    Change, ChangeEvent, Command, CommandEnvelope, DomainError, Maybe, ProjectAuditEntry,
+    ProjectMember, ProjectRole, ProjectSnapshot, ResetReason, Task, TaskMutation, TaskPatch,
+    TaskPriority, TaskStatus,
 };
 use prost::Message;
 use sha2::{Digest, Sha256};
@@ -467,6 +468,23 @@ pub fn project_snapshot_to_proto(value: &ProjectSnapshot) -> v1::GetProjectSnaps
         members: value.members.iter().map(project_member_to_proto).collect(),
         tasks: value.tasks.iter().map(task_to_proto).collect(),
         generated_at: Some(datetime_to_timestamp(value.generated_at)),
+        audit: value
+            .audit
+            .iter()
+            .map(project_audit_entry_to_proto)
+            .collect(),
+    }
+}
+
+pub fn project_audit_entry_to_proto(value: &ProjectAuditEntry) -> v1::ProjectAuditEntry {
+    v1::ProjectAuditEntry {
+        id: value.id.to_string(),
+        revision: value.revision,
+        action: value.action.clone(),
+        summary: value.summary.clone(),
+        task_id: value.task_id.map(|task_id| task_id.to_string()),
+        actor_id: value.actor_id.to_string(),
+        occurred_at: Some(datetime_to_timestamp(value.occurred_at)),
     }
 }
 

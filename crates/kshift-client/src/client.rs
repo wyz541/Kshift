@@ -4,8 +4,8 @@ use std::time::{Duration, Instant};
 use chrono::{DateTime, NaiveDate, Utc};
 use contract::{v1, MAX_UNARY_REQUEST_BYTES};
 use domain::{
-    ChangeEvent, Command, CommandEnvelope, Maybe, Project, ProjectMember, ProjectSnapshot,
-    ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
+    ChangeEvent, Command, CommandEnvelope, Maybe, Project, ProjectAuditEntry, ProjectMember,
+    ProjectSnapshot, ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
 };
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
@@ -716,11 +716,35 @@ fn project_snapshot_from_proto(
         .into_iter()
         .map(task_from_proto)
         .collect::<Result<Vec<_>, _>>()?;
+    let audit = value
+        .audit
+        .into_iter()
+        .map(project_audit_entry_from_proto)
+        .collect::<Result<Vec<_>, _>>()?;
     Ok(ProjectSnapshot {
         project,
         members,
         tasks,
+        audit,
         generated_at: timestamp_to_datetime("generated_at", value.generated_at.as_ref())?,
+    })
+}
+
+fn project_audit_entry_from_proto(
+    value: v1::ProjectAuditEntry,
+) -> Result<ProjectAuditEntry, ClientError> {
+    Ok(ProjectAuditEntry {
+        id: parse_uuid("audit.id", &value.id)?,
+        revision: value.revision,
+        action: value.action,
+        summary: value.summary,
+        task_id: value
+            .task_id
+            .as_deref()
+            .map(|task_id| parse_uuid("audit.task_id", task_id))
+            .transpose()?,
+        actor_id: parse_uuid("audit.actor_id", &value.actor_id)?,
+        occurred_at: timestamp_to_datetime("audit.occurred_at", value.occurred_at.as_ref())?,
     })
 }
 

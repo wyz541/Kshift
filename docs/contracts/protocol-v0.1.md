@@ -26,7 +26,7 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | Package | `kshift.v1` |
 | 传输 | gRPC over HTTP/2 + TLS |
 | 流式接口 | `WatchProjectChanges` |
-| Schema version | `1` |
+| Schema version | `2` |
 | 状态 | `review` |
 
 ## 2. RPC
@@ -125,20 +125,24 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 
 | 字段 | 规则 |
 | --- | --- |
-| `schema_version` | 必须为 `1` |
+| `schema_version` | 必须为 `2` |
 | `revision` | 对应项目快照 revision |
 | `project` | 必须有值 |
 | `users` | 只包含项目成员身份 |
 | `members` | 只包含当前项目成员 |
 | `tasks` | 只包含当前项目任务 |
+| `audit` | 最多 100 条项目审计记录，按时间升序 |
 | `project.time_zone` | 项目 IANA 时区；决定自然日期 |
 | `generated_at` | UTC 时间；客户端按用户时区显示 |
+
+审计记录包含 `id`、`revision`、`action`、`summary`、`task_id`、`actor_id` 和 `occurred_at`。`revision` 在 outbox 记录过期后可以为空。
 
 - `PROTO-101`：Snapshot 必须通过 `project_id` 隔离。
 - `PROTO-102`：Snapshot 不得包含数据库凭据。
 - `PROTO-103`：Snapshot 不得包含未授权项目实体。
 - `PROTO-104`：Server 必须执行项目级授权。
 - `PROTO-105`：客户端提交的 role 或 permission 不作为授权依据。
+- `PROTO-106`：Snapshot 审计记录必须有固定上限，不得随审计表无限增长。
 
 ## 6. 事件流
 

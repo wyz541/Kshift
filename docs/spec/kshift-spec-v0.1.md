@@ -203,6 +203,7 @@ flowchart LR
 - `FR-HIS-002`：审计记录必须包含 actor、command、project、entity 和时间。
 - `FR-HIS-003`：R3 历史回退必须生成新的审计记录。
 - `FR-HIS-004`：日志禁止包含 token、数据库密码、完整敏感请求体或附件内容。
+- `FR-HIS-005`：Snapshot 必须包含有界项目审计记录。Task history 从项目审计记录映射。
 
 ### 5.6 备份与管理
 

@@ -48,3 +48,5 @@ description: 说明 Kshift C ABI 的函数、所有权、Swift 加载规则和�
 5. 开发目录的 `.build/ffi/ios-simulator/libkshift_ffi.dylib`。
 
 生产发布需要生成、签名和嵌入 XCFramework。
+
+Snapshot JSON 的 `audit` 数组包含有界审计记录。Swift 按 `task_id` 将记录映射到任务历史。

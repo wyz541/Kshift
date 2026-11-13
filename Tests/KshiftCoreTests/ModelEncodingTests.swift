@@ -79,4 +79,69 @@ final class ModelEncodingTests: XCTestCase {
         XCTAssertEqual(utc, "2026-11-13 16:30")
         XCTAssertEqual(shanghai, "2026-11-14 00:30")
     }
+
+    func testSnapshotMappingGroupsAuditHistoryByTask() throws {
+        let json = """
+        {
+          "project": {
+            "id": "project-1",
+            "name": "Live Kshift",
+            "current_revision": 3
+          },
+          "members": [
+            {
+              "user_id": "person-1",
+              "display_name": "Mia Chen"
+            }
+          ],
+          "tasks": [
+            {
+              "id": "task-1",
+              "project_id": "project-1",
+              "title": "Live history task",
+              "description_markdown": "",
+              "status": "done",
+              "priority": "high",
+              "assignee_ids": ["person-1"],
+              "planned_on": "2026-11-13",
+              "due_on": "2026-11-13",
+              "version": 2,
+              "updated_by": "person-1",
+              "updated_at": "2026-11-13T02:00:02Z"
+            }
+          ],
+          "audit": [
+            {
+              "id": "audit-1",
+              "revision": 2,
+              "action": "create_task",
+              "summary": "创建任务 Live history task",
+              "task_id": "task-1",
+              "actor_id": "person-1",
+              "occurred_at": "2026-11-13T02:00:01Z"
+            },
+            {
+              "id": "audit-2",
+              "revision": 3,
+              "action": "update_task",
+              "summary": "更新任务 Live history task",
+              "task_id": "task-1",
+              "actor_id": "person-1",
+              "occurred_at": "2026-11-13T02:00:02Z"
+            }
+          ]
+        }
+        """
+
+        let snapshot = try RustClient.decodeSnapshot(Data(json.utf8))
+        let task = try XCTUnwrap(snapshot.tasks.first)
+
+        XCTAssertEqual(snapshot.audit.count, 2)
+        XCTAssertEqual(task.history.map(\.revision), [2, 3])
+        XCTAssertEqual(
+            task.history.map(\.summary),
+            ["创建任务 Live history task", "更新任务 Live history task"]
+        )
+        XCTAssertEqual(task.history.first?.actorID, "person-1")
+    }
 }

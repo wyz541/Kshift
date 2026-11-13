@@ -7,6 +7,7 @@ public struct KshiftRootView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShowingFilters = false
+    @State private var isShowingProjectAudit = false
 
     public init(model: AppModel) {
         self.model = model
@@ -47,6 +48,15 @@ public struct KshiftRootView: View {
                 .help("刷新共享快照")
 
                 Button {
+                    isShowingProjectAudit = true
+                } label: {
+                    Label("审计", systemImage: "clock.arrow.circlepath")
+                }
+                .buttonStyle(.glass)
+                .help("查看项目审计")
+                .accessibilityIdentifier("project-audit")
+
+                Button {
                     model.presentNewTask(assigneeIDs: [])
                 } label: {
                     Label("新建任务", systemImage: "plus")
@@ -66,6 +76,9 @@ public struct KshiftRootView: View {
             set: { if $0 == nil { model.detailTaskID = nil } }
         )) { task in
             TaskDetailView(model: model, taskID: task.id)
+        }
+        .sheet(isPresented: $isShowingProjectAudit) {
+            ProjectAuditView(model: model)
         }
         .overlay(alignment: .top) {
             if let conflict = model.conflict {

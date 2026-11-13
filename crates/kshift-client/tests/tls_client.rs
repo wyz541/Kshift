@@ -70,6 +70,7 @@ fn snapshot(revision: u64) -> ProjectSnapshot {
             role: ProjectRole::Admin,
         }],
         tasks: vec![task(1)],
+        audit: Vec::new(),
         generated_at: now(),
     }
 }

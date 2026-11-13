@@ -497,6 +497,7 @@ public final class AppModel: ObservableObject {
                 replaceProjectSummary(nextSnapshot.project)
                 conflict = nil
                 platform.perform(.success)
+                await refresh()
             } else if let error = response.error {
                 if error.code == "version_conflict" || error.code == "revision_conflict" {
                     conflict = ConflictNotice(
