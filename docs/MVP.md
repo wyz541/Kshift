@@ -32,6 +32,8 @@ flowchart LR
 
 `DemoKshiftClient` 只用于 Debug、预览和 UI 证据。Release 入口使用 `RustClient`。`RustClient` 读取 `KSHIFT_ENDPOINT`、`KSHIFT_CA_PATH` 或 `KSHIFT_CA_PEM`、`KSHIFT_TOKEN`。
 
+`KshiftRootView` 是唯一日计划 UI。并行原型已归档在 Git 提交 `84a8d1d`。决策见 [ADR-0009](adr/0009-single-day-plan-ui.md)。
+
 ## 功能映射
 
 | 验收项 | 实现 | 自动证据 | 状态 |
@@ -50,7 +52,7 @@ flowchart LR
 | 并发冲突 | revision 和 task version | Rust conflict tests、`testConflictIsExplicitAndDoesNotReplaceSnapshot` | 已验证到 server、adapter 和假客户端 |
 | 历史 | task history 和 project audit UI | 尚无 live snapshot 字段映射 | 未完成 live 验证 |
 | Liquid Glass | 原生 Glass API | `scripts/verify.sh` 结构检查 | 已验证 |
-| 单 UI 实现 | `Sources/KshiftUI` 无平台条件分支 | `scripts/verify.sh`、adapter tests | 已验证 |
+| 唯一日计划 UI | `KshiftRootView` 和 `AppModel` | app entry tests、`scripts/check-platform-boundaries.sh` | 已验证 |
 | FFI-only boundary | UI 只调用 `KshiftClientProtocol` | `scripts/check-platform-boundaries.sh` | 已验证 |
 
 ## 无障碍

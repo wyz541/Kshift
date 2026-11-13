@@ -33,6 +33,9 @@ done
 
 [[ -f Apps/KshiftMacOS/KshiftMacOSApp.swift ]] || fail "macOS app entry is missing"
 [[ -f Apps/KshiftIOS/KshiftIOSApp.swift ]] || fail "iOS app entry is missing"
-[[ -f Sources/KshiftUI/Feature/KshiftDayPlanFeatureView.swift ]] || fail "shared feature is missing"
+[[ -f Sources/KshiftUI/KshiftRootView.swift ]] || fail "shared day-plan root view is missing"
+if grep -R -n "KshiftDayPlanFeatureView" Apps Sources >/dev/null 2>&1; then
+  fail "parallel day-plan UI is forbidden by ADR-0009"
+fi
 
 echo "Platform boundary check passed."
