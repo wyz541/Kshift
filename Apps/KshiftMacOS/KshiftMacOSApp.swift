@@ -42,7 +42,7 @@
     var body: some Commands {
       CommandGroup(replacing: .newItem) {
         Button("新建任务") {
-          model.presentNewTask(assigneeID: nil)
+          model.presentNewTask(assigneeIDs: [])
         }
         .keyboardShortcut("n", modifiers: .command)
       }
