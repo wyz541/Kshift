@@ -27,8 +27,9 @@ ffi:
 swift-build:
 	swift build
 
-swift-test: prepare-cargo-home ffi
-	KSHIFT_FFI_PATH="$(CURDIR)/.build/ffi/macos/libkshift_ffi.dylib" swift test
+swift-test: prepare-cargo-home
+	$(RUST_ENV) ./scripts/build-ffi.sh macos
+	KSHIFT_FFI_PATH="$(CURDIR)/.build/ffi/macos/libkshift_ffi.a" swift test
 
 project:
 	xcodegen generate

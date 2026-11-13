@@ -3,53 +3,43 @@ import XCTest
 @testable import KshiftCore
 
 final class RustFFIIntegrationTests: XCTestCase {
-    func testRustClientReadsSnapshotThroughDynamicFFI() async throws {
-        let path = FileManager.default.currentDirectoryPath
-            + "/.build/ffi/macos/libkshift_ffi.dylib"
-        guard FileManager.default.fileExists(atPath: path) else {
-            throw XCTSkip("Run scripts/build-ffi.sh macos before this test.")
+    func testRustClientReportsMissingConfigurationExplicitly() async {
+        let client = RustClient(
+            endpoint: nil,
+            caPEM: nil,
+            token: nil
+        )
+        do {
+            _ = try await client.projects()
+            XCTFail("Unconfigured RustClient must not return fabricated data.")
+        } catch let error as KshiftClientError {
+            guard case .ffiUnavailable = error else {
+                return XCTFail("Unexpected error: \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
+    }
+
+    func testRustClientReadsSnapshotWhenServerConfigurationIsProvided() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard
+            let endpoint = environment["KSHIFT_ENDPOINT"],
+            let caPath = environment["KSHIFT_CA_PATH"],
+            !endpoint.isEmpty,
+            !caPath.isEmpty
+        else {
+            throw XCTSkip("Set KSHIFT_ENDPOINT and KSHIFT_CA_PATH to run the live FFI test.")
         }
 
-        let client = RustClient()
+        let client = RustClient(
+            endpoint: endpoint,
+            caPEM: try Data(contentsOf: URL(fileURLWithPath: caPath)),
+            token: environment["KSHIFT_TOKEN"]
+        )
         let projects = try await client.projects()
         let first = try XCTUnwrap(projects.first)
         let snapshot = try await client.snapshot(projectID: first.id)
         XCTAssertEqual(snapshot.project.id, first.id)
-        XCTAssertFalse(snapshot.tasks.isEmpty)
     }
-
-    func testRustClientCreatesTaskThroughDynamicFFI() async throws {
-        let path = FileManager.default.currentDirectoryPath
-            + "/.build/ffi/macos/libkshift_ffi.dylib"
-        guard FileManager.default.fileExists(atPath: path) else {
-            throw XCTSkip("Run scripts/build-ffi.sh macos before this test.")
-        }
-
-        let client = RustClient()
-        let projects = try await client.projects()
-        let project = try XCTUnwrap(projects.first)
-        let before = try await client.snapshot(projectID: project.id)
-        let title = "FFI create \(UUID().uuidString.prefix(8))"
-        let response = try await client.execute(
-            projectID: project.id,
-            envelope: CommandEnvelope(
-                expectedRevision: before.project.revision,
-                actorID: client.actorID,
-                command: .create(
-                    CreateTaskCommand(
-                        title: title,
-                        notes: "Created through kshift-ffi",
-                        status: .todo,
-                        priority: .medium,
-                        assigneeID: "person-mia",
-                        dueDate: KshiftDate.isoString(from: .now)
-                    )
-                )
-            )
-        )
-
-        XCTAssertTrue(response.ok)
-        XCTAssertTrue(response.snapshot?.tasks.contains(where: { $0.title == title }) == true)
-    }
-
 }

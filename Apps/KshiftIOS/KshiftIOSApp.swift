@@ -7,13 +7,17 @@
   @main
   struct KshiftIOSApp: App {
     @StateObject private var model = AppModel(
-      client: RustClient(),
+      client: KshiftClientFactory.makeDefault(),
       platform: UIKitPlatformCapabilities()
     )
 
     var body: some Scene {
       WindowGroup {
         KshiftRootView(model: model)
+          .environment(
+            \.kshiftForceReduceTransparency,
+            ProcessInfo.processInfo.environment["KSHIFT_FORCE_REDUCE_TRANSPARENCY"] == "1"
+          )
           .tint(.accentColor)
           .background {
             UIKitSceneAccessor { _ in }

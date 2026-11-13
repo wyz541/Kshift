@@ -1,5 +1,10 @@
 // swift-tools-version: 6.1
+import Foundation
 import PackageDescription
+
+let packageDirectory = URL(fileURLWithPath: #filePath)
+  .deletingLastPathComponent()
+  .path
 
 let package = Package(
   name: "Kshift",
@@ -17,11 +22,16 @@ let package = Package(
     .library(name: "KshiftUIKitAdapter", targets: ["KshiftUIKitAdapter"]),
   ],
   targets: [
-    .target(name: "KshiftCore"),
+    .target(name: "KshiftCore", dependencies: ["KshiftFFI"]),
     .target(name: "KshiftPresentation"),
+    .systemLibrary(name: "CKshiftFFI", path: "include"),
     .target(
       name: "KshiftFFI",
-      dependencies: ["KshiftPresentation"]
+      dependencies: ["KshiftPresentation", "CKshiftFFI"],
+      linkerSettings: [
+        .unsafeFlags(["-L", "\(packageDirectory)/target/debug"]),
+        .linkedLibrary("kshift_ffi"),
+      ]
     ),
     .target(
       name: "KshiftUI",
@@ -42,6 +52,10 @@ let package = Package(
     .testTarget(
       name: "KshiftPresentationTests",
       dependencies: ["KshiftPresentation"]
+    ),
+    .testTarget(
+      name: "KshiftFFITests",
+      dependencies: ["KshiftFFI"]
     ),
     .testTarget(
       name: "KshiftFeatureTests",

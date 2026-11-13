@@ -31,10 +31,7 @@ targets:
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          "$SRCROOT/Scripts/build-ffi.sh" macos
-          destination="$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH"
-          mkdir -p "$destination"
-          cp "$SRCROOT/.build/ffi/macos/libkshift_ffi.dylib" "$destination/"
+          "$SRCROOT/scripts/build-ffi.sh" macos
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.mac
@@ -62,13 +59,7 @@ targets:
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          "$SRCROOT/Scripts/build-ffi.sh" ios-simulator
-          destination="$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH"
-          mkdir -p "$destination"
-          cp "$SRCROOT/.build/ffi/ios-simulator/libkshift_ffi.dylib" "$destination/"
-          if [[ "${CODE_SIGNING_ALLOWED:-YES}" == "YES" ]]; then
-            /usr/bin/codesign --force --sign "${EXPANDED_CODE_SIGN_IDENTITY:--}" --timestamp=none "$destination/libkshift_ffi.dylib"
-          fi
+          "$SRCROOT/scripts/build-ffi.sh" ios-simulator
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.ios

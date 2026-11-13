@@ -30,14 +30,15 @@ fi
 build_target() {
   local label="$1"
   local triple="$2"
-  local source="$root/target/$triple/$profile/libkshift_ffi.dylib"
+  local source="$root/target/$triple/$profile/libkshift_ffi.a"
   local destination="$root/.build/ffi/$label"
+  local host_copy="$root/target/$profile/libkshift_ffi.a"
 
   "$cargo_bin" build -p kshift-ffi --target "$triple" --locked ${profile_flag[@]} ${offline_flag[@]}
-  mkdir -p "$destination"
-  cp "$source" "$destination/libkshift_ffi.dylib"
-  install_name_tool -id "@rpath/libkshift_ffi.dylib" "$destination/libkshift_ffi.dylib"
-  printf 'Built %s\n' "$destination/libkshift_ffi.dylib"
+  mkdir -p "$destination" "$(dirname "$host_copy")"
+  cp "$source" "$destination/libkshift_ffi.a"
+  cp "$source" "$host_copy"
+  printf 'Built %s\n' "$destination/libkshift_ffi.a"
 }
 
 case "$target_name" in

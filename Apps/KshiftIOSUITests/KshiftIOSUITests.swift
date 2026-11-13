@@ -20,7 +20,16 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(save.isEnabled)
         save.tap()
 
-        XCTAssertTrue(app.staticTexts["UI evidence task"].waitForExistence(timeout: 5))
+        let created = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "UI evidence task"))
+            .firstMatch
+        if !created.waitForExistence(timeout: 3) {
+            let column = app.scrollViews["board-column-person-mia"].firstMatch
+            if column.waitForExistence(timeout: 3) {
+                column.swipeUp()
+            }
+        }
+        XCTAssertTrue(created.waitForExistence(timeout: 5), app.debugDescription)
     }
 
     func testCoreActionsMeetMinimumTouchTargets() throws {
@@ -57,6 +66,7 @@ final class KshiftIOSUITests: XCTestCase {
             "-UIPreferredContentSizeCategoryName",
             "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
         ]
+        app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
         app.launch()
 
         XCTAssertTrue(
@@ -120,6 +130,7 @@ final class KshiftIOSUITests: XCTestCase {
 
     private func launchPlanner() -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
         app.launch()
         XCTAssertTrue(
             element(in: app, identifier: "project-switcher", labelContains: "切换项目")

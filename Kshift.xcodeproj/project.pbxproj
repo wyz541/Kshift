@@ -283,7 +283,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\"$SRCROOT/Scripts/build-ffi.sh\" macos\ndestination=\"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH\"\nmkdir -p \"$destination\"\ncp \"$SRCROOT/.build/ffi/macos/libkshift_ffi.dylib\" \"$destination/\"\n";
+			shellScript = "set -euo pipefail\n\"$SRCROOT/scripts/build-ffi.sh\" macos\n";
 		};
 		338C549288599C3F6D6EA3E2 /* Build Rust FFI */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -302,7 +302,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\"$SRCROOT/Scripts/build-ffi.sh\" ios-simulator\ndestination=\"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH\"\nmkdir -p \"$destination\"\ncp \"$SRCROOT/.build/ffi/ios-simulator/libkshift_ffi.dylib\" \"$destination/\"\nif [[ \"${CODE_SIGNING_ALLOWED:-YES}\" == \"YES\" ]]; then\n  /usr/bin/codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" --timestamp=none \"$destination/libkshift_ffi.dylib\"\nfi\n";
+			shellScript = "set -euo pipefail\n\"$SRCROOT/scripts/build-ffi.sh\" ios-simulator\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

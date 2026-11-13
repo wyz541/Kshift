@@ -1,26 +1,51 @@
 # R2 证据
 
-以下截图来自 2026-11-13 本地运行。
+结论：R2 的 macOS 和 iOS 主页面已截图。iOS 自动测试已通过。真实系统无障碍人工检查和 macOS 窗口缩放性能仍待完成。
+
+## 主截图
 
 | 文件 | 平台 | 内容 |
 | --- | --- | --- |
-| `macos-board.jpg` | macOS 27.0.1 | 侧栏、项目快照、人员/日期看板和 Liquid Glass 卡片 |
-| `ios-board.png` | iOS 27.0 模拟器 | 紧凑项目菜单、日期控制、看板和浮动操作 |
+| `macos-board.png` | macOS 27.2 | 侧栏、项目快照、人员看板、工具栏和 Liquid Glass 卡片 |
+| `accessibility/ios-light.png` | iOS 27.0 Simulator | 亮色看板 |
+| `accessibility/ios-dark.png` | iOS 27.0 Simulator | 深色看板 |
+
+macOS 截图只包含 Kshift 窗口。iOS 截图使用 Debug 演示数据。
+
+## 无障碍截图
+
+| 文件 | 状态 |
+| --- | --- |
+| `accessibility/ios-increase-contrast.png` | Increase Contrast 已启用 |
+| `accessibility/ios-large-text.png` | Accessibility Extra Extra Extra Large |
+| `accessibility/ios-reduce-motion.png` | Reduce Motion 已启用 |
+| `accessibility/ios-reduce-transparency.png` | 应用环境覆盖已启用 |
+
+Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/README.md)。该截图证明 UI 降级分支可执行。该截图不证明模拟器系统设置入口存在。
 
 ## 已运行门禁
 
-- `cargo fmt --all -- --check`
-- `cargo clippy --workspace --all-targets -- -D warnings`
-- `cargo test --workspace`
-- `swift test`
-- macOS `xcodebuild build`
-- iOS `xcodebuild test`
-- iOS UI 创建任务流程
+| 检查 | 结果 |
+| --- | --- |
+| `cargo fmt --all -- --check` | 通过 |
+| `cargo clippy --offline -p kshift-client -p kshift-ffi --all-targets -- -D warnings` | 通过 |
+| `cargo test --offline -p kshift-client -p kshift-ffi` | 13 项通过 |
+| `swift test` | 21 项通过，1 项 live server test 跳过 |
+| macOS `xcodebuild build` | 通过 |
+| iOS `xcodebuild test` | 7 项通过 |
+| iOS UI tests | 6 项通过 |
 
 ## 未覆盖
 
-- Reduce Transparency 视觉截图。
-- Increase Contrast 视觉截图。
-- Reduce Motion 视觉截图。
-- VoiceOver 人工检查。
-- Instruments 性能读数。
+| 项目 | 状态 |
+| --- | --- |
+| VoiceOver | 待人工检查 |
+| macOS 键盘导航 | macOS UI test runner 未建立连接 |
+| macOS 窗口缩放性能 | 未采集 |
+| 真机环境 | 未采集 |
+| 真实 gRPC/PostgreSQL UI E2E | 未采集 |
+| Instruments frame trace | 未采集 |
+
+## 性能
+
+性能读数见 [performance.md](performance.md)。读数是 `XCTClockMetric`，不是帧耗时。

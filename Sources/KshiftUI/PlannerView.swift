@@ -50,7 +50,7 @@ struct PlannerView: View {
             .clipped()
             .background(.clear)
             .overlay(alignment: .bottomTrailing) {
-                if horizontalSizeClass != .regular {
+                if horizontalSizeClass != .regular, !usesAccessibilityLayout {
                     Button {
                         model.presentNewTask(assigneeID: nil)
                     } label: {
@@ -116,6 +116,8 @@ struct PlannerView: View {
                     Text(selectedDateTitle)
                         .font(.title3.weight(.medium))
                         .foregroundStyle(.secondary)
+                        .lineLimit(usesAccessibilityLayout ? 2 : 1)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 if model.isLoading {
@@ -341,25 +343,41 @@ struct SummaryMetric: View {
     let symbol: String
     let tint: Color
 
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: symbol)
                 .font(.title3)
                 .foregroundStyle(tint)
-                .frame(width: 28, height: 28)
+                .frame(
+                    width: dynamicTypeSize.isAccessibilitySize ? 44 : 28,
+                    height: dynamicTypeSize.isAccessibilitySize ? 44 : 28
+                )
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
                     .font(.headline.monospacedDigit())
+                    .lineLimit(1)
                 Text(title)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .frame(minWidth: 128, alignment: .leading)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .frame(
+            minWidth: dynamicTypeSize.isAccessibilitySize ? 260 : 128,
+            alignment: .leading
+        )
+        .fixedSize(horizontal: false, vertical: true)
+        .background(
+            reduceTransparency || forceReduceTransparency ? AnyShapeStyle(.background) : AnyShapeStyle(.thinMaterial),
+            in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title) \(value)")
     }

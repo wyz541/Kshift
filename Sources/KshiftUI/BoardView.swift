@@ -40,7 +40,10 @@ private struct BoardColumnView: View {
     let column: PersonColumn
     let width: CGFloat
 
-    private let maximumGlassCards = 12
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
+
+    private let maximumGlassCards = 6
 
     private var positions: (max: Int64, next: Int64) {
         let maximum = column.tasks.map(\.position).max() ?? 0
@@ -83,6 +86,7 @@ private struct BoardColumnView: View {
             }
             .scrollIndicators(.hidden)
             .frame(maxHeight: .infinity)
+            .accessibilityIdentifier("board-column-\(column.id)")
 
             Button {
                 model.presentNewTask(
@@ -101,7 +105,7 @@ private struct BoardColumnView: View {
         .frame(maxHeight: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.thinMaterial)
+                .fill(reduceTransparency || forceReduceTransparency ? AnyShapeStyle(.background) : AnyShapeStyle(.thinMaterial))
         )
         .dropDestination(for: String.self) { taskIDs, _ in
             guard let taskID = taskIDs.first else { return false }

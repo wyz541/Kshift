@@ -860,9 +860,22 @@ dependencies = [
 name = "kshift-client"
 version = "0.1.0"
 dependencies = [
- "kshift-core",
+ "chrono",
+ "futures-util",
+ "kshift-contract",
+ "kshift-domain",
+ "prost",
+ "prost-types",
  "serde",
  "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tonic",
+ "tower",
+ "uuid",
+ "zeroize",
 ]
 
 [[package]]
@@ -882,15 +895,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "kshift-core"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "kshift-domain"
 version = "0.1.0"
 dependencies = [
@@ -905,8 +909,15 @@ dependencies = [
 name = "kshift-ffi"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "kshift-client",
+ "kshift-contract",
+ "kshift-domain",
+ "serde",
  "serde_json",
+ "tokio",
+ "tokio-util",
+ "uuid",
 ]
 
 [[package]]
@@ -2147,6 +2158,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
+ "futures-util",
  "libc",
  "pin-project-lite",
  "tokio",
@@ -2808,6 +2820,20 @@ name = "zeroize"
 version = "1.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
+dependencies = [
+ "zeroize_derive",
+]
+
+[[package]]
+name = "zeroize_derive"
+version = "1.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3c50655cbb0fe3fc43170059e702f1ce5e19b84cec58dc87b037a09935c2f328"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
 
 [[package]]
 name = "zerotrie"

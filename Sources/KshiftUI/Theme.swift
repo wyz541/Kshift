@@ -1,6 +1,17 @@
 import KshiftCore
 import SwiftUI
 
+public struct KshiftForceReduceTransparencyKey: EnvironmentKey {
+    public static let defaultValue = false
+}
+
+public extension EnvironmentValues {
+    var kshiftForceReduceTransparency: Bool {
+        get { self[KshiftForceReduceTransparencyKey.self] }
+        set { self[KshiftForceReduceTransparencyKey.self] = newValue }
+    }
+}
+
 extension Color {
     init(hex: String) {
         let cleaned = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
@@ -75,19 +86,30 @@ struct ContentBoard: ViewModifier {
 struct GlassCardSurface: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
 
+    @ViewBuilder
     func body(content: Content) -> some View {
-        content
-            .padding(3)
-            .background {
-                if reduceTransparency || contrast == .increased {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(.background)
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        if reduceTransparency || forceReduceTransparency {
+            content
+                .padding(3)
+                .background(.background, in: shape)
+                .overlay {
+                    shape.strokeBorder(.separator, lineWidth: contrast == .increased ? 2 : 1)
                 }
-            }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: false)
+        } else {
+            content
+                .padding(3)
+                .glassEffect(.regular, in: shape)
+                .overlay {
+                    if contrast == .increased {
+                        shape.strokeBorder(.primary, lineWidth: 2)
+                    }
+                }
+                .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: false)
+        }
     }
 }
 

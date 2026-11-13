@@ -5,6 +5,7 @@ public struct KshiftRootView: View {
     @ObservedObject private var model: AppModel
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShowingFilters = false
 
     public init(model: AppModel) {
@@ -51,7 +52,9 @@ public struct KshiftRootView: View {
                 }
                 .buttonStyle(.glassProminent)
                 .keyboardShortcut("n", modifiers: .command)
-                .accessibilityIdentifier("toolbar-add-task")
+                .accessibilityIdentifier(
+                    dynamicTypeSize.isAccessibilitySize ? "add-task" : "toolbar-add-task"
+                )
             }
         }
         .sheet(item: $model.editorDraft) { draft in

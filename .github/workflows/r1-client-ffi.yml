@@ -1,0 +1,79 @@
+name: R1 client FFI
+
+on:
+  pull_request:
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-client/**"
+      - "crates/kshift-ffi/**"
+      - "include/**"
+      - "Sources/KshiftFFI/**"
+      - "Tests/KshiftFFITests/**"
+      - "swift-tests/**"
+      - "fixtures/tls/**"
+      - "scripts/build-xcframework.sh"
+      - "scripts/test-swift-smoke.sh"
+      - "scripts/verify-xcframework.sh"
+      - "Package.swift"
+      - ".github/workflows/r1-client-ffi.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-client/**"
+      - "crates/kshift-ffi/**"
+      - "include/**"
+      - "Sources/KshiftFFI/**"
+      - "Tests/KshiftFFITests/**"
+      - "swift-tests/**"
+      - "fixtures/tls/**"
+      - "scripts/build-xcframework.sh"
+      - "scripts/test-swift-smoke.sh"
+      - "scripts/verify-xcframework.sh"
+      - "Package.swift"
+      - ".github/workflows/r1-client-ffi.yml"
+
+jobs:
+  client-ffi:
+    runs-on: macos-26
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "26.0"
+      IPHONEOS_DEPLOYMENT_TARGET: "26.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Install iOS Rust targets
+        run: rustup target add aarch64-apple-ios aarch64-apple-ios-sim
+      - name: Rust format
+        run: cargo fmt --all -- --check
+      - name: Rust lint
+        run: cargo clippy --locked -p kshift-client -p kshift-ffi --all-targets --all-features -- -D warnings
+      - name: Rust tests
+        run: cargo test --locked -p kshift-client -p kshift-ffi --all-features
+      - name: Build macOS static library
+        run: cargo build --locked -p kshift-ffi
+      - name: Swift tests
+        run: swift test
+      - name: Swift C ABI smoke test
+        run: scripts/test-swift-smoke.sh
+      - name: Build XCFramework
+        run: scripts/build-xcframework.sh
+      - name: Verify XCFramework provenance
+        run: scripts/verify-xcframework.sh build/kshift-ffi.xcframework
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kshift-ffi-xcframework
+          path: build/kshift-ffi.xcframework
+          if-no-files-found: error
+          retention-days: 7
