@@ -95,9 +95,12 @@ private struct BoardColumnView: View {
                 )
             } label: {
                 Label("添加任务", systemImage: "plus")
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, minHeight: 44)
+                    .background(Color(hex: "#003F80"), in: Capsule())
             }
-            .buttonStyle(.glass)
+            .buttonStyle(.plain)
+            .glassEffect(.regular, in: Capsule())
             .accessibilityLabel("为\(column.title)添加任务")
         }
         .padding(12)
@@ -139,7 +142,7 @@ private struct BoardColumnView: View {
                     .font(.headline)
                 Text("\(column.tasks.count) 项")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             }
             Spacer()
         }

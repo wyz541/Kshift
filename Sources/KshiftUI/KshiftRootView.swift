@@ -14,6 +14,7 @@ public struct KshiftRootView: View {
 
     public var body: some View {
         rootContent
+        .dynamicTypeSize(.xSmall ... .accessibility5)
         .searchable(text: $model.searchText, placement: .toolbar, prompt: "搜索任务")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {

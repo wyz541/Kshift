@@ -29,14 +29,12 @@ struct TaskCard: View {
                     Text(task.title)
                         .font(.headline)
                         .strikethrough(task.status == .done)
-                        .foregroundStyle(task.status == .done ? .secondary : .primary)
-                        .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                        .foregroundStyle(.primary)
 
                     if !task.notes.isEmpty {
                         Text(task.notes)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 4 : 2)
+                            .foregroundStyle(.primary)
                     }
                 }
                 .accessibilityHidden(true)
@@ -44,23 +42,18 @@ struct TaskCard: View {
                 Spacer(minLength: 0)
             }
 
-            HStack(spacing: 7) {
-                Label(task.priority.title, systemImage: "flag.fill")
-                    .font(.caption2.weight(.semibold))
+            HStack(spacing: 10) {
+                Image(systemName: "flag.fill")
                     .foregroundStyle(task.priority.tint)
-                Label(task.status.title, systemImage: task.status.symbol)
-                    .font(.caption2.weight(.semibold))
+                Image(systemName: task.status.symbol)
                     .foregroundStyle(task.status.tint)
                 Spacer()
                 PersonAvatar(person: person, size: 23)
             }
+            .font(.callout)
             .accessibilityHidden(true)
 
             HStack {
-                Label("v\(task.version)", systemImage: "number")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
                 Spacer()
                 Menu {
                     Button {

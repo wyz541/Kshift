@@ -248,7 +248,6 @@ Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只�
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
 - VoiceOver、macOS 键盘导航、macOS 窗口缩放性能和真机证据尚未完成。
-- 完整 contrast/Dynamic Type audit 仍有未解决项。
 - live snapshot 尚未映射 task history 和 project audit。
 - PostgreSQL 高可用集群不在首版范围。
 

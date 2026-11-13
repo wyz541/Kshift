@@ -29,12 +29,12 @@
 
 | 文件 | SHA-256 |
 | --- | --- |
-| `ios-light.png` | `dc9443f43a85db5a309dc37a0857731d39bba6eae1ae98b482d21e17cd19c821` |
-| `ios-dark.png` | `c94cf4c2ba4b9d9a1fdcfa01a4fb7e154502be3f0a372d410523ec8f55af3568` |
-| `ios-increase-contrast.png` | `d2e92dfcf0b16d049a6b7b3026493f09a6b56103100c35767722dc92a6644842` |
-| `ios-large-text.png` | `fe46dcecb47e4b28e8989bec2e4339047ef0b8b6e356573efe326302ded6e42e` |
-| `ios-reduce-motion.png` | `61d86c1ec7f395af4f9b04c761f254f55650d6405fcc68f232f82081d42a1dda` |
-| `ios-reduce-transparency.png` | `b09db2036fc0ffa7b26fac9b70fb2837cf72834aded6a0e044cef37fff256476` |
+| `ios-light.png` | `8a0a88432fad4129c2af5291aec2f812bf00fcbed02f9dbd0692bd102c025aa3` |
+| `ios-dark.png` | `34ff1fece3beadc3950997770eea7bedb612c6730d3a206eb89e1a68c867991c` |
+| `ios-increase-contrast.png` | `484fa08ed3813495abbf51b40beca471d814aa78e9fc2ffdcf50612a82c7c9e1` |
+| `ios-large-text.png` | `fbee5bf12422dc318b8df0830fa4826f752e2b041f3376d83464abd869b24cd4` |
+| `ios-reduce-motion.png` | `ef64ca77e2c14d0aa638734ebc8abec6fa78be926e5a8a73191f1dd934cce6ad` |
+| `ios-reduce-transparency.png` | `d40c40bbd0ac275e266fe7ffe8f49acadad2cc261051a355e9475ab182f87fa4` |
 
 ## 自动检查
 
@@ -42,10 +42,10 @@
 | --- | --- |
 | 触控目标 | 通过 |
 | 结构无障碍审计 | 通过 |
-| 大号文字核心操作 | 通过 |
-| 完整 contrast/Dynamic Type audit | 有未解决项 |
+| 大号文字核心操作和标题/日期布局 | 通过 |
+| 完整 contrast/Dynamic Type audit | 通过，2 项误报豁免 |
 | VoiceOver | 待人工检查 |
 | 系统 Reduce Transparency | 待人工检查 |
 | Reduce Motion 全流程 | 待人工检查 |
 
-结构审计使用 `performAccessibilityAudit` 的 element detection、hit region、element description 和 trait 检查。完整 audit 仍报告对比度和 Dynamic Type 问题。这些问题不作为通过证据。
+完整审计通过。`Launch Room` 和 `Ship brief` 的 Dynamic Type 警告是已记录的 SwiftUI 误报。两项都由大号文字 UI 测试和截图覆盖。

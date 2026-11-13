@@ -6,13 +6,14 @@ struct PlannerView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShowingFilters = false
+    @State private var isShowingProjectPicker = false
 
     private var usesAccessibilityLayout: Bool {
         dynamicTypeSize.isAccessibilitySize
     }
 
     private var projectTitleFont: Font {
-        usesAccessibilityLayout ? .title2.weight(.bold) : .largeTitle.weight(.bold)
+        usesAccessibilityLayout ? .title3.weight(.bold) : .largeTitle.weight(.bold)
     }
 
     private var selectedDateTitle: String {
@@ -62,11 +63,15 @@ struct PlannerView: View {
                         } else {
                             Label("添加任务", systemImage: "plus")
                                 .font(.headline)
+                                .foregroundStyle(.white)
                                 .frame(minHeight: 44)
+                                .padding(.horizontal, 18)
+                                .background(Color(hex: "#003F80"), in: Capsule())
                                 .contentShape(Rectangle())
                         }
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.plain)
+                    .glassEffect(.regular, in: Capsule())
                     .padding(20)
                     .accessibilityLabel("添加任务")
                     .accessibilityIdentifier("add-task")
@@ -82,42 +87,49 @@ struct PlannerView: View {
                     if horizontalSizeClass == .regular {
                         Text(model.selectedProject?.name ?? "Kshift")
                             .font(projectTitleFont)
-                            .lineLimit(usesAccessibilityLayout ? 2 : 1)
+                            .dynamicTypeSize(.large ... .accessibility1)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                     } else {
-                        Menu {
-                            ForEach(model.projects) { project in
-                                Button {
-                                    model.selectedProjectID = project.id
-                                } label: {
-                                    if project.id == model.selectedProjectID {
-                                        Label(project.name, systemImage: "checkmark")
-                                    } else {
-                                        Text(project.name)
-                                    }
-                                }
-                            }
+                        Button {
+                            isShowingProjectPicker = true
                         } label: {
                             HStack(spacing: 8) {
                                 Text(model.selectedProject?.name ?? "Kshift")
                                     .font(projectTitleFont)
-                                    .lineLimit(usesAccessibilityLayout ? 2 : 1)
+                                    .dynamicTypeSize(.large ... .accessibility1)
+                                    .multilineTextAlignment(.leading)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.5)
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.headline)
                                     .foregroundStyle(.secondary)
                             }
-                            .frame(minHeight: 44, alignment: .leading)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .frame(minHeight: 44, alignment: .leading)
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                         .accessibilityLabel("切换项目，当前 \(model.selectedProject?.name ?? "Kshift")")
                         .accessibilityIdentifier("project-switcher")
+                        .confirmationDialog(
+                            "切换项目",
+                            isPresented: $isShowingProjectPicker,
+                            titleVisibility: .visible
+                        ) {
+                            ForEach(model.projects) { project in
+                                Button(project.name) {
+                                    model.selectedProjectID = project.id
+                                }
+                            }
+                            Button("取消", role: .cancel) {}
+                        }
                     }
                     Text(selectedDateTitle)
                         .font(.title3.weight(.medium))
                         .foregroundStyle(.secondary)
-                        .lineLimit(usesAccessibilityLayout ? 2 : 1)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("selected-date")
                 }
                 Spacer()
                 if model.isLoading {
@@ -363,8 +375,8 @@ struct SummaryMetric: View {
                     .lineLimit(1)
                 Text(title)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(.horizontal, 14)

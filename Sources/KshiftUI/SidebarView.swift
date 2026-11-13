@@ -145,11 +145,17 @@ struct PersonAvatar: View {
     var size: CGFloat = 32
 
     var body: some View {
-        Text(person.initials)
-            .font(.system(size: size * 0.34, weight: .bold, design: .rounded))
+        Image(systemName: "person.fill")
+            .font(.caption.weight(.bold))
             .foregroundStyle(.white)
             .frame(width: size, height: size)
-            .background(Color(hex: person.colorHex), in: Circle())
+            .background {
+                Circle()
+                    .fill(Color(hex: person.colorHex))
+                    .overlay {
+                        Circle().fill(.black.opacity(0.28))
+                    }
+            }
             .accessibilityHidden(true)
     }
 }

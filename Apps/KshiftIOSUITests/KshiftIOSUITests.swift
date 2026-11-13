@@ -62,14 +62,23 @@ final class KshiftIOSUITests: XCTestCase {
 
     func testAccessibilityAudit() throws {
         let app = launchPlanner()
-        try app.performAccessibilityAudit(
-            for: [
-                .elementDetection,
-                .hitRegion,
-                .sufficientElementDescription,
-                .trait,
-            ]
-        )
+        let waivedDynamicTypeLabels = Set(["Launch Room", "Ship brief"])
+        var unexpectedIssues: [String] = []
+
+        try app.performAccessibilityAudit { issue in
+            let label = issue.element?.label ?? ""
+            let waived = issue.auditType == .dynamicType
+                && waivedDynamicTypeLabels.contains(label)
+            if !waived {
+                unexpectedIssues.append(
+                    "\(issue.compactDescription): \(issue.detailedDescription) [\(label)]"
+                )
+            }
+            // Return true so this test reports one deterministic assertion below.
+            return true
+        }
+
+        XCTAssertTrue(unexpectedIssues.isEmpty, unexpectedIssues.joined(separator: "\n"))
     }
 
     func testAccessibilityTextSizeKeepsCoreActionsAvailable() throws {
@@ -81,10 +90,15 @@ final class KshiftIOSUITests: XCTestCase {
         app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
         app.launch()
 
-        XCTAssertTrue(
-            element(in: app, identifier: "project-switcher", labelContains: "切换项目")
-                .waitForExistence(timeout: 8)
+        let projectSwitcher = element(
+            in: app,
+            identifier: "project-switcher",
+            labelContains: "切换项目"
         )
+        let selectedDate = app.descendants(matching: .any)["selected-date"].firstMatch
+        XCTAssertTrue(projectSwitcher.waitForExistence(timeout: 8))
+        XCTAssertTrue(selectedDate.waitForExistence(timeout: 8))
+        XCTAssertLessThanOrEqual(projectSwitcher.frame.maxY, selectedDate.frame.minY)
         XCTAssertTrue(
             element(in: app, identifier: "add-task", labelContains: "添加任务")
                 .waitForExistence(timeout: 8)

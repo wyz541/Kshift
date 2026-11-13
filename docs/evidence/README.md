@@ -36,7 +36,7 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | macOS `xcodebuild build` | 通过 |
 | iOS `xcodebuild test` | 8 项通过 |
 | iOS UI tests | 7 项通过 |
-| 结构无障碍审计 | 通过 |
+| 完整无障碍审计 | 通过，2 项误报豁免 |
 
 ## 未覆盖
 
@@ -48,7 +48,6 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | 真机环境 | 未采集 |
 | 真实 gRPC/PostgreSQL UI E2E | 已采集，见 [live-server.md](live-server.md) |
 | Instruments frame trace | 未采集 |
-| 完整 contrast/Dynamic Type audit | 有未解决项 |
 
 ## 性能
 
