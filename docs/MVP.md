@@ -1,3 +1,18 @@
+---
+slug: /docs/r2-mvp
+title: R2 MVP 证据
+type: report
+status: review
+updated: "2026-11-13"
+keywords:
+  - R2
+  - MVP
+  - SwiftUI
+  - Liquid Glass
+  - 验收证据
+description: 记录 R2 日计划 MVP 的功能映射、自动证据、性能和剩余限制。
+---
+
 # R2 MVP 证据
 
 结论：#7 的共享 SwiftUI 日计划 MVP 已可构建和运行。UI 已通过 `kshift-ffi`、Rust client 和 TLS gRPC 读取真实 PostgreSQL 数据。

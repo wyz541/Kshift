@@ -1,3 +1,18 @@
+---
+slug: /evidence/accessibility
+title: iOS 无障碍证据
+type: report
+status: review
+updated: "2026-11-13"
+keywords:
+  - iOS
+  - 无障碍
+  - Dynamic Type
+  - 对比度
+  - 截图
+description: 记录 iOS 无障碍截图、SHA-256 和自动审计结果。
+---
+
 # iOS 无障碍证据
 
 结论：6 张 iOS 截图已采集。Reduce Transparency 使用应用环境覆盖，不是系统设置开关。

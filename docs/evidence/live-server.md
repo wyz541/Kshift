@@ -1,3 +1,18 @@
+---
+slug: /evidence/live-server
+title: 真实服务端 E2E
+type: report
+status: review
+updated: "2026-11-13"
+keywords:
+  - gRPC
+  - PostgreSQL
+  - TLS
+  - E2E
+  - FFI
+description: 记录 iOS 和 macOS App 通过真实 TLS gRPC server 读取和写入 PostgreSQL 的证据。
+---
+
 # 真实服务端 E2E
 
 结论：iOS 和 macOS App 已通过真实 TLS gRPC server 读取 PostgreSQL 数据。批量状态命令也已通过 service integration test。

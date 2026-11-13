@@ -1,3 +1,18 @@
+---
+slug: /docs/client-ffi
+title: Kshift Rust Client 与 C ABI
+type: reference
+status: review
+updated: "2026-11-13"
+keywords:
+  - Rust client
+  - C ABI
+  - FFI
+  - TLS gRPC
+  - Swift
+description: 说明 Kshift Rust client、C ABI、缓存、重试和 Swift 边界。
+---
+
 # Kshift Rust Client 与 C ABI
 
 本文记录 Issue #5 的实现边界。Transport 和业务类型由 R1 workspace 提供。

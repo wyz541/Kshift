@@ -1,3 +1,18 @@
+---
+slug: /docs/ffi
+title: Kshift FFI
+type: reference
+status: review
+updated: "2026-11-13"
+keywords:
+  - FFI
+  - C ABI
+  - Swift
+  - Rust
+  - JSON
+description: 说明 Kshift C ABI 的函数、所有权、Swift 加载规则和内存边界。
+---
+
 # Kshift FFI
 
 结论：Swift host 只读取 JSON，不接收 protobuf、tonic、SQLx 或数据库类型。

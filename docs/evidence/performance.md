@@ -1,3 +1,18 @@
+---
+slug: /evidence/performance
+title: iOS 性能读数
+type: report
+status: review
+updated: "2026-11-13"
+keywords:
+  - iOS
+  - 性能
+  - XCUITest
+  - XCTClockMetric
+  - 证据
+description: 记录 iOS 看板滚动、拖拽和 Sheet 打开的 XCUITest 性能读数。
+---
+
 # iOS 性能读数
 
 结论：3 项 iOS XCUITest 性能读数已采集。

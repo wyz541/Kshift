@@ -1,3 +1,18 @@
+---
+slug: /evidence
+title: R2 证据
+type: report
+status: review
+updated: "2026-11-13"
+keywords:
+  - R2
+  - 截图
+  - 无障碍
+  - 性能
+  - 证据
+description: 汇总 R2 的截图、自动门禁、性能读数和剩余限制。
+---
+
 # R2 证据
 
 结论：R2 的 macOS 和 iOS 主页面已截图。iOS 自动测试、无障碍审计和性能读数已通过。
