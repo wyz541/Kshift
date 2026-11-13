@@ -10,6 +10,9 @@ DerivedData/
 xcuserdata/
 .swiftpm/
 
+# Build output
+/build/
+
 # Generated code
 /proto/gen/
 /generated/
