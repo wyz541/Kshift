@@ -99,28 +99,34 @@ struct TaskDetailView: View {
                 }
 
                 detailSection("历史") {
-                    VStack(spacing: 0) {
-                        ForEach(Array(task.history.reversed())) { entry in
-                            HStack(alignment: .top, spacing: 12) {
-                                Circle()
-                                    .fill(.tint)
-                                    .frame(width: 8, height: 8)
-                                    .padding(.top, 6)
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(entry.summary)
-                                        .font(.callout.weight(.medium))
-                                    Text("\(model.actorName(for: entry.actorID)) · revision \(entry.revision)")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(model.displayTimestamp(entry.occurredAt))
-                                        .font(.caption2.monospacedDigit())
-                                        .foregroundStyle(.tertiary)
+                    if task.history.isEmpty {
+                        Text("暂无历史记录")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        VStack(spacing: 0) {
+                            ForEach(Array(task.history.reversed())) { entry in
+                                HStack(alignment: .top, spacing: 12) {
+                                    Circle()
+                                        .fill(.tint)
+                                        .frame(width: 8, height: 8)
+                                        .padding(.top, 6)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        Text(entry.summary)
+                                            .font(.callout.weight(.medium))
+                                        Text("\(model.actorName(for: entry.actorID)) · revision \(entry.revision)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Text(model.displayTimestamp(entry.occurredAt))
+                                            .font(.caption2.monospacedDigit())
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    Spacer()
                                 }
-                                Spacer()
-                            }
-                            .padding(.vertical, 9)
-                            if entry.id != task.history.first?.id {
-                                Divider()
+                                .padding(.vertical, 9)
+                                .accessibilityIdentifier("task-history-\(entry.id)")
+                                if entry.id != task.history.first?.id {
+                                    Divider()
+                                }
                             }
                         }
                     }

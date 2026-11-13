@@ -26,7 +26,9 @@ final class KshiftIOSUITests: XCTestCase {
         if !created.waitForExistence(timeout: 3) {
             let column = app.scrollViews["board-column-person-mia"].firstMatch
             if column.waitForExistence(timeout: 3) {
-                column.swipeUp()
+                for _ in 0..<3 where !created.exists {
+                    column.swipeUp()
+                }
             }
         }
         XCTAssertTrue(created.waitForExistence(timeout: 5), app.debugDescription)
@@ -109,6 +111,49 @@ final class KshiftIOSUITests: XCTestCase {
         )
     }
 
+    func testLiveServerHistoryAndWriteE2E() throws {
+        let app = try launchLivePlanner()
+        attachScreenshot(app, named: "ios-live-server")
+        XCTAssertTrue(app.staticTexts["当日任务 2"].waitForExistence(timeout: 8))
+        let initialTask = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Live history task"))
+            .firstMatch
+        XCTAssertTrue(initialTask.waitForExistence(timeout: 15), app.debugDescription)
+        initialTask.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["task-detail"]
+                .waitForExistence(timeout: 8),
+            app.debugDescription
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "label CONTAINS %@", "创建任务 Live history task"))
+                .firstMatch
+                .waitForExistence(timeout: 8),
+            app.debugDescription
+        )
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "label CONTAINS %@", "更新任务 Live history task"))
+                .firstMatch
+                .waitForExistence(timeout: 8),
+            app.debugDescription
+        )
+        app.buttons["关闭"].firstMatch.tap()
+
+        firstMiaAddTask(in: app).tap()
+        let titleField = taskTitleField(in: app)
+        titleField.tap()
+        titleField.typeText("Live UI created task")
+        app.buttons["保存"].firstMatch.tap()
+
+        XCTAssertTrue(
+            app.staticTexts["当日任务 3"].waitForExistence(timeout: 15),
+            app.debugDescription
+        )
+    }
+
     func testSheetOpenAndClosePerformance() throws {
         let app = launchPlanner()
         let addTask = firstMiaAddTask(in: app)
@@ -165,6 +210,32 @@ final class KshiftIOSUITests: XCTestCase {
         return app
     }
 
+    private func launchLivePlanner() throws -> XCUIApplication {
+        let environment = ProcessInfo.processInfo.environment
+        guard let endpoint = environment["KSHIFT_ENDPOINT"],
+              let caPath = environment["KSHIFT_CA_PATH"],
+              let token = environment["KSHIFT_TOKEN"],
+              let actorID = environment["KSHIFT_ACTOR_ID"]
+        else {
+            throw XCTSkip("Set live UI server environment to run the live E2E test.")
+        }
+        let caPEM = try String(contentsOfFile: caPath, encoding: .utf8)
+        let app = XCUIApplication()
+        app.launchEnvironment["KSHIFT_USE_FFI"] = "1"
+        app.launchEnvironment["KSHIFT_ENDPOINT"] = endpoint
+        app.launchEnvironment["KSHIFT_CA_PEM"] = caPEM
+        app.launchEnvironment["KSHIFT_TOKEN"] = token
+        app.launchEnvironment["KSHIFT_ACTOR_ID"] = actorID
+        app.launchEnvironment["KSHIFT_TLS_DOMAIN"] = "localhost"
+        app.launch()
+        XCTAssertTrue(
+            element(in: app, identifier: "project-switcher", labelContains: "Live Kshift")
+                .waitForExistence(timeout: 15),
+            app.debugDescription
+        )
+        return app
+    }
+
     private func element(
         in app: XCUIApplication,
         identifier: String,
@@ -198,5 +269,12 @@ final class KshiftIOSUITests: XCTestCase {
         }
         XCTAssertTrue(titleField.waitForExistence(timeout: 8))
         return titleField
+    }
+
+    private func attachScreenshot(_ app: XCUIApplication, named name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

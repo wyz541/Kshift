@@ -3,7 +3,7 @@ RUST_BIN := $(HOME)/.rustup/toolchains/stable-aarch64-apple-darwin/bin
 CARGO_HOME := $(CURDIR)/.build/cargo-home
 CARGO := $(RUST_BIN)/cargo
 RUST_ENV := PATH="$(RUST_BIN):$$PATH" CARGO_HOME="$(CARGO_HOME)"
-.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test ffi swift-build swift-test project mac-build ios-build ios-test test verify clean
+.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e test verify clean
 
 prepare-cargo-home:
 	@mkdir -p "$(CARGO_HOME)"
@@ -42,6 +42,9 @@ ios-build: ffi project
 
 ios-test: ffi project
 	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+
+live-ui-e2e:
+	KSHIFT_CARGO_OFFLINE=1 ./scripts/run-live-ui-e2e.sh
 
 test: rust-fmt rust-lint rust-test swift-test
 	KSHIFT_SKIP_XCODE_TESTS=1 ./scripts/verify.sh

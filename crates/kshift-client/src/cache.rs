@@ -481,6 +481,7 @@ mod tests {
             },
             members: Vec::new(),
             tasks: Vec::new(),
+            audit: Vec::new(),
             generated_at: now,
         }
     }

@@ -50,7 +50,7 @@ description: 记录 Issue #4 的质量门禁、migration digest 和恢复演练�
 ## Migration evidence
 
 ```text
-schema_version=1
+schema_version=2
 migration_count=1
 migration_digest=aeb741b70beef004eb4d8a5db3d183466a042cf40d91b1e6118d3b8f643b8e49
 postgres_version=18.6 (Homebrew)

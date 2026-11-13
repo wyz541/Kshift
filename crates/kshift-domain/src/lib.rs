@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
-pub const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 2;
 pub const MAX_PROJECT_NAME_CHARS: usize = 120;
 pub const MAX_TIME_ZONE_CHARS: usize = 64;
 pub const MAX_TASK_TITLE_CHARS: usize = 200;
@@ -104,7 +104,19 @@ pub struct ProjectSnapshot {
     pub project: Project,
     pub members: Vec<ProjectMember>,
     pub tasks: Vec<Task>,
+    pub audit: Vec<ProjectAuditEntry>,
     pub generated_at: DateTime<Utc>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ProjectAuditEntry {
+    pub id: Uuid,
+    pub revision: Option<u64>,
+    pub action: String,
+    pub summary: String,
+    pub task_id: Option<Uuid>,
+    pub actor_id: Uuid,
+    pub occurred_at: DateTime<Utc>,
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq)]

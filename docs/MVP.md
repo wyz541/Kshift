@@ -50,7 +50,7 @@ flowchart LR
 | 搜索、筛选、排序 | `AppModel.filteredTasks` | `testSearchAndFiltersReduceDailyTasks` | 已验证 |
 | 批量处理 | `BatchUpdateTasksCommand` | service integration 和 live server | 已验证，单事务原子提交 |
 | 并发冲突 | revision 和 task version | Rust conflict tests、`testConflictIsExplicitAndDoesNotReplaceSnapshot` | 已验证到 server、adapter 和假客户端 |
-| 历史 | task history 和 project audit UI | 尚无 live snapshot 字段映射 | 未完成 live 验证 |
+| 历史 | task history 和 project audit UI | Swift mapping tests、service integration、iOS live UI E2E | 已验证 live snapshot |
 | Liquid Glass | 原生 Glass API | `scripts/verify.sh` 结构检查 | 已验证 |
 | 唯一日计划 UI | `KshiftRootView` 和 `AppModel` | app entry tests、`scripts/check-platform-boundaries.sh` | 已验证 |
 | FFI-only boundary | UI 只调用 `KshiftClientProtocol` | `scripts/check-platform-boundaries.sh` | 已验证 |
@@ -71,9 +71,9 @@ flowchart LR
 
 | 场景 | 设备 | 平均值 | RSD | 样本 |
 | --- | --- | ---: | ---: | ---: |
-| 看板左右滚动 | iPhone 18 Pro，iOS 27.0 模拟器 | 2.948 s | 1.009% | 3 |
-| 拖拽 | iPhone 18 Pro，iOS 27.0 模拟器 | 1.671 s | 0% | 1 |
-| Sheet 打开和关闭 | iPhone 18 Pro，iOS 27.0 模拟器 | 7.386 s | 0.270% | 3 |
+| 看板左右滚动 | iPhone 18 Pro，iOS 27.0 模拟器 | 2.941 s | 0.877% | 3 |
+| 拖拽 | iPhone 18 Pro，iOS 27.0 模拟器 | 1.689 s | 0% | 1 |
+| Sheet 打开和关闭 | iPhone 18 Pro，iOS 27.0 模拟器 | 7.378 s | 0.344% | 3 |
 
 这些数值来自 `XCTClockMetric`。数值是 XCUITest automation clock，不是帧耗时，也不是 Instruments trace。真实服务端 E2E 见 [Live server evidence](evidence/live-server.md)。性能详见 [Performance](evidence/performance.md)。
 
@@ -103,4 +103,4 @@ flowchart LR
 
 | 项目 | 原因 |
 | --- | --- |
-| task history 和 project audit 的 live 映射 | 当前 snapshot JSON 不含所需历史字段 |
+| Instruments frame trace | 当前性能读数来自 XCUITest automation clock |

@@ -260,6 +260,17 @@ message ProjectChangeEvent {
   google.protobuf.Timestamp committed_at = 6;
 }
 
+// ProjectAuditEntry is one bounded audit record in a project snapshot.
+message ProjectAuditEntry {
+  string id = 1;
+  optional uint64 revision = 2;
+  string action = 3;
+  string summary = 4;
+  optional string task_id = 5;
+  string actor_id = 6;
+  google.protobuf.Timestamp occurred_at = 7;
+}
+
 // GetProjectSnapshotResponse returns an immutable full project view.
 message GetProjectSnapshotResponse {
   string schema_version = 1;
@@ -269,6 +280,7 @@ message GetProjectSnapshotResponse {
   repeated ProjectMember members = 5;
   repeated Task tasks = 6;
   google.protobuf.Timestamp generated_at = 7;
+  repeated ProjectAuditEntry audit = 8;
 }
 
 // CommandResult is the committed outcome of a write.

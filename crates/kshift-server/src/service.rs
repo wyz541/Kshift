@@ -6,8 +6,8 @@ use contract::{
     project_to_proto, reset_reason_to_string, v1, ApiError, ParsedCommand, MAX_EVENT_BYTES,
 };
 use domain::{
-    Change, ChangeEvent, Command, ProjectMember, ProjectRole, ProjectSnapshot, ResetReason, Task,
-    TaskPatch, TaskPriority, TaskStatus, SCHEMA_VERSION,
+    Change, ChangeEvent, Command, ProjectAuditEntry, ProjectMember, ProjectRole, ProjectSnapshot,
+    ResetReason, Task, TaskPatch, TaskPriority, TaskStatus, SCHEMA_VERSION,
 };
 use futures_util::Stream;
 use prost::Message;
@@ -26,6 +26,7 @@ use crate::{
 };
 
 const IDEMPOTENCY_RETENTION_DAYS: i32 = 7;
+const MAX_AUDIT_ENTRIES: i64 = 100;
 
 #[derive(Clone, Debug)]
 pub struct ApiSettings {
@@ -141,6 +142,7 @@ impl KshiftApi {
         let access = load_authorized_project(&mut tx, actor, project_id, false).await?;
         let members = load_project_members(&mut tx, project_id).await?;
         let tasks = load_project_tasks(&mut tx, project_id).await?;
+        let audit = load_project_audit(&mut tx, project_id).await?;
         tx.commit()
             .await
             .map_err(|error| database_error(error, "commit snapshot transaction"))?;
@@ -149,6 +151,7 @@ impl KshiftApi {
             project: access.project.try_into_domain()?,
             members,
             tasks,
+            audit,
             generated_at: Utc::now(),
         })
     }
@@ -876,6 +879,8 @@ async fn apply_create_task(
     draft: TaskDraft<'_>,
     now: DateTime<Utc>,
 ) -> Result<Task, ApiError> {
+    let mut assignee_ids = draft.assignee_ids.to_vec();
+    assignee_ids.sort_by_key(ToString::to_string);
     validate_task_links(
         tx,
         project_id,
@@ -884,7 +889,7 @@ async fn apply_create_task(
         draft.dependency_task_ids,
     )
     .await?;
-    validate_assignees(tx, project_id, draft.assignee_ids).await?;
+    validate_assignees(tx, project_id, &assignee_ids).await?;
 
     sqlx::query(
         r#"
@@ -912,13 +917,7 @@ async fn apply_create_task(
     .execute(&mut **tx)
     .await
     .map_err(|error| command_database_error(error, "create task"))?;
-    replace_task_relations(
-        tx,
-        draft.task_id,
-        draft.assignee_ids,
-        draft.dependency_task_ids,
-    )
-    .await?;
+    replace_task_relations(tx, draft.task_id, &assignee_ids, draft.dependency_task_ids).await?;
 
     Ok(Task {
         id: draft.task_id,
@@ -927,7 +926,7 @@ async fn apply_create_task(
         description_markdown: draft.description_markdown.to_owned(),
         status: draft.status,
         priority: draft.priority,
-        assignee_ids: draft.assignee_ids.to_vec(),
+        assignee_ids,
         planned_on: draft.planned_on,
         starts_on: draft.starts_on,
         due_on: draft.due_on,
@@ -1019,7 +1018,8 @@ async fn apply_update_task(
             current_entity_version: Some(existing.version),
         });
     }
-    let updated = domain::update_task(&existing, patch, actor.id).map_err(ApiError::from)?;
+    let mut updated = domain::update_task(&existing, patch, actor.id).map_err(ApiError::from)?;
+    updated.assignee_ids.sort_by_key(ToString::to_string);
     validate_task_links(
         tx,
         project_id,
@@ -1561,6 +1561,31 @@ async fn load_project_tasks(
             )
         })
         .collect()
+}
+
+async fn load_project_audit(
+    tx: &mut Transaction<'_, Postgres>,
+    project_id: Uuid,
+) -> Result<Vec<ProjectAuditEntry>, ApiError> {
+    let mut rows = sqlx::query_as::<_, AuditRow>(
+        r#"
+        SELECT a.id, e.revision, a.actor_id, a.command_name, a.entity_type,
+               a.entity_id, a.before_data, a.after_data, a.occurred_at
+        FROM kshift.audit_log a
+        LEFT JOIN kshift.change_event e
+          ON e.project_id = a.project_id AND e.command_id = a.command_id
+        WHERE a.project_id = $1
+        ORDER BY a.occurred_at DESC, a.id DESC
+        LIMIT $2
+        "#,
+    )
+    .bind(project_id)
+    .bind(MAX_AUDIT_ENTRIES)
+    .fetch_all(&mut **tx)
+    .await
+    .map_err(|error| database_error(error, "load project audit entries"))?;
+    rows.reverse();
+    rows.into_iter().map(AuditRow::into_domain).collect()
 }
 
 async fn load_project_relations(
@@ -2195,6 +2220,33 @@ fn prost_types_timestamp(value: DateTime<Utc>) -> prost_types::Timestamp {
     }
 }
 
+fn audit_summary(
+    action: &str,
+    before_data: Option<&serde_json::Value>,
+    after_data: Option<&serde_json::Value>,
+) -> String {
+    let label = audit_label(after_data)
+        .or_else(|| audit_label(before_data))
+        .unwrap_or("未知对象");
+    let verb = match action {
+        "create_project" => "创建项目",
+        "add_project_member" => "更新成员",
+        "create_task" => "创建任务",
+        "update_task" => "更新任务",
+        "delete_task" => "删除任务",
+        "batch_update_tasks" => "批量更新任务",
+        _ => "更新项目",
+    };
+    format!("{verb} {label}")
+}
+
+fn audit_label(data: Option<&serde_json::Value>) -> Option<&str> {
+    let data = data?;
+    ["title", "name", "display_name"]
+        .into_iter()
+        .find_map(|key| data.get(key).and_then(serde_json::Value::as_str))
+}
+
 #[derive(sqlx::FromRow)]
 struct CommandResultRow {
     project_id: Uuid,
@@ -2230,6 +2282,40 @@ struct MemberRow {
     user_id: Uuid,
     display_name: String,
     role: String,
+}
+
+#[derive(sqlx::FromRow)]
+struct AuditRow {
+    id: Uuid,
+    revision: Option<i64>,
+    actor_id: Uuid,
+    command_name: String,
+    entity_type: String,
+    entity_id: Uuid,
+    before_data: Option<serde_json::Value>,
+    after_data: Option<serde_json::Value>,
+    occurred_at: DateTime<Utc>,
+}
+
+impl AuditRow {
+    fn into_domain(self) -> Result<ProjectAuditEntry, ApiError> {
+        Ok(ProjectAuditEntry {
+            id: self.id,
+            revision: self
+                .revision
+                .map(|revision| u64::try_from(revision).map_err(|_| ApiError::Internal))
+                .transpose()?,
+            action: self.command_name.clone(),
+            summary: audit_summary(
+                &self.command_name,
+                self.before_data.as_ref(),
+                self.after_data.as_ref(),
+            ),
+            task_id: (self.entity_type == "task").then_some(self.entity_id),
+            actor_id: self.actor_id,
+            occurred_at: self.occurred_at,
+        })
+    }
 }
 
 impl TryFrom<MemberRow> for ProjectMember {

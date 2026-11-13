@@ -61,6 +61,7 @@ impl MockService {
                 .lock()
                 .unwrap_or_else(|poisoned| poisoned.into_inner())
                 .clone(),
+            audit: Vec::new(),
             generated_at: now(),
         }
     }

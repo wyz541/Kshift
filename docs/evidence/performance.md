@@ -32,15 +32,15 @@ description: 记录 iOS 看板滚动、拖拽和 Sheet 打开的 XCUITest 性能
 
 | 场景 | 平均值 | RSD | 样本数 | 原始值 |
 | --- | ---: | ---: | ---: | --- |
-| 看板左右滚动 | 2.948 s | 1.009% | 3 | 2.987950、2.916906、2.938454 |
-| 拖拽 “Ship brief” | 1.671 s | 0% | 1 | 1.671183 |
-| Sheet 打开和关闭 | 7.386 s | 0.270% | 3 | 7.412667、7.382007、7.364356 |
+| 看板左右滚动 | 2.941 s | 0.877% | 3 | 2.904966、2.954079、2.963938 |
+| 拖拽 “Ship brief” | 1.689 s | 0% | 1 | 1.688760 |
+| Sheet 打开和关闭 | 7.378 s | 0.344% | 3 | 7.406994、7.345282、7.382282 |
 
 ## 读取方法
 
 ```sh
 xcrun xcresulttool get test-results metrics \
-  --path '/Users/wyz/Library/Developer/Xcode/DerivedData/Kshift-efiloqhuibevqqdtynrqdqvdqvhs/Logs/Test/Test-Kshift-iOS-2026.11.13_16-15-15-+0800.xcresult' \
+  --path '/Users/wyz/Library/Developer/Xcode/DerivedData/Kshift-fvzzwfvjswduwihbpwffjlhipova/Logs/Test/Test-Kshift-iOS-2026.11.13_19-41-29-+0800.xcresult' \
   --format json
 ```
 

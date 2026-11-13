@@ -43,8 +43,8 @@
 		6B1EEED301D5012C43635AE5 /* KshiftIOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSUITests.swift; sourceTree = "<group>"; };
 		7A3F0217B2DC3602D48C8267 /* Kshift-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Kshift-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8AFCE71B6AD48FCFFDE43BF6 /* KshiftIOSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSTests.swift; sourceTree = "<group>"; };
+		8E7E2249E524A14FE150BE1A /* issue-7-live-history-e2e */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "issue-7-live-history-e2e"; path = .; sourceTree = SOURCE_ROOT; };
 		9F39A45AE2415DDC1E0064FD /* Kshift-iOS-PlannerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Kshift-iOS-PlannerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
-		A47197573B9EF60E1370DB4D /* issue-7-r2-daily-planner */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "issue-7-r2-daily-planner"; path = .; sourceTree = SOURCE_ROOT; };
 		AAB3FF5A5FC18B63FBFD0848 /* KshiftIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -91,7 +91,7 @@
 		913F907064FB6F47F615A65E /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				A47197573B9EF60E1370DB4D /* issue-7-r2-daily-planner */,
+				8E7E2249E524A14FE150BE1A /* issue-7-live-history-e2e */,
 			);
 			name = Packages;
 			sourceTree = "<group>";

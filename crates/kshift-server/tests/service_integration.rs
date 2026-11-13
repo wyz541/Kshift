@@ -256,6 +256,89 @@ async fn concurrent_writes_do_not_silently_overwrite() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn snapshot_maps_task_history_and_project_audit() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    db.seed_user(admin_id, "Audit User", true).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "audit-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Audit Project"),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("project should be created");
+    let task = created_task(
+        api.api
+            .execute_command(request(
+                create_task(
+                    project_id,
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    "Initial audit task",
+                    "",
+                    1,
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .expect("task should be created")
+            .into_inner(),
+    );
+    let task_id = Uuid::parse_str(&task.id).expect("task id should be a UUID");
+
+    api.api
+        .execute_command(request(
+            update_task_title(
+                project_id,
+                Uuid::new_v4(),
+                task_id,
+                "Updated audit task",
+                2,
+                1,
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("task should be updated");
+
+    let snapshot = api
+        .api
+        .get_project_snapshot(request(
+            v1::GetProjectSnapshotRequest {
+                project_id: project_id.to_string(),
+            },
+            api.token(admin_id),
+        ))
+        .await
+        .expect("snapshot should include audit data")
+        .into_inner();
+
+    assert_eq!(snapshot.revision, 3);
+    assert_eq!(snapshot.audit.len(), 3);
+    assert_eq!(snapshot.audit[0].action, "create_project");
+    assert_eq!(snapshot.audit[0].summary, "创建项目 Audit Project");
+    assert_eq!(snapshot.audit[0].revision, Some(1));
+    assert_eq!(snapshot.audit[1].action, "create_task");
+    assert_eq!(snapshot.audit[1].summary, "创建任务 Initial audit task");
+    assert_eq!(snapshot.audit[1].revision, Some(2));
+    assert_eq!(snapshot.audit[1].task_id.as_deref(), Some(task.id.as_str()));
+    assert_eq!(snapshot.audit[2].action, "update_task");
+    assert_eq!(snapshot.audit[2].summary, "更新任务 Updated audit task");
+    assert_eq!(snapshot.audit[2].revision, Some(3));
+    assert_eq!(snapshot.audit[2].actor_id, admin_id.to_string());
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn batch_status_update_is_atomic() {
     let Some(db) = TestDatabase::create().await else {
         return;
