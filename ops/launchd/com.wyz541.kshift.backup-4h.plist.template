@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.wyz541.kshift.backup-4h</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__KSHIFT_HOME__/current/bin/kshift-ops-run</string>
+    <string>backup</string>
+    <string>create</string>
+    <string>--output</string>
+    <string>__KSHIFT_BACKUP_DIR__</string>
+    <string>--kind</string>
+    <string>scheduled-4h</string>
+    <string>--database-url-env</string>
+    <string>KSHIFT_BACKUP_DATABASE_URL</string>
+    <string>--age-recipient-file</string>
+    <string>__KSHIFT_AGE_RECIPIENT_FILE__</string>
+    <string>--source-commit</string>
+    <string>__KSHIFT_SOURCE_COMMIT__</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>KSHIFT_ENV_FILE</key>
+    <string>__KSHIFT_HOME__/etc/kshift.env</string>
+  </dict>
+  <key>UserName</key>
+  <string>__KSHIFT_SERVICE_USER__</string>
+  <key>StartInterval</key>
+  <integer>14400</integer>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>__KSHIFT_LOG_DIR__/backup-4h.log</string>
+  <key>StandardErrorPath</key>
+  <string>__KSHIFT_LOG_DIR__/backup-4h.error.log</string>
+</dict>
+</plist>

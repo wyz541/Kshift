@@ -1,0 +1,104 @@
+name: Operations CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: ops-and-release-unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Check shell and plist templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y zsh
+          for script in deploy/*.sh release/platform/*.sh; do zsh -n "$script"; done
+          for template in ops/launchd/*.plist.template; do
+            rendered="$RUNNER_TEMP/$(basename "$template" .template)"
+            sed \
+              -e 's|__KSHIFT_HOME__|/Library/Application Support/Kshift|g' \
+              -e 's|__KSHIFT_LOG_DIR__|/Library/Logs/Kshift|g' \
+              -e 's|__KSHIFT_BACKUP_DIR__|/Library/Application Support/Kshift/backups|g' \
+              -e 's|__KSHIFT_DATA_DIR__|/Library/Application Support/Kshift|g' \
+              -e 's|__KSHIFT_SERVICE_USER__|_kshift|g' \
+              -e 's|__KSHIFT_AGE_RECIPIENT_FILE__|/Library/Application Support/Kshift/etc/age-recipient.txt|g' \
+              -e 's|__KSHIFT_SOURCE_COMMIT__|aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa|g' \
+              -e 's|__KSHIFT_MIN_FREE_GIB__|10|g' \
+              "$template" > "$rendered"
+            python3 - "$rendered" <<'PY'
+          import plistlib
+          import sys
+          with open(sys.argv[1], "rb") as handle:
+              plistlib.load(handle)
+          PY
+          done
+          ruby -e 'require "yaml"; Dir[".github/workflows/*.yml"].each { |f| YAML.load_file(f); puts "ok #{f}" }'
+      - name: Check repository documents and release JSON
+        shell: bash
+        run: |
+          python3 scripts/check_docs.py
+          for file in release/*.json release/examples/*.json release/schema/*.json; do
+            jq empty "$file"
+          done
+      - name: Python unit tests
+        shell: bash
+        run: PYTHONPATH=ops python3 -m unittest discover -s ops/tests -p 'test_*.py' -v
+      - name: Release contract tests
+        shell: bash
+        run: |
+          for file in release/tools/*.mjs; do node --check "$file"; done
+          node --test release/test/release.test.mjs
+
+  postgres:
+    name: postgresql18-integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      KSHIFT_TEST_ADMIN_DATABASE_URL: postgresql://postgres:test@127.0.0.1:5432/postgres
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install PostgreSQL 18 client and age
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --batch --yes --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-18 age
+      - name: Run PostgreSQL integration tests
+        shell: bash
+        run: PYTHONPATH=ops python3 -m unittest ops.tests.test_postgres_integration -v

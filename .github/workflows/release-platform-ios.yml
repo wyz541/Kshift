@@ -1,0 +1,160 @@
+name: Release platform - iOS
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      channel:
+        required: true
+        type: string
+      source_commit:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+    secrets:
+      IOS_CERTIFICATE_BASE64:
+        required: false
+      IOS_CERTIFICATE_PASSWORD:
+        required: false
+      IOS_KEYCHAIN_PASSWORD:
+        required: false
+      APPLE_TEAM_ID:
+        required: false
+      IOS_PROVISIONING_PROFILE_BASE64:
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: ios
+    runs-on: macos-26
+    timeout-minutes: 60
+    env:
+      KSHIFT_VERSION: ${{ inputs.version }}
+      KSHIFT_CHANNEL: ${{ inputs.channel }}
+      KSHIFT_SOURCE_COMMIT: ${{ inputs.source_commit }}
+      KSHIFT_OUTPUT_DIR: ${{ github.workspace }}/dist
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.source_commit }}
+          fetch-depth: 0
+      - name: Verify source commit
+        shell: bash
+        run: test "$(git rev-parse HEAD)" = "$KSHIFT_SOURCE_COMMIT"
+      - name: Install XcodeGen
+        shell: bash
+        run: brew install xcodegen
+      - name: Import iOS signing identity and profile
+        if: ${{ inputs.channel == 'stable' }}
+        shell: bash
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+          PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "$CERTIFICATE_BASE64"
+          test -n "$CERTIFICATE_PASSWORD"
+          test -n "$KEYCHAIN_PASSWORD"
+          test -n "$PROFILE_BASE64"
+          certificate="$RUNNER_TEMP/ios-signing.p12"
+          profile="$RUNNER_TEMP/kshift.mobileprovision"
+          python3 -c 'import base64, os; open(os.environ["RUNNER_TEMP"] + "/ios-signing.p12", "wb").write(base64.b64decode(os.environ["CERTIFICATE_BASE64"]))'
+          python3 -c 'import base64, os; open(os.environ["RUNNER_TEMP"] + "/kshift.mobileprovision", "wb").write(base64.b64decode(os.environ["PROFILE_BASE64"]))'
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security import "$certificate" -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security list-keychains -d user -s build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$profile" "$HOME/Library/MobileDevice/Provisioning Profiles/kshift.mobileprovision"
+      - name: Build and package iOS app
+        shell: bash
+        run: release/platform/build-ios.sh
+      - name: Create iOS fragment
+        shell: bash
+        run: |
+          set -euo pipefail
+          ipa="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-ios-arm64.ipa"
+          if [[ "$KSHIFT_CHANNEL" == "stable" || "$KSHIFT_CHANNEL" == "hotfix" ]]; then
+            signing_status="signed"
+            signature_gate="passed"
+          else
+            signing_status="unsigned"
+            signature_gate="skipped"
+          fi
+          jq -n \
+            --arg version "$KSHIFT_VERSION" \
+            --arg channel "$KSHIFT_CHANNEL" \
+            --arg source "$KSHIFT_SOURCE_COMMIT" \
+            --arg ipa "$(basename "$ipa")" \
+            --arg status "$signing_status" \
+            --arg signature_gate "$signature_gate" \
+            --arg notarization not-requested \
+            --arg workflow "$GITHUB_WORKFLOW" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --argjson run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              schema_version: "1",
+              product: "Kshift",
+              version: $version,
+              channel: $channel,
+              source_commit: $source,
+              platform: "ios",
+              architecture: "arm64",
+              generated_at: $generated,
+              signing: {
+                status: $status,
+                identity: ($status == "signed" ? "configured-distribution-identity" : null),
+                notarization: $notarization
+              },
+              provenance: {
+                workflow: $workflow,
+                run_id: $run_id,
+                run_attempt: $run_attempt,
+                artifact_id: "release-fragment-ios"
+              },
+              assets: [
+                {name: $ipa, platform: "ios", architecture: "arm64", role: "application", signing_status: $status}
+              ],
+              gates: [
+                {name: "build", status: "passed", evidence: "xcodebuild completed"},
+                {name: "distribution-signature", status: $signature_gate, evidence: "signed export gate"},
+                {name: "install", status: "skipped", evidence: "requires internal iOS device"},
+                {name: "upgrade", status: "skipped", evidence: "requires internal iOS device"},
+                {name: "rollback", status: "skipped", evidence: "requires internal iOS device"},
+                {name: "liquid-glass", status: "skipped", evidence: "requires R2 UI evidence"},
+                {name: "accessibility", status: "skipped", evidence: "requires R2 UI evidence"},
+                {name: "performance", status: "skipped", evidence: "requires R2 performance evidence"}
+              ],
+              limitations: ["Distribution and device gates are required before stable promotion."]
+            }' > "$KSHIFT_OUTPUT_DIR/ios.fragment.spec.json"
+          node release/tools/kshift-release.mjs fragment \
+            --spec "$KSHIFT_OUTPUT_DIR/ios.fragment.spec.json" \
+            --assets-dir "$KSHIFT_OUTPUT_DIR" \
+            --output "$KSHIFT_OUTPUT_DIR/ios.fragment.json"
+      - name: Attest iOS artifact
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45
+        with:
+          subject-path: ${{ github.workspace }}/dist/kshift-*-ios-*.ipa
+      - name: Upload iOS fragment
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-fragment-ios
+          path: |
+            ${{ github.workspace }}/dist/kshift-*-ios-*.ipa
+            ${{ github.workspace }}/dist/ios.fragment.json
+          if-no-files-found: error
