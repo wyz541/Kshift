@@ -117,6 +117,8 @@ sequenceDiagram
 - `SYNC-011`：事件流每 15 秒发送 heartbeat。
 - `SYNC-012`：重连使用带 jitter 的指数退避。初始 500 ms，上限 30 秒。
 - `SYNC-013`：慢消费者超过有界 channel 时必须断开，并要求重新 snapshot。
+- `SYNC-014`：R3 snapshot、command 和 report 使用专用 typed RPC；Swift host 只读取 FFI JSON projection。
+- `SYNC-015`：R3 plan snapshot revision 必须等于项目 revision；不一致时拒绝 R3 写入。
 
 ## 6. 客户端缓存
 

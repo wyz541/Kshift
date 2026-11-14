@@ -65,9 +65,16 @@ async fn persistent_plan_depth_survives_conflict_attachment_and_rollback() -> an
             },
         },
     };
-    let created = store.execute(create).await?;
+    let created = store.execute(create.clone()).await?;
     assert!(created.ok);
     assert_eq!(created.snapshot.project.revision, 8);
+    let retried = store.execute(create).await?;
+    assert!(retried.ok);
+    assert_eq!(retried.snapshot.project.revision, 8);
+    assert_eq!(
+        retried.snapshot.history.len(),
+        created.snapshot.history.len()
+    );
 
     let reloaded = store.load(project_id).await?;
     assert!(reloaded

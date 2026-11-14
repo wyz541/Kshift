@@ -22,7 +22,7 @@ let package = Package(
     .library(name: "KshiftUIKitAdapter", targets: ["KshiftUIKitAdapter"]),
   ],
   targets: [
-    .target(name: "KshiftCore", dependencies: ["KshiftFFI"]),
+    .target(name: "KshiftCore", dependencies: ["KshiftFFI", "KshiftPresentation"]),
     .target(name: "KshiftPresentation"),
     .systemLibrary(name: "CKshiftFFI", path: "include"),
     .target(

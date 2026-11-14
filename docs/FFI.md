@@ -3,7 +3,7 @@ slug: /docs/ffi
 title: Kshift FFI
 type: reference
 status: review
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - FFI
   - C ABI
@@ -19,34 +19,29 @@ description: 说明 Kshift C ABI 的函数、所有权、Swift 加载规则和�
 
 ## C ABI
 
-| 函数 | 作用 |
+| 函数组 | 作用 |
 | --- | --- |
-| `kshift_ffi_schema_version` | 返回 ABI schema version |
-| `kshift_client_new` | 创建 opaque client handle |
-| `kshift_client_free` | 释放 client handle |
-| `kshift_client_projects_json` | 返回项目列表 JSON |
-| `kshift_client_snapshot_json` | 返回项目快照 JSON |
-| `kshift_client_execute_json` | 执行 typed command JSON |
-| `kshift_string_free` | 释放 Rust 返回的字符串 |
+| `kshift_client_create` / `kshift_client_destroy` | 创建和释放 opaque client handle |
+| `kshift_client_list_projects` / `kshift_client_get_snapshot` | 返回项目列表和项目快照 JSON |
+| `kshift_client_execute_command` | 执行通用 Task command JSON |
+| `kshift_client_get_plan_depth_snapshot` | 返回 R3 snapshot 和 server role JSON |
+| `kshift_client_execute_plan_depth_command` | 执行 R3 status 或 rollback command JSON |
+| `kshift_client_get_plan_depth_report` | 返回绑定 source revision 的报告 JSON |
+| `kshift_client_watch_project` / `kshift_subscription_next` | 创建和轮询事件订阅 |
+| `kshift_cancel_token_*` | 创建、取消和释放 cancel token |
+| `kshift_last_error_json` | 返回当前线程的最后错误 |
+| `kshift_buffer_free` | 释放 Rust owned output buffer |
 
 ## 所有权
 
-- Rust 返回的 `char *` 由 Rust 分配。
-- 调用方必须用 `kshift_string_free` 释放字符串。
-- `KshiftClientHandle *` 必须用 `kshift_client_free` 释放。
+- Rust 返回的 `KshiftBuffer` 由 Rust 分配。
+- 调用方必须用 `kshift_buffer_free` 释放输出 buffer。
+- `KshiftClientHandle` 必须用 `kshift_client_destroy` 释放。
 - 同一 handle 的调用由 Rust `Mutex` 串行化。
 - panic 在 FFI 内捕获。panic 不跨 C ABI。
 
 ## Swift 加载
 
-`RustClient` 按以下顺序查找动态库：
-
-1. `KSHIFT_FFI_PATH`。
-2. App 的 `Frameworks/libkshift_ffi.dylib`。
-3. App resource 中的 `libkshift_ffi.dylib`。
-4. 开发目录的 `.build/ffi/macos/libkshift_ffi.dylib`。
-5. 开发目录的 `.build/ffi/ios-simulator/libkshift_ffi.dylib`。
-
-生产发布需要生成、签名和嵌入 XCFramework。
+Swift package 通过 `KSHIFT_FFI_PATH` 链接静态库。`scripts/build-ffi.sh macos` 生成 macOS 静态库。生产发布需要生成、签名和嵌入 XCFramework。
 
 Snapshot JSON 的 `audit` 数组包含有界审计记录。Swift 按 `task_id` 将记录映射到任务历史。

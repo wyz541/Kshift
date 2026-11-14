@@ -15,6 +15,7 @@ chrono.workspace = true
 contract.workspace = true
 domain.workspace = true
 futures-util.workspace = true
+kshift-core.workspace = true
 prost.workspace = true
 prost-types.workspace = true
 serde.workspace = true

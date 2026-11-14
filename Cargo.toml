@@ -24,6 +24,7 @@ chrono = { version = "0.4.45", features = ["serde"] }
 chrono-tz = "0.10.4"
 contract = { package = "kshift-contract", path = "crates/kshift-contract" }
 domain = { package = "kshift-domain", path = "crates/kshift-domain" }
+kshift-core = { path = "crates/kshift-core" }
 futures-util = "0.3.34"
 hex = "0.4.3"
 prost = "0.13.5"

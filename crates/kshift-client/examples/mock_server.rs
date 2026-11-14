@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 
-use chrono::{TimeZone, Utc};
+use chrono::{NaiveDate, TimeZone, Utc};
 use contract::v1;
 use domain::{
     Change, ChangeEvent, Command, Project, ProjectMember, ProjectRole, ProjectSnapshot, Task,
@@ -32,6 +32,8 @@ fn now() -> chrono::DateTime<Utc> {
 struct State {
     revision: AtomicU64,
     tasks: std::sync::Mutex<Vec<Task>>,
+    plan_task_version: AtomicU64,
+    plan_status: std::sync::Mutex<kshift_core::TaskStatus>,
 }
 
 #[derive(Clone)]
@@ -63,6 +65,48 @@ impl MockService {
                 .clone(),
             audit: Vec::new(),
             generated_at: now(),
+        }
+    }
+
+    fn plan_snapshot(&self) -> kshift_core::PlanDepthSnapshot {
+        let snapshot = self.snapshot();
+        kshift_core::PlanDepthSnapshot {
+            project: kshift_core::PlanProject {
+                id: snapshot.project.id.to_string(),
+                name: snapshot.project.name,
+                revision: snapshot.project.current_revision,
+                schema_version: kshift_core::PLAN_SCHEMA_VERSION,
+            },
+            people: vec![kshift_core::Person {
+                id: user_id().to_string(),
+                name: "Smoke User".to_owned(),
+                initials: "SU".to_owned(),
+                color_hex: "#2F7CF6".to_owned(),
+            }],
+            tasks: vec![kshift_core::PlanTask {
+                id: "e0000000-0000-4000-8000-000000000001".to_owned(),
+                project_id: project_id().to_string(),
+                parent_id: None,
+                title: "R3 smoke task".to_owned(),
+                description_markdown: "Typed FFI smoke".to_owned(),
+                status: *self
+                    .state
+                    .plan_status
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner()),
+                priority: kshift_core::TaskPriority::Medium,
+                assignee_id: Some(user_id().to_string()),
+                starts_on: NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
+                due_on: NaiveDate::from_ymd_opt(2026, 11, 14).unwrap(),
+                estimate_minutes: 60,
+                position: 0,
+                version: self.state.plan_task_version.load(Ordering::SeqCst),
+                completed_at: None,
+            }],
+            dependencies: Vec::new(),
+            attachments: Vec::new(),
+            attachment_links: Vec::new(),
+            history: Vec::new(),
         }
     }
 }
@@ -169,6 +213,95 @@ impl contract::KshiftService for MockService {
         }))
     }
 
+    async fn get_plan_depth_snapshot(
+        &self,
+        request: Request<v1::GetPlanDepthSnapshotRequest>,
+    ) -> Result<Response<v1::GetPlanDepthSnapshotResponse>, Status> {
+        authorize(&request)?;
+        let requested = Uuid::parse_str(&request.into_inner().project_id)
+            .map_err(|_| Status::invalid_argument("project_id must be a UUID"))?;
+        if requested != project_id() {
+            return Err(Status::not_found("project not found"));
+        }
+        Ok(Response::new(v1::GetPlanDepthSnapshotResponse {
+            snapshot: Some(contract::plan_depth_snapshot_to_proto(
+                &self.plan_snapshot(),
+            )),
+            actor_role: v1::PlanActorRole::Admin as i32,
+        }))
+    }
+
+    async fn execute_plan_depth_command(
+        &self,
+        request: Request<v1::ExecutePlanDepthCommandRequest>,
+    ) -> Result<Response<v1::ExecutePlanDepthCommandResponse>, Status> {
+        authorize(&request)?;
+        let input = contract::parse_execute_plan_depth_command(request.get_ref())
+            .map_err(|error| error.to_status())?;
+        let mut store = kshift_core::PlanDepthStore::new(self.plan_snapshot())
+            .map_err(|error| Status::failed_precondition(error.to_string()))?;
+        let response = store.execute(&kshift_core::PlanCommandEnvelope {
+            request_id: input.request_id.to_string(),
+            project_id: input.project_id,
+            expected_revision: input.expected_revision,
+            actor_id: user_id().to_string(),
+            actor_role: kshift_core::PlanActorRole::Admin,
+            command: input.command,
+        });
+        if let Some(error) = response.error {
+            return Err(contract::plan_error_to_api(error).to_status());
+        }
+        let task = response
+            .snapshot
+            .tasks
+            .first()
+            .ok_or_else(|| Status::internal("R3 smoke task disappeared"))?;
+        self.state
+            .revision
+            .store(response.snapshot.project.revision, Ordering::SeqCst);
+        self.state
+            .plan_task_version
+            .store(task.version, Ordering::SeqCst);
+        *self
+            .state
+            .plan_status
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner()) = task.status;
+        Ok(Response::new(contract::plan_command_response_to_proto(
+            &response,
+            kshift_core::PlanActorRole::Admin,
+        )))
+    }
+
+    #[allow(clippy::result_large_err)]
+    async fn get_plan_depth_report(
+        &self,
+        request: Request<v1::GetPlanDepthReportRequest>,
+    ) -> Result<Response<v1::GetPlanDepthReportResponse>, Status> {
+        authorize(&request)?;
+        let request = request.into_inner();
+        let requested = Uuid::parse_str(&request.project_id)
+            .map_err(|_| Status::invalid_argument("project_id must be a UUID"))?;
+        if requested != project_id() {
+            return Err(Status::not_found("project not found"));
+        }
+        let parse = |value: &str, field: &str| {
+            NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .map_err(|_| Status::invalid_argument(format!("{field} must use YYYY-MM-DD")))
+        };
+        let range = kshift_core::ReportRange {
+            starts_on: parse(&request.starts_on, "starts_on")?,
+            ends_on: parse(&request.ends_on, "ends_on")?,
+        };
+        let today = parse(&request.today, "today")?;
+        let report = kshift_core::PlanDepthStore::new(self.plan_snapshot())
+            .and_then(|store| store.report(&range, today))
+            .map_err(|error| Status::failed_precondition(error.to_string()))?;
+        Ok(Response::new(v1::GetPlanDepthReportResponse {
+            report: Some(contract::plan_report_to_proto(&report)),
+        }))
+    }
+
     type WatchProjectChangesStream = std::pin::Pin<
         Box<
             dyn futures_util::Stream<Item = Result<v1::WatchProjectChangesResponse, Status>> + Send,
@@ -247,6 +380,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let state = Arc::new(State {
         revision: AtomicU64::new(1),
         tasks: std::sync::Mutex::new(Vec::new()),
+        plan_task_version: AtomicU64::new(1),
+        plan_status: std::sync::Mutex::new(kshift_core::TaskStatus::Todo),
     });
     let service = MockService { state };
     std::fs::write(

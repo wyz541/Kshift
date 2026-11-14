@@ -3,20 +3,31 @@ import Foundation
 public actor InMemoryKshiftPlanDepthBoundary: KshiftPlanDepthBoundary {
     private var snapshot: KshiftPlanDepthSnapshot
     private var states: [UInt64: KshiftPlanDepthSnapshot]
+    private let viewerRole: KshiftPlanRole
 
-    public init(snapshot: KshiftPlanDepthSnapshot = KshiftPlanSampleData.makeSnapshot()) {
+    public init(
+        snapshot: KshiftPlanDepthSnapshot = KshiftPlanSampleData.makeSnapshot(),
+        viewerRole: KshiftPlanRole = .admin
+    ) {
         self.snapshot = snapshot
         states = [snapshot.revision: snapshot]
+        self.viewerRole = viewerRole
     }
 
-    public func fetchPlanDepth(projectID: UUID) async throws -> KshiftPlanDepthSnapshot {
+    public func fetchPlanDepth(projectID: UUID) async throws -> KshiftPlanDepthSession {
         guard snapshot.projectID == projectID else {
             throw KshiftPlanDepthError.notFound
         }
-        return snapshot
+        return KshiftPlanDepthSession(snapshot: snapshot, viewerRole: viewerRole)
     }
 
-    public func execute(_ command: KshiftPlanDepthCommand) async throws -> KshiftPlanDepthSnapshot {
+    public func execute(
+        projectID: UUID,
+        _ command: KshiftPlanDepthCommand
+    ) async throws -> KshiftPlanDepthSnapshot {
+        guard projectID == snapshot.projectID else {
+            throw KshiftPlanDepthError.notFound
+        }
         switch command {
         case let .setTaskStatus(taskID, status, expectedTaskVersion, expectedRevision):
             guard expectedRevision == snapshot.revision else {

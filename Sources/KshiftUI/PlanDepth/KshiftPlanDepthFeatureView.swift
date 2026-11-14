@@ -13,17 +13,34 @@ public struct KshiftPlanDepthFeatureView: View {
 
     public init(
         capabilities: any KshiftPlatformCapabilities,
+        boundary: any KshiftPlanDepthBoundary,
+        projectID: UUID,
         locale: Locale = .current,
         timeZone: TimeZone = .current
     ) {
         let model = KshiftPlanDepthFeatureModel(
-            boundary: KshiftPlanSampleData.makeBoundary(),
+            boundary: boundary,
             capabilities: capabilities,
+            projectID: projectID,
             locale: locale,
             timeZone: timeZone
         )
         _model = State(initialValue: model)
         self.capabilities = capabilities
+    }
+
+    public init(
+        capabilities: any KshiftPlatformCapabilities,
+        locale: Locale = .current,
+        timeZone: TimeZone = .current
+    ) {
+        self.init(
+            capabilities: capabilities,
+            boundary: KshiftPlanSampleData.makeBoundary(),
+            projectID: KshiftPlanSampleData.projectID,
+            locale: locale,
+            timeZone: timeZone
+        )
     }
 
     public init(

@@ -2,15 +2,24 @@ use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
 
 use chrono::{DateTime, NaiveDate, Utc};
 use contract::{
-    change_event_to_proto, collapse_change_event, parse_execute_command, project_snapshot_to_proto,
-    project_to_proto, reset_reason_to_string, v1, ApiError, ParsedCommand, MAX_EVENT_BYTES,
+    change_event_to_proto, collapse_change_event, parse_execute_command,
+    parse_execute_plan_depth_command, plan_actor_role_to_proto, plan_command_response_to_proto,
+    plan_depth_snapshot_to_proto, plan_error_to_api, plan_report_to_proto,
+    project_snapshot_to_proto, project_to_proto, reset_reason_to_string, v1, ApiError,
+    ParsedCommand, MAX_EVENT_BYTES,
 };
 use domain::{
     Change, ChangeEvent, Command, ProjectAuditEntry, ProjectMember, ProjectRole, ProjectSnapshot,
     ResetReason, Task, TaskPatch, TaskPriority, TaskStatus, SCHEMA_VERSION,
 };
 use futures_util::Stream;
+use kshift_core::{
+    PlanActorRole, PlanCommandEnvelope, PlanDepthSnapshot, PlanHistoryEntry, PlanProject, PlanTask,
+    ReportRange, TaskDependency, PLAN_SCHEMA_VERSION,
+};
+use kshift_plan_store::{PlanSnapshotStore, PlanStoreError};
 use prost::Message;
+use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Transaction};
 use tokio::sync::{broadcast, mpsc, Semaphore};
 use tokio_stream::wrappers::ReceiverStream;
@@ -45,6 +54,7 @@ pub struct KshiftApi {
 
 struct ApiInner {
     pool: PgPool,
+    plan_store: PlanSnapshotStore,
     auth: TokenAuthenticator,
     notifications: NotificationHub,
     settings: ApiSettings,
@@ -65,6 +75,7 @@ impl KshiftApi {
     ) -> Self {
         Self {
             inner: Arc::new(ApiInner {
+                plan_store: PlanSnapshotStore::new(pool.clone()),
                 pool,
                 auth,
                 notifications,
@@ -500,6 +511,238 @@ impl contract::KshiftService for KshiftApi {
             .await
             .map(Response::new)
             .map_err(|error| error.to_status())
+    }
+
+    async fn get_plan_depth_snapshot(
+        &self,
+        request: Request<v1::GetPlanDepthSnapshotRequest>,
+    ) -> Result<Response<v1::GetPlanDepthSnapshotResponse>, Status> {
+        let request_id = Uuid::new_v4();
+        let span = tracing::info_span!("grpc.get_plan_depth_snapshot", request_id = %request_id);
+        self.get_plan_depth_snapshot_inner(request, request_id)
+            .instrument(span)
+            .await
+            .map(Response::new)
+            .map_err(|error| error.to_status())
+    }
+
+    async fn execute_plan_depth_command(
+        &self,
+        request: Request<v1::ExecutePlanDepthCommandRequest>,
+    ) -> Result<Response<v1::ExecutePlanDepthCommandResponse>, Status> {
+        let request_id = Uuid::new_v4();
+        let span = tracing::info_span!("grpc.execute_plan_depth_command", request_id = %request_id);
+        self.execute_plan_depth_command_inner(request, request_id)
+            .instrument(span)
+            .await
+            .map(Response::new)
+            .map_err(|error| error.to_status())
+    }
+
+    async fn get_plan_depth_report(
+        &self,
+        request: Request<v1::GetPlanDepthReportRequest>,
+    ) -> Result<Response<v1::GetPlanDepthReportResponse>, Status> {
+        let request_id = Uuid::new_v4();
+        let span = tracing::info_span!("grpc.get_plan_depth_report", request_id = %request_id);
+        self.get_plan_depth_report_inner(request, request_id)
+            .instrument(span)
+            .await
+            .map(Response::new)
+            .map_err(|error| error.to_status())
+    }
+}
+
+impl KshiftApi {
+    async fn get_plan_depth_snapshot_inner(
+        &self,
+        request: Request<v1::GetPlanDepthSnapshotRequest>,
+        request_id: Uuid,
+    ) -> Result<v1::GetPlanDepthSnapshotResponse, ApiError> {
+        let _rpc_permit = self.acquire_rpc_slot().await?;
+        let actor = self.authenticate(&request).await?;
+        let project_id = parse_uuid(&request.into_inner().project_id, "project_id")?;
+        let (role, current_revision) = self.plan_project_access(&actor, project_id).await?;
+        let snapshot = tokio::time::timeout(
+            self.inner.settings.timeouts.unary_request,
+            self.ensure_plan_depth_snapshot(&actor, project_id, current_revision),
+        )
+        .await
+        .map_err(|_| ApiError::DeadlineExceeded)??;
+        tracing::info!(
+            request_id = %request_id,
+            user_id = %actor.id,
+            project_id = %project_id,
+            revision = snapshot.project.revision,
+            "plan depth snapshot completed"
+        );
+        Ok(v1::GetPlanDepthSnapshotResponse {
+            snapshot: Some(plan_depth_snapshot_to_proto(&snapshot)),
+            actor_role: plan_actor_role_to_proto(role) as i32,
+        })
+    }
+
+    async fn execute_plan_depth_command_inner(
+        &self,
+        request: Request<v1::ExecutePlanDepthCommandRequest>,
+        request_id: Uuid,
+    ) -> Result<v1::ExecutePlanDepthCommandResponse, ApiError> {
+        let _rpc_permit = self.acquire_rpc_slot().await?;
+        let actor = self.authenticate(&request).await?;
+        let input = parse_execute_plan_depth_command(request.get_ref())?;
+        let (role, current_revision) = self.plan_project_access(&actor, input.project_id).await?;
+        let _write_permit = self
+            .inner
+            .write_slots
+            .clone()
+            .try_acquire_owned()
+            .map_err(|_| {
+                ApiError::ResourceExhausted("write transaction limit reached".to_owned())
+            })?;
+        tracing::info!(
+            request_id = %request_id,
+            command_request_id = %input.request_id,
+            user_id = %actor.id,
+            project_id = %input.project_id,
+            "plan depth command started"
+        );
+        let response =
+            tokio::time::timeout(self.inner.settings.timeouts.write_transaction, async {
+                self.ensure_plan_depth_snapshot(&actor, input.project_id, current_revision)
+                    .await?;
+                let envelope = PlanCommandEnvelope {
+                    request_id: input.request_id.to_string(),
+                    project_id: input.project_id,
+                    expected_revision: input.expected_revision,
+                    actor_id: actor.id.to_string(),
+                    actor_role: role,
+                    command: input.command,
+                };
+                let response = self
+                    .inner
+                    .plan_store
+                    .execute(envelope)
+                    .await
+                    .map_err(plan_store_error)?;
+                if let Some(error) = response.error {
+                    return Err(plan_error_to_api(error));
+                }
+                Ok(response)
+            })
+            .await
+            .map_err(|_| ApiError::DeadlineExceeded)??;
+        tracing::info!(
+            request_id = %request_id,
+            command_request_id = %input.request_id,
+            user_id = %actor.id,
+            project_id = %input.project_id,
+            revision = response.snapshot.project.revision,
+            "plan depth command completed"
+        );
+        Ok(plan_command_response_to_proto(&response, role))
+    }
+
+    async fn get_plan_depth_report_inner(
+        &self,
+        request: Request<v1::GetPlanDepthReportRequest>,
+        request_id: Uuid,
+    ) -> Result<v1::GetPlanDepthReportResponse, ApiError> {
+        let _rpc_permit = self.acquire_rpc_slot().await?;
+        let actor = self.authenticate(&request).await?;
+        let request = request.into_inner();
+        let project_id = parse_uuid(&request.project_id, "project_id")?;
+        let range = ReportRange {
+            starts_on: parse_date(&request.starts_on, "starts_on")?,
+            ends_on: parse_date(&request.ends_on, "ends_on")?,
+        };
+        let today = parse_date(&request.today, "today")?;
+        let (_role, current_revision) = self.plan_project_access(&actor, project_id).await?;
+        let report = tokio::time::timeout(self.inner.settings.timeouts.unary_request, async {
+            self.ensure_plan_depth_snapshot(&actor, project_id, current_revision)
+                .await?;
+            self.inner
+                .plan_store
+                .report(project_id, &range, today)
+                .await
+                .map_err(plan_store_error)
+        })
+        .await
+        .map_err(|_| ApiError::DeadlineExceeded)??;
+        tracing::info!(
+            request_id = %request_id,
+            user_id = %actor.id,
+            project_id = %project_id,
+            revision = report.source_revision,
+            task_count = report.tasks.len(),
+            "plan depth report completed"
+        );
+        Ok(v1::GetPlanDepthReportResponse {
+            report: Some(plan_report_to_proto(&report)),
+        })
+    }
+
+    async fn plan_project_access(
+        &self,
+        actor: &AuthenticatedUser,
+        project_id: Uuid,
+    ) -> Result<(PlanActorRole, u64), ApiError> {
+        let mut tx = self
+            .inner
+            .pool
+            .begin()
+            .await
+            .map_err(|error| database_error(error, "begin plan role transaction"))?;
+        let access = load_authorized_project(&mut tx, actor, project_id, false).await?;
+        let current_revision = access.project.current_revision_u64()?;
+        let role = plan_actor_role_from_project(access.role);
+        tx.commit()
+            .await
+            .map_err(|error| database_error(error, "commit plan role transaction"))?;
+        Ok((role, current_revision))
+    }
+
+    async fn ensure_plan_depth_snapshot(
+        &self,
+        actor: &AuthenticatedUser,
+        project_id: Uuid,
+        current_revision: u64,
+    ) -> Result<PlanDepthSnapshot, ApiError> {
+        match self.inner.plan_store.load(project_id).await {
+            Ok(store) if store.snapshot().project.revision == current_revision => {
+                Ok(store.snapshot().clone())
+            }
+            Ok(_) => Err(ApiError::FailedPrecondition(
+                "plan depth snapshot is out of sync with the project revision".to_owned(),
+            )),
+            Err(PlanStoreError::NotInitialized) => {
+                let project = self.snapshot(actor, project_id).await?;
+                if project.project.current_revision != current_revision {
+                    return Err(ApiError::Conflict {
+                        current_revision: Some(project.project.current_revision),
+                        entity_id: None,
+                        current_entity_version: None,
+                    });
+                }
+                let snapshot = plan_snapshot_from_project(&project)?;
+                self.inner
+                    .plan_store
+                    .initialize(&snapshot, actor.id)
+                    .await
+                    .map_err(plan_store_error)?;
+                let snapshot = self
+                    .inner
+                    .plan_store
+                    .load(project_id)
+                    .await
+                    .map(|store| store.snapshot().clone())
+                    .map_err(plan_store_error)?;
+                if snapshot.project.revision != current_revision {
+                    return Err(ApiError::Internal);
+                }
+                Ok(snapshot)
+            }
+            Err(error) => Err(plan_store_error(error)),
+        }
     }
 }
 
@@ -2119,6 +2362,142 @@ fn reset_required(
         reason: reset_reason_to_string(reason).to_owned(),
         minimum_retained_revision,
     }
+}
+
+fn plan_actor_role_from_project(role: ProjectRole) -> PlanActorRole {
+    match role {
+        ProjectRole::Viewer => PlanActorRole::Viewer,
+        ProjectRole::Editor => PlanActorRole::Editor,
+        ProjectRole::Admin => PlanActorRole::Admin,
+    }
+}
+
+fn plan_snapshot_from_project(project: &ProjectSnapshot) -> Result<PlanDepthSnapshot, ApiError> {
+    let colors = ["#2F7CF6", "#2F9E6B", "#D26A3B", "#8A63D2", "#0891B2"];
+    let people = project
+        .members
+        .iter()
+        .enumerate()
+        .map(|(index, member)| kshift_core::Person {
+            id: member.user_id.to_string(),
+            name: member.display_name.clone(),
+            initials: initials(&member.display_name),
+            color_hex: colors[index % colors.len()].to_owned(),
+        })
+        .collect::<Vec<_>>();
+    let tasks = project
+        .tasks
+        .iter()
+        .enumerate()
+        .map(|(index, task)| -> Result<PlanTask, ApiError> {
+            Ok(PlanTask {
+                id: task.id.to_string(),
+                project_id: task.project_id.to_string(),
+                parent_id: task.parent_task_id.map(|value| value.to_string()),
+                title: task.title.clone(),
+                description_markdown: task.description_markdown.clone(),
+                status: plan_status(task.status),
+                priority: plan_priority(task.priority),
+                assignee_id: task.assignee_ids.first().map(ToString::to_string),
+                starts_on: task.starts_on.unwrap_or(task.planned_on),
+                due_on: task.due_on.unwrap_or(task.planned_on),
+                estimate_minutes: 0,
+                position: i64::try_from(index).map_err(|_| ApiError::Internal)?,
+                version: task.version,
+                completed_at: (task.status == TaskStatus::Done)
+                    .then(|| task.updated_at.to_rfc3339()),
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let dependencies = project
+        .tasks
+        .iter()
+        .flat_map(|task| {
+            task.dependency_task_ids
+                .iter()
+                .map(move |dependency| TaskDependency {
+                    task_id: task.id.to_string(),
+                    depends_on_task_id: dependency.to_string(),
+                })
+        })
+        .collect();
+    let history = project
+        .audit
+        .iter()
+        .take(usize::try_from(MAX_AUDIT_ENTRIES).unwrap_or(100))
+        .map(|entry| PlanHistoryEntry {
+            id: entry.id.to_string(),
+            revision: entry.revision.unwrap_or(project.project.current_revision),
+            actor_id: entry.actor_id.to_string(),
+            action: entry.action.clone(),
+            summary: entry.summary.clone(),
+            occurred_at: entry.occurred_at.to_rfc3339(),
+            restored_from_revision: None,
+            content_sha256: hex::encode(Sha256::digest(
+                format!("{}:{}:{}", entry.id, entry.action, entry.summary).as_bytes(),
+            )),
+        })
+        .collect();
+    Ok(PlanDepthSnapshot {
+        project: PlanProject {
+            id: project.project.id.to_string(),
+            name: project.project.name.clone(),
+            revision: project.project.current_revision,
+            schema_version: PLAN_SCHEMA_VERSION,
+        },
+        people,
+        tasks,
+        dependencies,
+        attachments: Vec::new(),
+        attachment_links: Vec::new(),
+        history,
+    })
+}
+
+fn plan_priority(value: TaskPriority) -> kshift_core::TaskPriority {
+    match value {
+        TaskPriority::None | TaskPriority::Low => kshift_core::TaskPriority::Low,
+        TaskPriority::Medium => kshift_core::TaskPriority::Medium,
+        TaskPriority::High => kshift_core::TaskPriority::High,
+        TaskPriority::Urgent => kshift_core::TaskPriority::Urgent,
+    }
+}
+
+fn plan_status(value: TaskStatus) -> kshift_core::TaskStatus {
+    match value {
+        TaskStatus::Todo => kshift_core::TaskStatus::Todo,
+        TaskStatus::InProgress => kshift_core::TaskStatus::InProgress,
+        TaskStatus::Blocked => kshift_core::TaskStatus::Blocked,
+        TaskStatus::Done => kshift_core::TaskStatus::Done,
+    }
+}
+
+fn initials(value: &str) -> String {
+    value
+        .split_whitespace()
+        .filter_map(|part| part.chars().next())
+        .take(2)
+        .collect::<String>()
+        .to_uppercase()
+}
+
+fn plan_store_error(error: PlanStoreError) -> ApiError {
+    match error {
+        PlanStoreError::Domain(error) => plan_error_to_api(error),
+        PlanStoreError::NotInitialized => {
+            ApiError::FailedPrecondition("plan depth snapshot is not initialized".to_owned())
+        }
+        PlanStoreError::InvalidProjectIdentifier | PlanStoreError::InvalidActorIdentifier => {
+            ApiError::InvalidArgument("plan depth identifier is invalid".to_owned())
+        }
+        PlanStoreError::Database(error) => database_error(error, "plan depth store"),
+        PlanStoreError::Serialization(_) => ApiError::Internal,
+    }
+}
+
+fn parse_date(value: &str, field: &str) -> Result<NaiveDate, ApiError> {
+    NaiveDate::parse_from_str(value, "%Y-%m-%d")
+        .map_err(|_| ApiError::InvalidArgument(format!("{field} must use YYYY-MM-DD")))
 }
 
 fn parse_uuid(value: &str, field: &str) -> Result<Uuid, ApiError> {

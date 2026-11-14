@@ -2,8 +2,8 @@
 
 use chrono::NaiveDate;
 use kshift_core::{
-    PlanCommandEnvelope, PlanCommandResponse, PlanDepthSnapshot, PlanDepthStore, PlanError,
-    ReportRange, WorkReport,
+    PlanCommand, PlanCommandEnvelope, PlanCommandResponse, PlanDepthSnapshot, PlanDepthStore,
+    PlanError, ReportRange, WorkReport,
 };
 use sqlx::{PgPool, Postgres, Transaction};
 use thiserror::Error;
@@ -106,6 +106,18 @@ impl PlanSnapshotStore {
         &self,
         envelope: PlanCommandEnvelope,
     ) -> Result<PlanCommandResponse, PlanStoreError> {
+        if let Some(snapshot) = self
+            .idempotent_response(envelope.project_id, &envelope.request_id)
+            .await?
+        {
+            return Ok(PlanCommandResponse {
+                ok: true,
+                request_id: envelope.request_id,
+                snapshot,
+                affected_task_ids: affected_task_ids(&envelope.command),
+                error: None,
+            });
+        }
         let store = self.load(envelope.project_id).await?;
         let before = store.snapshot().clone();
         let mut store = store;
@@ -170,6 +182,37 @@ impl PlanSnapshotStore {
         .fetch_optional(&self.pool)
         .await?;
         Ok(row.map(|(content,)| content))
+    }
+
+    async fn idempotent_response(
+        &self,
+        project_id: Uuid,
+        request_id: &str,
+    ) -> Result<Option<PlanDepthSnapshot>, PlanStoreError> {
+        let row: Option<(sqlx::types::Json<PlanDepthSnapshot>,)> = sqlx::query_as(
+            "SELECT payload FROM kshift.plan_state
+             WHERE project_id = $1 AND payload->'history'->0->>'id' = $2
+             ORDER BY revision DESC
+             LIMIT 1",
+        )
+        .bind(project_id)
+        .bind(request_id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(row.map(|(snapshot,)| snapshot.0))
+    }
+}
+
+fn affected_task_ids(command: &PlanCommand) -> Vec<String> {
+    match command {
+        PlanCommand::CreateTask { task_id, .. }
+        | PlanCommand::UpdateTask { task_id, .. }
+        | PlanCommand::DeleteTask { task_id, .. }
+        | PlanCommand::SetParent { task_id, .. }
+        | PlanCommand::ReplaceDependencies { task_id, .. }
+        | PlanCommand::SetTaskStatus { task_id, .. }
+        | PlanCommand::AttachFile { task_id, .. } => vec![task_id.clone()],
+        PlanCommand::Rollback { .. } => Vec::new(),
     }
 }
 

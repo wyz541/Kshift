@@ -4,7 +4,7 @@ title: Kshift Protocol Contract v0.1
 type: reference
 status: active
 version: "0.1"
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - gRPC
   - protobuf
@@ -26,7 +26,7 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | Package | `kshift.v1` |
 | 传输 | gRPC over HTTP/2 + TLS |
 | 流式接口 | `WatchProjectChanges` |
-| Schema version | `2` |
+| Schema version | `3` |
 | 状态 | `review` |
 
 ## 2. RPC
@@ -37,12 +37,18 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | `GetProjectSnapshot` | unary | 获取完整项目快照 |
 | `ExecuteCommand` | unary | 提交一个幂等写命令 |
 | `WatchProjectChanges` | server streaming | 回放增量事件和 heartbeat |
+| `GetPlanDepthSnapshot` | unary | 获取 R3 plan-depth snapshot 和调用者 role |
+| `ExecutePlanDepthCommand` | unary | 提交 status 或 rollback R3 command |
+| `GetPlanDepthReport` | unary | 生成绑定 source revision 的 R3 报告 |
 
 - `PROTO-001`：所有 RPC 必须设置 deadline。
 - `PROTO-002`：取消必须传递到 server。
 - `PROTO-003`：Stable 禁止明文 gRPC。
 - `PROTO-004`：Stable 禁止启用 gRPC reflection。
 - `PROTO-005`：健康检查保持启用。
+- `PROTO-006`：R3 service 从认证身份取得 actor 和 role。Client 不得提交可信 actor 或 role。
+- `PROTO-007`：R3 snapshot revision 必须等于项目 revision。两者不一致时返回 `FAILED_PRECONDITION`。
+- `PROTO-008`：R3 command 使用 `request_id` 保持重试幂等。
 
 ## 3. 标识与时间
 
@@ -125,7 +131,7 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 
 | 字段 | 规则 |
 | --- | --- |
-| `schema_version` | 必须为 `2` |
+| `schema_version` | 必须为 `3` |
 | `revision` | 对应项目快照 revision |
 | `project` | 必须有值 |
 | `users` | 只包含项目成员身份 |
@@ -204,6 +210,9 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 | --- | --- |
 | Client handle | opaque pointer；create 和 destroy 配对 |
 | Snapshot | 有界 byte buffer 或 typed FFI view |
+| R3 snapshot | typed plan-depth JSON projection；必须包含 server role |
+| R3 command | typed status/rollback request；必须包含 `request_id` 和 revision |
+| R3 report | 绑定 `source_revision` 的 report JSON projection |
 | Command | typed FFI struct 转换为 Rust command |
 | Event stream | callback 或 poll handle；必须支持取消 |
 | Error | stable status enum、error code 和 owned message |

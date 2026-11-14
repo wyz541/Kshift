@@ -67,6 +67,55 @@ func main() throws {
         throw SmokeError.failed("execute_command did not return a task event")
     }
 
+    let planDepth = try client.planDepthSnapshot(projectID: projectID)
+    guard
+        let planSession = try JSONSerialization.jsonObject(with: planDepth) as? [String: Any],
+        let planSnapshot = planSession["snapshot"] as? [String: Any],
+        let planRevision = (planSnapshot["project"] as? [String: Any])?["revision"] as? NSNumber,
+        let planTasks = planSnapshot["tasks"] as? [[String: Any]],
+        let planTaskID = planTasks.first?["id"] as? String,
+        let planVersion = planTasks.first?["version"] as? NSNumber
+    else {
+        throw SmokeError.failed("plan-depth snapshot JSON is incomplete")
+    }
+    let planCommandJSON = """
+    {
+      "request_id": "77777777-6666-4555-8444-333333333333",
+      "project_id": "\(projectID)",
+      "expected_revision": \(planRevision),
+      "command": {
+        "type": "set_task_status",
+        "value": {
+          "task_id": "\(planTaskID)",
+          "status": "done",
+          "expected_version": \(planVersion)
+        }
+      }
+    }
+    """
+    let planUpdate = try client.executePlanDepthCommand(Data(planCommandJSON.utf8))
+    guard
+        let updateSession = try JSONSerialization.jsonObject(with: planUpdate) as? [String: Any],
+        let updatedSnapshot = updateSession["snapshot"] as? [String: Any],
+        let updatedProject = updatedSnapshot["project"] as? [String: Any],
+        let updatedRevision = updatedProject["revision"] as? NSNumber
+    else {
+        throw SmokeError.failed("plan-depth command JSON is incomplete")
+    }
+    let planReport = try client.planDepthReport(
+        projectID: projectID,
+        startsOn: "2026-11-13",
+        endsOn: "2026-11-14",
+        today: "2026-11-14"
+    )
+    guard
+        let report = try JSONSerialization.jsonObject(with: planReport) as? [String: Any],
+        (report["source_revision"] as? NSNumber) == updatedRevision,
+        (report["html"] as? String)?.contains("R3 smoke task") == true
+    else {
+        throw SmokeError.failed("plan-depth report does not match the updated revision")
+    }
+
     let cancel = try KshiftCancelToken()
     let subscription = try client.watchProject(projectID: projectID, cancel: cancel)
     var sawSnapshot = false
@@ -84,7 +133,7 @@ func main() throws {
         throw SmokeError.failed("subscription did not deliver a snapshot")
     }
     cancel.cancel()
-    print("KSHIFT_SWIFT_FFI_SMOKE_OK projects=1 snapshot_bytes=\(snapshot.count) outcome_bytes=\(outcome.count)")
+    print("KSHIFT_SWIFT_FFI_SMOKE_OK projects=1 snapshot_bytes=\(snapshot.count) outcome_bytes=\(outcome.count) plan_depth_bytes=\(planDepth.count) plan_update_bytes=\(planUpdate.count) plan_report_bytes=\(planReport.count)")
 }
 
 do {

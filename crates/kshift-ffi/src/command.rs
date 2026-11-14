@@ -2,6 +2,7 @@ use chrono::NaiveDate;
 use domain::{
     Command, CommandEnvelope, Maybe, ProjectRole, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
 };
+use kshift_core::PlanCommand;
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -146,6 +147,37 @@ enum TaskPriorityDto {
     Urgent,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct PlanDepthCommandRequestDto {
+    request_id: String,
+    project_id: String,
+    expected_revision: u64,
+    command: PlanDepthCommandDto,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", content = "value", rename_all = "snake_case")]
+enum PlanDepthCommandDto {
+    SetTaskStatus(SetPlanTaskStatusDto),
+    Rollback(RollbackPlanDto),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SetPlanTaskStatusDto {
+    task_id: String,
+    status: TaskStatusDto,
+    expected_version: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RollbackPlanDto {
+    target_revision: u64,
+    reason: String,
+}
+
 #[derive(Clone, Debug, Default)]
 enum PatchField<T> {
     #[default]
@@ -230,6 +262,30 @@ pub fn command_from_json(bytes: &[u8]) -> Result<CommandEnvelope, FfiError> {
     };
     envelope.validate()?;
     Ok(envelope)
+}
+
+pub fn plan_depth_command_from_json(
+    bytes: &[u8],
+) -> Result<contract::PlanDepthCommandInput, FfiError> {
+    let dto: PlanDepthCommandRequestDto = serde_json::from_slice(bytes)
+        .map_err(|error| FfiError::InvalidArgument(format!("invalid R3 command JSON: {error}")))?;
+    let command = match dto.command {
+        PlanDepthCommandDto::SetTaskStatus(value) => PlanCommand::SetTaskStatus {
+            task_id: parse_uuid("task_id", &value.task_id)?.to_string(),
+            status: plan_task_status(value.status),
+            expected_version: value.expected_version,
+        },
+        PlanDepthCommandDto::Rollback(value) => PlanCommand::Rollback {
+            target_revision: value.target_revision,
+            reason: value.reason,
+        },
+    };
+    Ok(contract::PlanDepthCommandInput {
+        request_id: parse_uuid("request_id", &dto.request_id)?,
+        project_id: parse_uuid("project_id", &dto.project_id)?,
+        expected_revision: dto.expected_revision,
+        command,
+    })
 }
 
 fn task_mutation(value: TaskMutationDto) -> Result<TaskMutation, FfiError> {
@@ -385,6 +441,15 @@ fn task_status(value: TaskStatusDto) -> TaskStatus {
     }
 }
 
+fn plan_task_status(value: TaskStatusDto) -> kshift_core::TaskStatus {
+    match value {
+        TaskStatusDto::Todo => kshift_core::TaskStatus::Todo,
+        TaskStatusDto::InProgress => kshift_core::TaskStatus::InProgress,
+        TaskStatusDto::Blocked => kshift_core::TaskStatus::Blocked,
+        TaskStatusDto::Done => kshift_core::TaskStatus::Done,
+    }
+}
+
 fn task_priority(value: TaskPriorityDto) -> TaskPriority {
     match value {
         TaskPriorityDto::None => TaskPriority::None,
@@ -443,6 +508,33 @@ mod tests {
                     status: Maybe::Value(TaskStatus::Done),
                     ..
                 },
+                ..
+            }
+        ));
+    }
+
+    #[test]
+    fn parses_r3_status_command() {
+        let json = br#"{
+          "request_id": "99999999-8888-4777-8666-555555555555",
+          "project_id": "11111111-2222-4333-8444-555555555555",
+          "expected_revision": 7,
+          "command": {
+            "type": "set_task_status",
+            "value": {
+              "task_id": "22222222-2222-4222-8222-222222222222",
+              "status": "done",
+              "expected_version": 3
+            }
+          }
+        }"#;
+        let input = plan_depth_command_from_json(json).expect("R3 command should parse");
+        assert_eq!(input.expected_revision, 7);
+        assert!(matches!(
+            input.command,
+            PlanCommand::SetTaskStatus {
+                status: kshift_core::TaskStatus::Done,
+                expected_version: 3,
                 ..
             }
         ));

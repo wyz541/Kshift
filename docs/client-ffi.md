@@ -3,7 +3,7 @@ slug: /docs/client-ffi
 title: Kshift Rust Client 与 C ABI
 type: reference
 status: review
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - Rust client
   - C ABI
@@ -15,13 +15,13 @@ description: 说明 Kshift Rust client、C ABI、缓存、重试和 Swift 边界
 
 # Kshift Rust Client 与 C ABI
 
-本文记录 Issue #5 的实现边界。Transport 和业务类型由 R1 workspace 提供。
+本文记录 Issue #5 的实现边界。Transport、R1 业务类型和 R3 plan-depth boundary 由 Rust workspace 提供。
 
 ## 边界
 
 | 层 | 输入 | 输出 | 禁止事项 |
 | --- | --- | --- | --- |
-| Swift host | JSON command、handle、cancel token | JSON snapshot、event、error | 不接收 protobuf、tonic、SQLx |
+| Swift host | JSON command、R3 command、handle、cancel token | JSON snapshot、R3 view、report、event、error | 不接收 protobuf、tonic、SQLx |
 | `kshift-ffi` | bounded C slice、opaque token | bounded C buffer、status enum | 不保存 Swift memory |
 | `kshift-client` | `domain` command、`kshift.v1` RPC | `domain` snapshot/event | 不执行数据库事务 |
 | `kshift-server` | `kshift.v1` RPC | snapshot、event stream、`ErrorDetail` | 不信任客户端 role |
@@ -44,6 +44,34 @@ description: 说明 Kshift Rust client、C ABI、缓存、重试和 Swift 边界
 | Unary response / snapshot | 16 MiB |
 | Single event | 256 KiB |
 | Attachment item | 256 MiB |
+
+## R3 C ABI
+
+| 函数 | 用途 |
+| --- | --- |
+| `kshift_client_get_plan_depth_snapshot` | 返回 R3 snapshot 和 server-authoritative actor role |
+| `kshift_client_execute_plan_depth_command` | 执行 status 或 rollback command |
+| `kshift_client_get_plan_depth_report` | 返回绑定 source revision 的报告和 HTML 投影 |
+
+R3 command 使用 `request_id`、`project_id`、`expected_revision` 和 tagged command。Server 从认证身份取得 actor 和 role。Client 提供的 actor 或 role 不进入 wire request。
+
+```json
+{
+  "request_id": "99999999-8888-4777-8666-555555555555",
+  "project_id": "11111111-2222-4333-8444-555555555555",
+  "expected_revision": 7,
+  "command": {
+    "type": "set_task_status",
+    "value": {
+      "task_id": "e0000000-0000-4000-8000-000000000001",
+      "status": "done",
+      "expected_version": 1
+    }
+  }
+}
+```
+
+R3 snapshot JSON 不包含 protobuf 或数据库类型。Swift 将 JSON 投影映射为 `KshiftPlanDepthSnapshot`。
 
 ## C ABI 内存
 
@@ -123,3 +151,4 @@ Command envelope 使用 UUID、`expected_project_revision` 和 tagged command。
 - iOS 设备安装和运行不在 Issue #5 内。
 - Keychain 实现和登录 UI 不在 Issue #5 内。
 - 生产签名和 notarization 不在 Issue #5 内。
+- R3 附件上传和通用依赖编辑仍由独立 Task 跟踪。

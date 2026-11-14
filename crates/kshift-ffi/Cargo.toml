@@ -16,6 +16,7 @@ path = "src/lib.rs"
 chrono.workspace = true
 contract.workspace = true
 domain.workspace = true
+kshift-core.workspace = true
 kshift-client = { path = "../kshift-client" }
 serde.workspace = true
 serde_json.workspace = true

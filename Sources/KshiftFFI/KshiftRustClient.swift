@@ -1,6 +1,16 @@
 import CKshiftFFI
 import Foundation
 
+public enum KshiftFFIStatus {
+    public static let invalidArgument = KSHIFT_STATUS_INVALID_ARGUMENT.rawValue
+    public static let invalidState = KSHIFT_STATUS_INVALID_STATE.rawValue
+    public static let unauthenticated = KSHIFT_STATUS_UNAUTHENTICATED.rawValue
+    public static let permissionDenied = KSHIFT_STATUS_PERMISSION_DENIED.rawValue
+    public static let notFound = KSHIFT_STATUS_NOT_FOUND.rawValue
+    public static let conflict = KSHIFT_STATUS_CONFLICT.rawValue
+    public static let protocolError = KSHIFT_STATUS_PROTOCOL_ERROR.rawValue
+}
+
 public struct KshiftCFFIError: Error, LocalizedError, Sendable {
     public let status: UInt32
     public let code: String
@@ -213,6 +223,25 @@ public final class KshiftClient: @unchecked Sendable {
         return try readBuffer(status, &buffer)
     }
 
+    public func planDepthSnapshot(
+        projectID: String,
+        deadlineMilliseconds: UInt64 = 10_000,
+        cancel: KshiftCancelToken? = nil
+    ) throws -> Data {
+        guard let handle else { throw lastError(status: KSHIFT_STATUS_INVALID_HANDLE) }
+        var buffer = KshiftBuffer(data: nil, len: 0, capacity: 0)
+        let status = withSlice(Data(projectID.utf8)) { slice in
+            kshift_client_get_plan_depth_snapshot(
+                handle,
+                slice,
+                deadlineMilliseconds,
+                cancel?.rawHandle,
+                &buffer
+            )
+        }
+        return try readBuffer(status, &buffer)
+    }
+
     public func cachedSnapshot(projectID: String) throws -> Data {
         guard let handle else { throw lastError(status: KSHIFT_STATUS_INVALID_HANDLE) }
         var buffer = KshiftBuffer(data: nil, len: 0, capacity: 0)
@@ -231,6 +260,56 @@ public final class KshiftClient: @unchecked Sendable {
         var buffer = KshiftBuffer(data: nil, len: 0, capacity: 0)
         let status = withSlice(commandJSON) { slice in
             kshift_client_execute_command(handle, slice, deadlineMilliseconds, cancel?.rawHandle, &buffer)
+        }
+        return try readBuffer(status, &buffer)
+    }
+
+    public func executePlanDepthCommand(
+        _ commandJSON: Data,
+        deadlineMilliseconds: UInt64 = 10_000,
+        cancel: KshiftCancelToken? = nil
+    ) throws -> Data {
+        guard let handle else { throw lastError(status: KSHIFT_STATUS_INVALID_HANDLE) }
+        var buffer = KshiftBuffer(data: nil, len: 0, capacity: 0)
+        let status = withSlice(commandJSON) { slice in
+            kshift_client_execute_plan_depth_command(
+                handle,
+                slice,
+                deadlineMilliseconds,
+                cancel?.rawHandle,
+                &buffer
+            )
+        }
+        return try readBuffer(status, &buffer)
+    }
+
+    public func planDepthReport(
+        projectID: String,
+        startsOn: String,
+        endsOn: String,
+        today: String,
+        deadlineMilliseconds: UInt64 = 10_000,
+        cancel: KshiftCancelToken? = nil
+    ) throws -> Data {
+        guard let handle else { throw lastError(status: KSHIFT_STATUS_INVALID_HANDLE) }
+        var buffer = KshiftBuffer(data: nil, len: 0, capacity: 0)
+        let status = withSlice(Data(projectID.utf8)) { projectSlice in
+            withSlice(Data(startsOn.utf8)) { startsSlice in
+                withSlice(Data(endsOn.utf8)) { endsSlice in
+                    withSlice(Data(today.utf8)) { todaySlice in
+                        kshift_client_get_plan_depth_report(
+                            handle,
+                            projectSlice,
+                            startsSlice,
+                            endsSlice,
+                            todaySlice,
+                            deadlineMilliseconds,
+                            cancel?.rawHandle,
+                            &buffer
+                        )
+                    }
+                }
+            }
         }
         return try readBuffer(status, &buffer)
     }

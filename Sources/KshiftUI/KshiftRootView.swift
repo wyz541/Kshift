@@ -1,4 +1,5 @@
 import KshiftCore
+import KshiftPresentation
 import SwiftUI
 
 public struct KshiftRootView: View {
@@ -83,7 +84,20 @@ public struct KshiftRootView: View {
             ProjectAuditView(model: model)
         }
         .sheet(isPresented: $isShowingPlanDepth) {
-            KshiftPlanDepthFeatureView(capabilities: model.platformCapabilities)
+            if let projectID = planDepthProjectID {
+                KshiftPlanDepthFeatureView(
+                    capabilities: model.platformCapabilities,
+                    boundary: planDepthBoundary,
+                    projectID: projectID
+                )
+            } else {
+                ContentUnavailableView(
+                    "无法打开计划深度",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text("当前项目尚未加载。")
+                )
+                .frame(minWidth: 420, minHeight: 320)
+            }
         }
         .overlay(alignment: .top) {
             if let conflict = model.conflict {
@@ -132,6 +146,21 @@ public struct KshiftRootView: View {
             }
         }
     }
+
+    private var planDepthBoundary: any KshiftPlanDepthBoundary {
+        if let boundary = model.client as? any KshiftPlanDepthBoundary {
+            return boundary
+        }
+        return KshiftPlanSampleData.makeBoundary()
+    }
+
+    private var planDepthProjectID: UUID? {
+        if model.client is any KshiftPlanDepthBoundary {
+            return model.selectedProjectID.flatMap(UUID.init(uuidString:))
+        }
+        return KshiftPlanSampleData.projectID
+    }
+
     @ViewBuilder
     private var rootContent: some View {
         if horizontalSizeClass == .compact {

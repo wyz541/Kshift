@@ -253,6 +253,7 @@ R3 已进入共享 `KshiftRootView` 的“计划深度”入口。切片包含�
 - 附件按 SHA-256 去重。单文件上限为 10 MiB。类型白名单校验扩展名和内容。
 - Admin 回退创建新 revision。审计记录保存恢复来源和内容摘要。
 - 报告固定 source revision。打印和 PNG 导出读取同一份报告。
+- 计划深度页面通过 Rust client 的 R3 gRPC/FFI 边界读取 snapshot、写入 status/rollback 并生成报告。Sample boundary 只用于 Demo 和 preview。
 - 看板、甘特、历史、报告、Markdown 和附件视图在 macOS/iOS 共用。
 - 看板任务卡使用原生 Liquid Glass。甘特、历史和报告使用内容底板。
 
@@ -263,7 +264,8 @@ cargo test --workspace
 ./scripts/test-plan-store.sh
 swift test
 xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -derivedDataPath build/DerivedData test
 ```
 
 验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-DOMAIN](docs/specs/domain.md) 和 [KS-UI](docs/specs/ui.md)。
