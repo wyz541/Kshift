@@ -2,7 +2,7 @@
 slug: /adr/0008-task-ownership-and-time-zones
 title: ADR-0008 任务负责人和时区语义
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定多负责人集合、项目时区和用户时区的业务边�
 # ADR-0008 任务负责人和时区语义
 
 > 结论：负责人是无序成员集合。项目时区决定自然日期。用户时区只决定绝对时间戳的显示。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-DOMAIN`。
 
 ## 1. 状态
 

@@ -59,10 +59,10 @@ body:
     id: relationships
     attributes:
       label: 关系
-      description: 写出 Spec、Decision、Contract、父 Issue 和阻塞关系。不要重复维护子 Issue 清单。
+      description: 写出 Active Spec、Decision Issue、Contract、父 Issue 和阻塞关系。不要重复维护子 Issue 清单。
       placeholder: |-
         - Spec：
-        - Decision：
+        - Decision Issue：
         - Contract：
         - 父 Issue：
         - 阻塞关系：
@@ -87,6 +87,6 @@ body:
       placeholder: |-
         - Discussion：
         - Spec：
-        - ADR：
+        - Decision Issue：
     validations:
       required: true

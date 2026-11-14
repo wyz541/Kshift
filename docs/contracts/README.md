@@ -3,7 +3,7 @@ slug: /contracts
 title: Kshift 合同基线
 type: reference
 status: active
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - 合同
   - protobuf
@@ -45,5 +45,5 @@ description: 列出 Kshift v0.1 的协议、FFI 和 Release 合同入口。
 - 破坏性变更使用新的 package major version。
 - JSON Schema 使用新增可选字段保持兼容。
 - 删除或收紧字段时更新 schema version。
-- 所有合同变更必须链接 Spec 和 ADR。
+- 所有合同变更必须链接 Active Spec 和 Decision Issue。
 - 所有示例必须通过自动校验。

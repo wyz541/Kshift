@@ -2,7 +2,7 @@
 slug: /adr/0003-native-liquid-glass-boundary
 title: ADR-0003 原生 Liquid Glass 边界
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 Kshift 使用原生 Liquid Glass 的交互边界和无障碍
 # ADR-0003 原生 Liquid Glass 边界
 
 > 结论：导航、操作表面和可交互任务卡片使用 Apple 原生 Liquid Glass。正文、密集表格和长文本编辑使用清晰内容底板。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-UI`。
 
 ## 1. 状态
 

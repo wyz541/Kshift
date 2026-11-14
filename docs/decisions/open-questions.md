@@ -2,9 +2,9 @@
 slug: /decisions/open-questions
 title: Kshift 未决问题
 type: reference
-status: active
-version: "0.1"
-updated: "2026-11-13"
+status: superseded
+version: "0.2"
+updated: "2026-11-14"
 keywords:
   - 未决问题
   - owner
@@ -16,6 +16,8 @@ description: 记录 Kshift v1 尚未决定的问题、负责人、截止日期�
 # Kshift 未决问题
 
 > 结论：所有未决项都有 owner、截止日期和影响范围。未决项关闭前，受影响实现暂停。
+
+> 迁移状态：本文件自 Issue #34 起冻结为迁移来源。新决策进入 Issue，新规则进入 Active Spec。
 
 ## 1. 未决项
 
@@ -39,10 +41,10 @@ description: 记录 Kshift v1 尚未决定的问题、负责人、截止日期�
 1. Owner 写出最终选择。
 2. Owner 写出被拒绝的备选方案。
 3. Owner 写出迁移和回滚影响。
-4. 更新 decision register。
-5. 更新 Spec 和合同。
-6. 需要时增加 ADR。
-7. 更新受影响 Issue 的 Spec 入口。
+4. 更新 Active Spec。
+5. 更新合同和检查。
+6. 更新受影响 Issue 的 Spec 入口。
+7. 回写来源 Discussion。
 
 ## 3. 过期处理
 

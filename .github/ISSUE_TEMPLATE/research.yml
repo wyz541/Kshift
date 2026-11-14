@@ -1,5 +1,5 @@
 name: Research
-description: 完成调查并给出 Decision、ADR、不采纳结论或后续 Issue。
+description: 完成调查并给出决策结论、不采纳结论或后续 Issue。
 title: "[Research] "
 body:
   - type: textarea
@@ -66,7 +66,7 @@ body:
     id: expected-output
     attributes:
       label: 预期输出
-      description: 写出 Decision、ADR、不采纳结论或后续 Issue 等交付结果。
+      description: 写出决策结论、不采纳结论和后续 Issue 等交付结果。
       placeholder: |-
         - ...
     validations:
@@ -83,8 +83,8 @@ body:
   - type: textarea
     id: decision-record
     attributes:
-      label: Decision/ADR
-      description: 完成后填写 Decision 或 ADR 链接。尚未决定时写“待完成”，不适用时写“无”。
+      label: 决策结论
+      description: 完成后写本次 Issue 的决策摘要和 Active Spec 链接。尚未决定时写“待完成”，不适用时写“无”。
       placeholder: 待完成
     validations:
       required: true

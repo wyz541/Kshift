@@ -2,7 +2,7 @@
 slug: /adr/0004-postgresql18-single-host
 title: ADR-0004 PostgreSQL 18 单机部署
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 PostgreSQL 18 与 Rust server 同机部署、最小权限和
 # ADR-0004 PostgreSQL 18 单机部署
 
 > 结论：首版使用 PostgreSQL 18.x 和 Rust server 同机部署。数据库只监听 loopback 或 Unix socket。备份使用 `pg_dump`，恢复使用 `pg_restore`。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-OPS`。
 
 ## 1. 状态
 

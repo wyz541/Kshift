@@ -6,38 +6,46 @@ status: active
 updated: "2026-11-14"
 keywords:
   - 文档入口
-  - Spec
-  - ADR
-  - Contract
-description: 提供 Kshift Spec、ADR、决策和合同的阅读入口。
+  - Active Spec
+  - Issue
+  - 合同
+  - Kshift
+description: 提供 Kshift Active Spec、决策过程、合同和历史材料的阅读入口。
 ---
 
 # Kshift 文档
 
-结论：先读 Spec，再按任务读取 ADR、决策记录或合同。
+结论：先读 Active Spec。Issue 用于追溯决策过程。ADR 只提供历史背景。
 
 ## 阅读顺序
 
 | 顺序 | 文档 | 用途 |
 | ---: | --- | --- |
-| 1 | [Spec v0.1](spec/kshift-spec-v0.1.md) | 产品、技术、UI 和验收的权威规则 |
-| 2 | [R0 Spec Review](reviews/2026-11-13-r0-spec-review.md) | 正式评审结论和证据 |
-| 3 | [Traceability](spec/traceability.md) | 从 Discussion 追踪到 Spec |
-| 4 | [Decision Register](decisions/decision-register.md) | 查看确认、待定和拒绝状态 |
-| 5 | [Open Questions](decisions/open-questions.md) | 查看 owner、截止日期和影响 |
-| 6 | [ADR Index](adr/README.md) | 理解关键决策的原因和取舍 |
-| 7 | [Contracts](contracts/README.md) | 实现协议和 Release 规则 |
-| 8 | [Issue Relations](governance/issue-relations.md) | 查询原生事项关系和执行审计 |
-| 9 | [Labels and Project](governance/labels-and-project.md) | 查看标签、Project 字段和迁移映射 |
-| 10 | [R4/R5](r4-r5/README.md) | 运维、部署、发布和验收 |
+| 1 | [Active Spec 索引](specs/index.md) | 查看领域 Spec、ID、生命周期和迁移目标 |
+| 2 | [KS-GOV](specs/governance.md) | 查看当前工程治理规则 |
+| 3 | [Spec v0.1](spec/kshift-spec-v0.1.md) | 查看尚未迁移的领域规则 |
+| 4 | [Traceability](spec/traceability.md) | 从 Discussion 追踪到 Spec |
+| 5 | [Contracts](contracts/README.md) | 实现协议和 Release 规则 |
+| 6 | [Issue Relations](governance/issue-relations.md) | 查询原生事项关系和执行审计 |
+| 7 | [Labels and Project](governance/labels-and-project.md) | 查看标签、Project 字段和迁移映射 |
+| 8 | [R0 Spec Review](reviews/2026-11-13-r0-spec-review.md) | 查看正式评审结论和证据 |
+| 9 | [Decision Register](decisions/decision-register.md) | 查看冻结的历史决策记录 |
+| 10 | [Open Questions](decisions/open-questions.md) | 查看待迁移的未决问题 |
+| 11 | [ADR Index](adr/README.md) | 追溯历史决策原因 |
+| 12 | [R4/R5](r4-r5/README.md) | 运维、部署、发布和验收 |
 
 ## 状态说明
 
 | 状态 | 含义 |
 | --- | --- |
-| `confirmed` | 已进入 Spec 基线 |
-| `pending` | 尚未决定；不得由实现 PR 自行决定 |
-| `rejected` | 明确不进入首版或永久禁止 |
-| `review` | 文档可引用，等待评审确认 |
-| `active` | 文档是当前有效基线 |
-| `superseded` | 已由新文档替代 |
+| `draft` | 尚未约束实现 |
+| `active` | 当前生效的 Active Spec 或入口 |
+| `historical` | 只用于追溯 |
+| `superseded` | 已有新入口替代 |
+
+## 规范边界
+
+- 新规则只写入 Active Spec。
+- 新决策在新 Issue 中形成。
+- PR 同时链接 Issue、Active Spec 和证据。
+- 旧 ADR、Decision Register 和 Open Questions 不批量删除。

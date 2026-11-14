@@ -2,20 +2,22 @@
 slug: /decisions/decision-register
 title: Kshift 决策登记表
 type: reference
-status: active
-version: "0.2"
+status: superseded
+version: "0.3"
 updated: "2026-11-14"
 keywords:
   - 决策
   - 状态
   - ADR
   - Kshift
-description: 记录 Kshift v1 的确认、待定和拒绝决策。
+description: 记录历史决策和迁移映射；新决策进入 Issue。
 ---
 
 # Kshift 决策登记表
 
 > 结论：实现只能使用 `confirmed` 决策。`pending` 决策必须先由 owner 决定。`rejected` 决策不得在实现 PR 中重新引入。
+
+> 迁移状态：本文件自 Issue #34 起冻结为迁移来源。新决策进入 Issue，新规则进入 Active Spec。
 
 ## 1. 状态规则
 

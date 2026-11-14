@@ -2,7 +2,7 @@
 slug: /adr/0009-single-day-plan-ui
 title: ADR-0009 唯一日计划 UI
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 KshiftRootView 为唯一日计划 UI，并归档未接入应
 # ADR-0009 唯一日计划 UI
 
 > 结论：`KshiftRootView` 和 `AppModel` 是唯一日计划 UI。`KshiftDayPlanFeatureView` 原型已从当前树删除，并保留在 Git 历史中。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-UI`。
 
 ## 1. 状态
 

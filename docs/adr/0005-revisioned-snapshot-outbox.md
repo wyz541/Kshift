@@ -2,7 +2,7 @@
 slug: /adr/0005-revisioned-snapshot-outbox
 title: ADR-0005 revision snapshot 和 transactional outbox
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 Kshift 的 revisioned snapshot、事务 outbox 和冲突处�
 # ADR-0005 revision snapshot 和 transactional outbox
 
 > 结论：客户端从完整 snapshot 起步。服务端用 transactional outbox 提供有序增量事件。revision gap 触发重新获取 snapshot。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-ARCH`。
 
 ## 1. 状态
 
