@@ -2,7 +2,7 @@
 slug: /evidence/people-schedule
 title: 人员排期证据
 type: reference
-status: active
+status: review
 updated: "2026-11-14"
 keywords:
   - 人员排期
@@ -33,6 +33,14 @@ description: 列出 Issue #42 人员排期实现的规则入口、测试、截�
 | `2026-11-14-local.md` | 本机命令、结果、截图和未运行项 |
 | `macos-people-schedule-final.png` | macOS 人员排期主界面和跨日任务 |
 | `ios-people-schedule-final.png` | iOS Simulator 人员排期主界面和跨日任务 |
+| `2026-11-14-glass-redesign.md` | Liquid Glass 任务条重设计和待完成的视觉验收 |
+| `macos-glass-compact.png` | macOS 紧凑密度 |
+| `macos-glass-standard.png` | macOS 标准密度 |
+| `macos-glass-loose.png` | macOS 宽松密度 |
+| `ios-glass-light.png` | iOS 亮色 |
+| `ios-glass-dark.png` | iOS Dark Mode |
+| `ios-glass-large-text.png` | iOS Accessibility XXXL |
+| `ios-glass-reduce-transparency.png` | iOS Reduce Transparency |
 
 ## 结论规则
 

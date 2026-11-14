@@ -697,6 +697,7 @@ private struct PeopleScheduleTaskCapsule: View {
     let scrollToDay: (Date, ScrollViewProxy, Bool) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @State private var isHovering = false
     @State private var pinnedStatusPicker = false
@@ -720,16 +721,30 @@ private struct PeopleScheduleTaskCapsule: View {
         SchedulePriorityPalette(priority: task.priority)
     }
 
-    private var taskFill: Color {
-        task.status == .done ? palette.fill.opacity(0.32) : palette.fill
+    private var taskTint: Color {
+        palette.fill.opacity(task.status == .done ? 0.14 : 0.32)
     }
 
-    private var taskForeground: Color {
-        task.status == .done ? .primary : palette.foreground
-    }
+    private var taskForeground: Color { .primary }
 
     private var taskBorder: Color {
-        task.status == .done ? .primary.opacity(0.24) : palette.border
+        task.status == .done ? .primary.opacity(0.22) : palette.fill.opacity(0.72)
+    }
+
+    @ViewBuilder
+    private var taskBackground: some View {
+        if reduceTransparency {
+            Capsule(style: .continuous)
+                .fill(.regularMaterial)
+                .overlay {
+                    Capsule(style: .continuous)
+                        .fill(taskTint)
+                }
+        } else {
+            Capsule(style: .continuous)
+                .fill(taskTint)
+                .glassEffect(.regular.interactive(), in: Capsule(style: .continuous))
+        }
     }
 
     private var dateLabel: String {
@@ -742,11 +757,10 @@ private struct PeopleScheduleTaskCapsule: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                Capsule(style: .continuous)
-                    .fill(taskFill)
+                taskBackground
 
                 Text(task.title)
-                    .font(.caption.weight(.semibold))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(taskForeground)
                     .lineLimit(1)
                     .frame(maxWidth: max(geometry.size.width - 42, 20), alignment: .leading)
@@ -1013,17 +1027,4 @@ private struct SchedulePriorityPalette {
         }
     }
 
-    var foreground: Color {
-        switch priority {
-        case .high: .black
-        default: .white
-        }
-    }
-
-    var border: Color {
-        switch priority {
-        case .high: .black.opacity(0.24)
-        default: .white.opacity(0.2)
-        }
-    }
 }
