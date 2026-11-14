@@ -9,6 +9,17 @@
 - Decision Issue:
 - Contract:
 
+## 工作区与清理
+
+- Worktree path:
+- Branch:
+- Evidence migration:
+- Generated artifacts:
+- Cleanup audit:
+- Cleanup approval:
+- Cleanup result:
+- Issue closure: `manual` or `automatic`
+
 ## 变更
 
 -
@@ -41,6 +52,10 @@
 - [ ] PR 使用 `Closes #N` 或 `Part of #N`。
 - [ ] 已链接 Active Spec。
 - [ ] 已链接 Decision Issue。
+- [ ] 已记录 Worktree 路径和 branch，或已写明不适用原因。
+- [ ] Worktree 交付已使用 `Part of #N`。
+- [ ] 唯一证据已迁移，生成物清理结果已记录。
+- [ ] 需要删除的 Worktree 或 branch 已有 `@wyz541` 的明确批准。
 - [ ] Active Spec 已更新或已写明无需更新原因。
 - [ ] 合同变更兼容或已新增版本。
 - [ ] 没有秘密或敏感数据。
