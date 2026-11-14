@@ -263,7 +263,8 @@ cargo test --workspace
 ./scripts/test-plan-store.sh
 swift test
 xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
-  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -derivedDataPath build/DerivedData test
 ```
 
 验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-DOMAIN](docs/specs/domain.md) 和 [KS-UI](docs/specs/ui.md)。
