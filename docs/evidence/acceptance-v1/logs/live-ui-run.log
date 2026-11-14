@@ -1,0 +1,36 @@
+ Container task-39-acceptance-postgres-1 Running 
+ Container task-39-acceptance-postgres-1 Waiting 
+ Container task-39-acceptance-postgres-1 Healthy 
+   Compiling kshift-server v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-server)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.40s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
+{
+  "display_name": "Mia Chen",
+  "id": "11111111-1111-4111-8111-111111111111",
+  "is_active": true,
+  "is_admin": true
+}
+{
+  "display_name": "Noah Li",
+  "id": "22222222-2222-4222-8222-222222222222",
+  "is_active": true,
+  "is_admin": false
+}
+{"actor_id":"11111111-1111-4111-8111-111111111111","alpha_audit_entries":5,"alpha_date":"2026-11-15","alpha_project_id":"11111111-2222-4333-8444-555555555555","alpha_project_name":"Alpha Project","alpha_revision":5,"alpha_time_zone":"Pacific/Kiritimati","beta_audit_entries":3,"beta_date":"2026-11-14","beta_project_id":"44444444-5555-4666-8777-888888888888","beta_project_name":"Beta Project","beta_revision":3,"beta_time_zone":"America/Los_Angeles","second_user_id":"22222222-2222-4222-8222-222222222222"}
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.46
+   Compiling rustls-webpki v0.103.17
+   Compiling tokio-rustls v0.26.6
+   Compiling tonic v0.13.1
+   Compiling kshift-contract v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-contract)
+   Compiling kshift-client v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-client)
+   Compiling kshift-ffi v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-ffi)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.65s
+scratch=/Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/live-ui/20261114-144957-81398
+ios_result=/Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/live-ui/20261114-144957-81398/ios-live.xcresult
+macos_board=/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/docs/evidence/macos-board.png
+macos_live_server=/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/docs/evidence/macos-live-server.png
+ios_live_server=/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/docs/evidence/ios-live-server.png
+real 132.56
+user 72.64
+sys 34.71
