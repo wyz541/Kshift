@@ -2,7 +2,10 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
+derived_data="$root/build/DerivedData"
 cd "$root"
+
+./scripts/check-build-governance.py
 
 if rg -n '#if os\(' Sources/KshiftCore Sources/KshiftUI; then
   echo "Shared UI contains a platform conditional." >&2
@@ -37,6 +40,7 @@ xcodebuild \
   -scheme Kshift-macOS \
   -configuration Debug \
   -destination 'platform=macOS' \
+  -derivedDataPath "$derived_data" \
   build
 
 xcodebuild \
@@ -44,4 +48,5 @@ xcodebuild \
   -scheme Kshift-iOS \
   -configuration Debug \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -derivedDataPath "$derived_data" \
   test

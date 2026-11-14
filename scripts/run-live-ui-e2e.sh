@@ -153,7 +153,7 @@ env "${p0_env[@]}" \
   >"$scratch/macos-p0-test.log" 2>&1
 xcodegen generate >/dev/null
 ios_result="$scratch/ios-live.xcresult"
-ios_derived="$scratch/ios-derived"
+ios_derived="$root/build/DerivedData"
 
 env "${test_runner_env[@]}" \
   xcodebuild \
@@ -178,7 +178,7 @@ if [[ ! -s "$scratch/macos-p0-report.json" ]]; then
   exit 1
 fi
 
-macos_derived="$scratch/macos-derived"
+macos_derived="$root/build/DerivedData"
 xcodebuild \
   -project Kshift.xcodeproj \
   -scheme Kshift-macOS \

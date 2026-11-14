@@ -34,6 +34,7 @@ description: 提供 Kshift Active Spec、决策过程、合同和历史材料的
 | 11 | [Open Questions](decisions/open-questions.md) | 查看待迁移的未决问题 |
 | 12 | [ADR Index](adr/README.md) | 追溯历史决策原因 |
 | 13 | [R4/R5](r4-r5/README.md) | 运维、部署、发布和验收 |
+| 14 | [Local Build](local-build.md) | DerivedData、Debug App 和 Test Runner 的本地规则 |
 
 ## 状态说明
 

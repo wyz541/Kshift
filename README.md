@@ -175,6 +175,17 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 
 ### Swift 验证
 
+本地 Xcode 构建统一写入 `build/DerivedData`。完整规则见
+[本地构建路径治理](docs/local-build.md)。
+
+| 命令 | 作用 |
+| --- | --- |
+| `make app-paths` | 输出 macOS 和 iOS Debug App 路径 |
+| `make clean-build DRY_RUN=1` | 只输出固定 DerivedData 清理路径 |
+| `make check-build-governance` | 检查固定路径、target 和 bundle identifier |
+
+Debug App 显示名为 `Kshift Dev`。Release App 显示名为 `Kshift`。Debug App 禁止复制到 `/Applications` 或 `~/Applications`。Test Runner 只允许测试命令启动。
+
 1. 检查共享边界。
 
    ```sh
@@ -196,13 +207,13 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 4. 构建 macOS app。
 
    ```sh
-   xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
+   xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -destination 'platform=macOS' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
    ```
 
 5. 构建 iOS app。
 
    ```sh
-   xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+   xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -destination 'generic/platform=iOS Simulator' -derivedDataPath build/DerivedData CODE_SIGNING_ALLOWED=NO build
    ```
 
 6. 运行 macOS/iOS live P0 E2E。

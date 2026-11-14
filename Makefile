@@ -3,7 +3,13 @@ RUST_BIN := $(HOME)/.rustup/toolchains/stable-aarch64-apple-darwin/bin
 CARGO_HOME := $(CURDIR)/.build/cargo-home
 CARGO := $(RUST_BIN)/cargo
 RUST_ENV := PATH="$(RUST_BIN):$$PATH" CARGO_HOME="$(CARGO_HOME)"
-.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test postgres-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e test verify clean
+BUILD_DIR := $(CURDIR)/build
+DERIVED_DATA := $(BUILD_DIR)/DerivedData
+MACOS_APP := $(DERIVED_DATA)/Build/Products/Debug/Kshift-macOS.app
+IOS_APP := $(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/Kshift-iOS.app
+DRY_RUN ?= 0
+
+.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test postgres-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e test verify app-paths clean-build check-build-governance legacy-deriveddata-manifest clean
 
 prepare-cargo-home:
 	@mkdir -p "$(CARGO_HOME)"
@@ -22,9 +28,9 @@ rust-test: prepare-cargo-home
 	$(RUST_ENV) $(CARGO) test --workspace
 
 postgres-test: prepare-cargo-home
-	$(RUST_ENV) ./Scripts/test-plan-store.sh
+	$(RUST_ENV) ./scripts/test-plan-store.sh
 
-ffi:
+ffi: prepare-cargo-home
 	$(RUST_ENV) ./scripts/build-ffi.sh all
 
 swift-build:
@@ -38,13 +44,13 @@ project:
 	xcodegen generate
 
 mac-build: ffi project
-	xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -configuration Debug -destination 'platform=macOS' build
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -configuration Debug -destination 'platform=macOS' -derivedDataPath "$(DERIVED_DATA)" build
 
 ios-build: ffi project
-	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath "$(DERIVED_DATA)" build
 
 ios-test: ffi project
-	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -derivedDataPath "$(DERIVED_DATA)" test
 
 live-ui-e2e:
 	KSHIFT_CARGO_OFFLINE=1 ./scripts/run-live-ui-e2e.sh
@@ -55,5 +61,18 @@ test: rust-fmt rust-lint rust-test postgres-test swift-test
 verify: test
 	./scripts/verify.sh
 
-clean:
+app-paths:
+	@printf 'macOS: %s (%s)\n' "$(MACOS_APP)" "$(if $(wildcard $(MACOS_APP)),present,missing)"
+	@printf 'iOS:   %s (%s)\n' "$(IOS_APP)" "$(if $(wildcard $(IOS_APP)),present,missing)"
+
+clean-build:
+	@./scripts/clean-build.sh $(if $(filter 1 true yes,$(DRY_RUN)),--dry-run,)
+
+check-build-governance:
+	@./scripts/check-build-governance.py
+
+legacy-deriveddata-manifest:
+	@./scripts/list-legacy-deriveddata.sh
+
+clean: clean-build
 	rm -rf .build target
