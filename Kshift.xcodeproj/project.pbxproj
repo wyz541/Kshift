@@ -15,6 +15,7 @@
 		B58DDBA27251D80F8BF78868 /* KshiftIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAB3FF5A5FC18B63FBFD0848 /* KshiftIOSApp.swift */; };
 		B6BDBBC21024D227FB3A8645 /* KshiftIOSUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B1EEED301D5012C43635AE5 /* KshiftIOSUITests.swift */; };
 		C173CEA5FB026A5DFE637C65 /* KshiftCore in Frameworks */ = {isa = PBXBuildFile; productRef = 571E165F4691C1D92F2676D8 /* KshiftCore */; };
+		CDE7F3C56279BDA33508594F /* KshiftIOSLiveP0Harness.swift in Sources */ = {isa = PBXBuildFile; fileRef = E719FA3E87A89C8D09210A1E /* KshiftIOSLiveP0Harness.swift */; };
 		E3E80CAEE3E82D3C4A453B14 /* KshiftAppKitAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 9EE188FC6A3E92DE584BB5E8 /* KshiftAppKitAdapter */; };
 		E471558095728F1619F89F0F /* KshiftCore in Frameworks */ = {isa = PBXBuildFile; productRef = 6D668502395B93144092764F /* KshiftCore */; };
 /* End PBXBuildFile section */
@@ -43,9 +44,10 @@
 		6B1EEED301D5012C43635AE5 /* KshiftIOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSUITests.swift; sourceTree = "<group>"; };
 		7A3F0217B2DC3602D48C8267 /* Kshift-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Kshift-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8AFCE71B6AD48FCFFDE43BF6 /* KshiftIOSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSTests.swift; sourceTree = "<group>"; };
-		8E7E2249E524A14FE150BE1A /* issue-7-live-history-e2e */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "issue-7-live-history-e2e"; path = .; sourceTree = SOURCE_ROOT; };
 		9F39A45AE2415DDC1E0064FD /* Kshift-iOS-PlannerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Kshift-iOS-PlannerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AAB3FF5A5FC18B63FBFD0848 /* KshiftIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSApp.swift; sourceTree = "<group>"; };
+		E03A0BE1A74C3A375AB1F608 /* issue-7-timezone-p0-e2e */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "issue-7-timezone-p0-e2e"; path = .; sourceTree = SOURCE_ROOT; };
+		E719FA3E87A89C8D09210A1E /* KshiftIOSLiveP0Harness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSLiveP0Harness.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,7 +93,7 @@
 		913F907064FB6F47F615A65E /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				8E7E2249E524A14FE150BE1A /* issue-7-live-history-e2e */,
+				E03A0BE1A74C3A375AB1F608 /* issue-7-timezone-p0-e2e */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -130,6 +132,7 @@
 			isa = PBXGroup;
 			children = (
 				AAB3FF5A5FC18B63FBFD0848 /* KshiftIOSApp.swift */,
+				E719FA3E87A89C8D09210A1E /* KshiftIOSLiveP0Harness.swift */,
 			);
 			path = KshiftIOS;
 			sourceTree = "<group>";
@@ -312,6 +315,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B58DDBA27251D80F8BF78868 /* KshiftIOSApp.swift in Sources */,
+				CDE7F3C56279BDA33508594F /* KshiftIOSLiveP0Harness.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

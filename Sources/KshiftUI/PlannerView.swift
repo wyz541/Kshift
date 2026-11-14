@@ -17,7 +17,12 @@ struct PlannerView: View {
     }
 
     private var selectedDateTitle: String {
-        model.selectedDate.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        model.selectedDate.formatted(
+            Date.FormatStyle(timeZone: model.projectTimeZone)
+                .weekday(.wide)
+                .month(.wide)
+                .day()
+        )
     }
 
     var body: some View {
@@ -119,7 +124,7 @@ struct PlannerView: View {
                         ) {
                             ForEach(model.projects) { project in
                                 Button(project.name) {
-                                    model.selectedProjectID = project.id
+                                    Swift.Task { await model.selectProject(project.id) }
                                 }
                             }
                             Button("取消", role: .cancel) {}
@@ -235,7 +240,7 @@ struct PlannerView: View {
     private var dateStepButtons: some View {
         HStack(spacing: 8) {
             Button {
-                model.selectedDate = KshiftDate.addingDays(-1, to: model.selectedDate)
+                model.addDaysToSelection(-1)
             } label: {
                 Image(systemName: "chevron.left")
                     .frame(width: 44, height: 44)
@@ -244,7 +249,7 @@ struct PlannerView: View {
             .accessibilityLabel("前一天")
 
             Button {
-                model.selectedDate = KshiftDate.startOfDay(.now)
+                model.selectToday()
             } label: {
                 Image(systemName: "calendar.badge.clock")
                     .frame(width: 44, height: 44)
@@ -253,7 +258,7 @@ struct PlannerView: View {
             .accessibilityLabel("今天")
 
             Button {
-                model.selectedDate = KshiftDate.addingDays(1, to: model.selectedDate)
+                model.addDaysToSelection(1)
             } label: {
                 Image(systemName: "chevron.right")
                     .frame(width: 44, height: 44)
@@ -266,10 +271,14 @@ struct PlannerView: View {
     private var datePickerControl: some View {
         DatePicker(
             "选择日期",
-            selection: $model.selectedDate,
+            selection: Binding(
+                get: { model.selectedDate },
+                set: { model.selectDate($0) }
+            ),
             displayedComponents: .date
         )
         .labelsHidden()
+        .environment(\.timeZone, model.projectTimeZone)
         .fixedSize()
     }
 

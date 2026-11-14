@@ -6,7 +6,7 @@
 
   @main
   struct KshiftIOSApp: App {
-    @StateObject private var model = AppModel(
+    @StateObject private var model = KshiftRuntimeEnvironment.makeModel(
       client: KshiftClientFactory.makeDefault(),
       platform: UIKitPlatformCapabilities()
     )

@@ -121,10 +121,6 @@ public struct KshiftRootView: View {
             Text(model.errorMessage ?? "")
         }
         .task { await model.bootstrap() }
-        .onChange(of: model.selectedProjectID) { _, newValue in
-            guard let newValue else { return }
-            Swift.Task { await model.selectProject(newValue) }
-        }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active, model.hasLoaded {
                 Swift.Task { await model.refresh() }

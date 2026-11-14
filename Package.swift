@@ -47,7 +47,12 @@ let package = Package(
     ),
     .testTarget(
       name: "KshiftCoreTests",
-      dependencies: ["KshiftCore", "KshiftUI"]
+      dependencies: [
+        "KshiftCore",
+        "KshiftUI",
+        "KshiftPresentation",
+        "KshiftAppKitAdapter",
+      ]
     ),
     .testTarget(
       name: "KshiftFFITests",

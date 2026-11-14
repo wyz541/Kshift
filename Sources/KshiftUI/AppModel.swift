@@ -139,11 +139,23 @@ public final class AppModel: ObservableObject {
 
     public let client: any KshiftClientProtocol
     private let platform: any KshiftPlatformCapabilities
+    private let userTimeZoneOverride: TimeZone?
+    private let fallbackUserTimeZoneToProject: Bool
+    private let nowProvider: () -> Date
     private var hasBootstrapped = false
 
-    public init(client: any KshiftClientProtocol, platform: any KshiftPlatformCapabilities) {
+    public init(
+        client: any KshiftClientProtocol,
+        platform: any KshiftPlatformCapabilities,
+        userTimeZone: TimeZone? = nil,
+        fallbackUserTimeZoneToProject: Bool = false,
+        now: @escaping () -> Date = Date.init
+    ) {
         self.client = client
         self.platform = platform
+        self.userTimeZoneOverride = userTimeZone
+        self.fallbackUserTimeZoneToProject = fallbackUserTimeZoneToProject
+        self.nowProvider = now
     }
 
     public var tasks: [TaskItem] {
@@ -169,7 +181,14 @@ public final class AppModel: ObservableObject {
         return calendar
     }
 
-    public var userTimeZone: TimeZone { .current }
+    public var userTimeZone: TimeZone {
+        userTimeZoneOverride
+            ?? (fallbackUserTimeZoneToProject ? projectTimeZone : .current)
+    }
+
+    public var projectToday: Date {
+        KshiftDate.startOfDay(nowProvider(), calendar: projectCalendar)
+    }
 
     public var selectedDateString: String {
         KshiftDate.isoString(from: selectedDate, calendar: projectCalendar)
@@ -264,18 +283,21 @@ public final class AppModel: ObservableObject {
     }
 
     public func selectProject(_ projectID: String) async {
-        guard projectID != selectedProjectID || snapshot == nil else { return }
+        guard projectID != snapshot?.project.id || snapshot == nil else { return }
         isLoading = true
         defer { isLoading = false }
         do {
+            let loadedSnapshot = try await client.snapshot(projectID: projectID)
             selectedProjectID = projectID
-            snapshot = try await client.snapshot(projectID: projectID)
+            snapshot = loadedSnapshot
+            replaceProjectSummary(loadedSnapshot.project)
             alignSelectedDateToProject()
             selectedTaskIDs.removeAll()
             selectedTasksChanged()
             conflict = nil
             hasLoaded = true
         } catch {
+            selectedProjectID = snapshot?.project.id ?? selectedProjectID
             errorMessage = error.localizedDescription
         }
     }
@@ -314,6 +336,22 @@ public final class AppModel: ObservableObject {
             dueDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
             position: position
         )
+    }
+
+    public func selectDate(_ date: Date) {
+        selectedDate = KshiftDate.startOfDay(date, calendar: projectCalendar)
+    }
+
+    public func selectToday() {
+        selectedDate = projectToday
+    }
+
+    public func addDaysToSelection(_ days: Int) {
+        selectedDate = KshiftDate.addingDays(days, to: selectedDate, calendar: projectCalendar)
+    }
+
+    public func isProjectToday(_ date: Date) -> Bool {
+        projectCalendar.isDate(date, inSameDayAs: projectToday)
     }
 
     public func presentEdit(_ task: TaskItem) {
@@ -448,7 +486,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func taskCount(on date: Date) -> Int {
-        let key = KshiftDate.isoString(from: date)
+        let key = KshiftDate.isoString(from: date, calendar: projectCalendar)
         return filteredTasks.filter { $0.dueDate == key }.count
     }
 
@@ -547,7 +585,7 @@ public final class AppModel: ObservableObject {
     }
 
     private func alignSelectedDateToProject() {
-        selectedDate = KshiftDate.startOfDay(.now, calendar: projectCalendar)
+        selectedDate = projectToday
     }
 
     private func sorted(_ tasks: [TaskItem]) -> [TaskItem] {
