@@ -708,8 +708,6 @@ private struct PeopleScheduleTaskCapsule: View {
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isFocused: Bool
     @State private var isHovering = false
-    @State private var isStatusHovering = false
-    @State private var pinnedStatusPicker = false
 
     private var taskWidth: CGFloat {
         CGFloat(slice.dayCount) * dateWidth - 6
@@ -734,9 +732,20 @@ private struct PeopleScheduleTaskCapsule: View {
         RoundedRectangle(cornerRadius: 13, style: .continuous)
     }
 
+    private var contentShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+    }
+
     private var glassTint: Color {
-        let opacity = task.status == .done ? 0.06 : (isHovering ? 0.22 : 0.16)
+        let opacity = task.status == .done ? 0.05 : (isHovering ? 0.22 : 0.16)
         return palette.glassTint.opacity(opacity)
+    }
+
+    private var contentPlateColor: Color {
+        if colorScheme == .dark {
+            return .black.opacity(contrast == .increased ? 0.92 : 0.72)
+        }
+        return .white.opacity(contrast == .increased ? 1 : 0.92)
     }
 
     private var borderColor: Color {
@@ -744,9 +753,9 @@ private struct PeopleScheduleTaskCapsule: View {
             return colorScheme == .dark ? .white : .black
         }
         if isHovering {
-            return palette.accent.opacity(0.72)
+            return palette.accent.opacity(0.82)
         }
-        return colorScheme == .dark ? .white.opacity(0.20) : .black.opacity(0.12)
+        return colorScheme == .dark ? .white.opacity(0.34) : .black.opacity(0.30)
     }
 
     private var dateLabel: String {
@@ -758,79 +767,121 @@ private struct PeopleScheduleTaskCapsule: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let isNarrow = geometry.size.width < 140
             taskSurface {
                 ZStack(alignment: .leading) {
+                    contentShape
+                        .fill(contentPlateColor)
+                        .padding(3)
+                        .contentShape(taskShape)
+                        .onTapGesture {
+                            model.presentDetails(task)
+                        }
+                        .accessibilityElement()
+                        .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
+                        .accessibilityHint("点击可查看任务详情。")
+                        .accessibilityAction(named: "查看任务详情") {
+                            model.presentDetails(task)
+                        }
+                        .accessibilityIdentifier("schedule-task-\(task.id)")
+
                     Capsule(style: .continuous)
-                        .fill(palette.accent.opacity(task.status == .done ? 0.42 : 1))
+                        .fill(palette.accent.opacity(task.status == .done ? 0.48 : 1))
                         .frame(width: 3, height: max(geometry.size.height - 18, 18))
-                        .offset(x: 9)
+                        .offset(x: 6)
+                        .allowsHitTesting(false)
+
+                    statusBadge(isNarrow: isNarrow)
 
                     Text(task.title)
-                        .font(.caption.weight(.semibold))
+                        .font(isNarrow ? .caption2.weight(.semibold) : .caption.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
+                        .lineLimit(isNarrow ? 2 : 1)
+                        .multilineTextAlignment(.leading)
+                        .minimumScaleFactor(0.90)
                         .allowsTightening(true)
-                        .frame(maxWidth: max(geometry.size.width - 56, 20), alignment: .leading)
-                        .offset(x: max(titleLeading, 19))
+                        .frame(
+                            maxWidth: max(geometry.size.width - (isNarrow ? 38 : 60), 20),
+                            maxHeight: .infinity,
+                            alignment: .leading
+                        )
+                        .offset(x: max(titleLeading, isNarrow ? 30 : 52))
+                        .allowsHitTesting(false)
                         .accessibilityHidden(true)
-
-                    Button {
-                        pinnedStatusPicker.toggle()
-                    } label: {
-                        Image(systemName: task.status.symbol)
-                            .font(.system(size: 12, weight: .bold))
-                            .symbolRenderingMode(.hierarchical)
-                            .foregroundStyle(task.status.tint)
-                            .frame(width: 22, height: 22)
-                            .frame(width: 44, height: max(laneHeight - 4, 44))
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .onHover { hovering in
-                        isStatusHovering = hovering
-                    }
-                    .accessibilityLabel("\(task.title)，状态 \(task.status.title)。展开状态选择")
-                    .accessibilityIdentifier("schedule-status-\(task.id)")
-
-                    resizeHandle(edge: .start)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    resizeHandle(edge: .end)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
                 }
+            }
+            .overlay(alignment: .leading) {
+                statusMenu
+            }
+            .overlay(alignment: .leading) {
+                resizeHandle(edge: .start)
+                    .frame(width: 12)
+            }
+            .overlay(alignment: .trailing) {
+                resizeHandle(edge: .end)
+                    .frame(width: 12)
             }
         }
         .contentShape(taskShape)
         .onHover { isHovering = $0 }
-        .popover(
-            isPresented: Binding(
-                get: { isStatusHovering || pinnedStatusPicker },
-                set: { presented in
-                    if !presented { pinnedStatusPicker = false }
-                }
-            ),
-            arrowEdge: .bottom
-        ) {
-            PeopleScheduleStatusPicker(model: model, task: task)
-        }
-        .onTapGesture {
-            model.presentDetails(task)
-        }
         .draggable(task.id)
         .focusable()
         .focused($isFocused)
         .focusEffectDisabled()
         .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
         .animation(reduceMotion ? nil : .snappy(duration: 0.18), value: isHovering)
-        .opacity(task.status == .done ? 0.72 : 1)
-        .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
-        .accessibilityHint("拖动可移动任务。点击可查看详情。")
-        .accessibilityAction(named: "查看任务详情") {
-            model.presentDetails(task)
+        .opacity(task.status == .done ? 0.78 : 1)
+    }
+
+    private var statusMenu: some View {
+        Menu {
+            ForEach(TaskStatus.allCases) { status in
+                Button {
+                    Swift.Task { await model.setStatus(task, to: status) }
+                } label: {
+                    Label(status.title, systemImage: status.symbol)
+                }
+            }
+        } label: {
+            Color.clear
+            .frame(width: 44, height: max(laneHeight - 4, 44))
+            .contentShape(Rectangle())
         }
-        .accessibilityIdentifier("schedule-task-\(task.id)")
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .frame(width: 44, height: max(laneHeight - 4, 44))
+        .fixedSize(horizontal: true, vertical: true)
+        .contentShape(Rectangle())
+        .accessibilityLabel("\(task.title)，\(task.priority.code)，状态 \(task.status.title)。更改状态")
+        .accessibilityIdentifier("schedule-status-\(task.id)")
+    }
+
+    private func statusBadge(isNarrow: Bool) -> some View {
+        VStack(spacing: 1) {
+            if !isNarrow {
+                Canvas { context, size in
+                    context.draw(
+                        Text(task.priority.code)
+                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.black),
+                        at: CGPoint(x: size.width / 2, y: size.height / 2),
+                        anchor: .center
+                    )
+                }
+                .frame(width: 18, height: 12)
+                .background(palette.glassTint, in: Capsule())
+                .accessibilityHidden(true)
+            }
+
+            Image(systemName: task.status.symbol)
+                .font(.system(size: 13, weight: .bold))
+                .symbolRenderingMode(.hierarchical)
+                .foregroundStyle(task.status.tint)
+        }
+        .frame(width: 44, height: max(laneHeight - 4, 44))
+        .allowsHitTesting(false)
+        .accessibilityElement(children: .ignore)
+        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -884,39 +935,6 @@ private struct PeopleScheduleTaskCapsule: View {
                     }
             )
             .accessibilityHidden(true)
-    }
-}
-
-private struct PeopleScheduleStatusPicker: View {
-    @ObservedObject var model: AppModel
-    let task: TaskItem
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(task.title)
-                .font(.callout.weight(.semibold))
-                .lineLimit(2)
-            Text("更改状态")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.secondary)
-            HStack(spacing: 6) {
-                ForEach(TaskStatus.allCases) { status in
-                    Button {
-                        Swift.Task { await model.setStatus(task, to: status) }
-                    } label: {
-                        Image(systemName: status.symbol)
-                            .frame(width: 44, height: 44)
-                    }
-                    .buttonStyle(.glass)
-                    .tint(status.tint)
-                    .help(status.title)
-                    .accessibilityLabel(status.title)
-                    .accessibilityIdentifier("schedule-status-\(status.rawValue)-\(task.id)")
-                }
-            }
-        }
-        .padding(14)
-        .frame(minWidth: 250)
     }
 }
 
@@ -1043,12 +1061,7 @@ private struct SchedulePriorityPalette {
     let priority: TaskPriority
 
     var accent: Color {
-        switch priority {
-        case .urgent: Color(hex: "#C62828")
-        case .high: Color(hex: "#B26A00")
-        case .medium: Color(hex: "#1565C0")
-        case .low: Color(hex: "#666A70")
-        }
+        priority.tint
     }
 
     var glassTint: Color {

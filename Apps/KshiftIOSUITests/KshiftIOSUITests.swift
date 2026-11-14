@@ -109,6 +109,18 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(unexpectedIssues.isEmpty, unexpectedIssues.joined(separator: "\n"))
     }
 
+    func testPeopleScheduleStatusControlOpensNativeMenu() throws {
+        let app = launchPlannerWithDefaultView()
+        let status = app.buttons["schedule-status-task-launch-brief"].firstMatch
+        XCTAssertTrue(status.waitForExistence(timeout: 8), app.debugDescription)
+
+        status.tap()
+
+        let completed = app.buttons["已完成"].firstMatch
+        XCTAssertTrue(completed.waitForExistence(timeout: 3), app.debugDescription)
+        completed.tap()
+    }
+
     func testCoreActionsMeetMinimumTouchTargets() throws {
         let app = launchPlanner()
 
