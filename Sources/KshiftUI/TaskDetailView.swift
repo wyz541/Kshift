@@ -86,7 +86,7 @@ struct TaskDetailView: View {
 
                 HStack(spacing: 18) {
                     DetailFact(title: "负责人", value: model.assigneeNames(for: task))
-                    DetailFact(title: "日期", value: task.dueDate)
+                    DetailFact(title: "日期", value: task.scheduleStartDate == task.scheduleEndDate ? task.dueDate : "\(task.scheduleStartDate) 至 \(task.scheduleEndDate)")
                     DetailFact(title: "版本", value: "v\(task.version)")
                 }
                 .padding(16)
@@ -96,6 +96,13 @@ struct TaskDetailView: View {
                     Text(task.notes.isEmpty ? "无说明" : task.notes)
                         .foregroundStyle(task.notes.isEmpty ? .secondary : .primary)
                         .textSelection(.enabled)
+                }
+
+                if !task.tags.isEmpty {
+                    detailSection("标签") {
+                        Text(task.tags.map { "#\($0)" }.joined(separator: "  "))
+                            .textSelection(.enabled)
+                    }
                 }
 
                 detailSection("历史") {

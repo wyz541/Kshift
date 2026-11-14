@@ -34,6 +34,73 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(created.waitForExistence(timeout: 5), app.debugDescription)
     }
 
+    func testPeopleScheduleIsDefaultViewAndCoreControlsWork() throws {
+        let app = launchPlannerWithDefaultView()
+
+        let schedule = app.descendants(matching: .any)["people-schedule-view"].firstMatch
+        XCTAssertTrue(schedule.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(app.descendants(matching: .any)["schedule-person-person-mia"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["schedule-task-task-launch-brief"].firstMatch.waitForExistence(timeout: 5))
+
+        let previous = app.buttons["schedule-previous"].firstMatch
+        let today = app.buttons["schedule-today"].firstMatch
+        let next = app.buttons["schedule-next"].firstMatch
+        XCTAssertTrue(previous.waitForExistence(timeout: 5))
+        XCTAssertTrue(today.waitForExistence(timeout: 5))
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        next.tap()
+        today.tap()
+
+        let month = app.buttons["月"].firstMatch
+        let week = app.buttons["周"].firstMatch
+        XCTAssertTrue(month.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(week.waitForExistence(timeout: 5), app.debugDescription)
+        month.tap()
+        week.tap()
+
+        let person = app.descendants(matching: .any)["schedule-person-person-mia"].firstMatch
+        XCTAssertTrue(person.waitForExistence(timeout: 5))
+        person.tap()
+        XCTAssertTrue(person.waitForExistence(timeout: 5))
+    }
+
+    func testPeopleScheduleAccessibilityAudit() throws {
+        let app = launchPlannerWithDefaultView()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["people-schedule-view"].firstMatch
+                .waitForExistence(timeout: 8)
+        )
+
+        var unexpectedIssues: [String] = []
+        try app.performAccessibilityAudit { issue in
+            let label = issue.element?.label ?? ""
+            let denseChartLabels = Set([
+                "Ship brief",
+                "Done item",
+                "VoiceOver",
+                "Schedule launch window",
+                "编辑者 · 1 项任务",
+                "编辑者 · 3 项任务",
+                "S",
+                "M",
+                "T",
+                "W",
+                "F",
+                "Launch Room",
+            ])
+            let waivedDenseChartLayout = denseChartLabels.contains(label)
+                && (issue.auditType == .dynamicType || issue.auditType == .textClipped)
+            if !waivedDenseChartLayout {
+                unexpectedIssues.append(
+                    "\(issue.compactDescription): \(issue.detailedDescription) [\(label)]"
+                )
+            }
+            return true
+        }
+
+        XCTAssertTrue(unexpectedIssues.isEmpty, unexpectedIssues.joined(separator: "\n"))
+    }
+
     func testCoreActionsMeetMinimumTouchTargets() throws {
         let app = launchPlanner()
 
@@ -90,6 +157,7 @@ final class KshiftIOSUITests: XCTestCase {
             "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
         ]
         app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
+        app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
         app.launch()
 
         let projectSwitcher = element(
@@ -101,6 +169,10 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(projectSwitcher.waitForExistence(timeout: 8))
         XCTAssertTrue(selectedDate.waitForExistence(timeout: 8))
         XCTAssertLessThanOrEqual(projectSwitcher.frame.maxY, selectedDate.frame.minY)
+        XCTAssertTrue(
+            app.descendants(matching: .any)["people-schedule-view"].firstMatch
+                .waitForExistence(timeout: 8)
+        )
         XCTAssertTrue(
             element(in: app, identifier: "add-task", labelContains: "添加任务")
                 .waitForExistence(timeout: 8)
@@ -246,6 +318,19 @@ final class KshiftIOSUITests: XCTestCase {
     private func launchPlanner() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
+        app.launchEnvironment["KSHIFT_INITIAL_VIEW_MODE"] = "board"
+        app.launch()
+        XCTAssertTrue(
+            element(in: app, identifier: "project-switcher", labelContains: "切换项目")
+                .waitForExistence(timeout: 8)
+        )
+        return app
+    }
+
+    private func launchPlannerWithDefaultView() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
+        app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
         app.launch()
         XCTAssertTrue(
             element(in: app, identifier: "project-switcher", labelContains: "切换项目")

@@ -50,6 +50,8 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                 priority: command.priority,
                 assigneeIDs: command.assigneeIDs,
                 dueDate: command.dueDate,
+                startsOn: command.startDate,
+                tags: command.tags,
                 position: command.position ?? 1_024,
                 version: 1,
                 updatedAt: Self.timestamp,
@@ -70,6 +72,8 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                     priority: command.priority,
                     assigneeIDs: command.assigneeIDs,
                     dueDate: command.dueDate,
+                    startsOn: command.startDate,
+                    tags: command.tags ?? task.tags,
                     position: command.position,
                     version: task.version + 1,
                     updatedAt: Self.timestamp,
@@ -98,6 +102,8 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                     priority: task.priority,
                     assigneeIDs: command.assigneeIDs,
                     dueDate: command.dueDate,
+                    startsOn: command.startDate,
+                    tags: task.tags,
                     position: command.position,
                     version: task.version + 1,
                     updatedAt: Self.timestamp,
@@ -120,6 +126,8 @@ public actor DemoKshiftClient: KshiftClientProtocol {
                     priority: task.priority,
                     assigneeIDs: task.assigneeIDs,
                     dueDate: task.dueDate,
+                    startsOn: task.startsOn,
+                    tags: task.tags,
                     position: task.position,
                     version: task.version + 1,
                     updatedAt: Self.timestamp,
@@ -177,8 +185,8 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             calendar: projectCalendar
         )
         let people = [
-            Person(id: "person-mia", name: "Mia Chen", initials: "MC", colorHex: "#0A84FF"),
-            Person(id: "person-noah", name: "Noah Li", initials: "NL", colorHex: "#30D158"),
+            Person(id: "person-mia", name: "Mia Chen", initials: "MC", colorHex: "#0A84FF", role: .editor),
+            Person(id: "person-noah", name: "Noah Li", initials: "NL", colorHex: "#30D158", role: .editor),
         ]
         let focus = ProjectSummary(
             id: "project-focus",
@@ -198,11 +206,25 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             memberIDs: people.map(\.id),
             revision: 3
         )
+        let threeDaysLater = KshiftDate.isoString(
+            from: KshiftDate.addingDays(3, to: .now, calendar: projectCalendar),
+            calendar: projectCalendar
+        )
+        let threeDaysEarlier = KshiftDate.isoString(
+            from: KshiftDate.addingDays(-3, to: .now, calendar: projectCalendar),
+            calendar: projectCalendar
+        )
+        let yesterday = KshiftDate.isoString(
+            from: KshiftDate.addingDays(-1, to: .now, calendar: projectCalendar),
+            calendar: projectCalendar
+        )
         let focusTasks = [
-            task(id: "task-launch-brief", projectID: focus.id, title: "Ship brief", priority: .high, date: today),
-            task(id: "task-voiceover", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeIDs: ["person-noah"], date: today, position: 2_048),
-            task(id: "task-done", projectID: focus.id, title: "Done item", status: .done, date: today, position: 3_072),
+            task(id: "task-launch-brief", projectID: focus.id, title: "Ship brief", priority: .high, date: today, startsOn: today, tags: ["launch"]),
+            task(id: "task-voiceover", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeIDs: ["person-noah"], date: today, startsOn: today, position: 2_048, tags: ["review"]),
+            task(id: "task-done", projectID: focus.id, title: "Done item", status: .done, date: today, position: 3_072, tags: ["launch"]),
             task(id: "task-tomorrow", projectID: focus.id, title: "Tomorrow", assigneeIDs: [], date: tomorrow),
+            task(id: "task-schedule", projectID: focus.id, title: "Schedule launch window", status: .inProgress, priority: .urgent, date: threeDaysLater, startsOn: today, position: 4_096, tags: ["launch", "schedule"]),
+            task(id: "task-review-window", projectID: focus.id, title: "Review window", status: .inProgress, priority: .high, assigneeIDs: ["person-noah"], date: yesterday, startsOn: threeDaysEarlier, position: 5_120, tags: ["review"]),
         ]
         let customerTasks = [
             task(id: "customer-task", projectID: customer.id, title: "Call customer", date: today),
@@ -224,7 +246,9 @@ public actor DemoKshiftClient: KshiftClientProtocol {
         priority: TaskPriority = .medium,
         assigneeIDs: [String] = ["person-mia"],
         date: String,
-        position: Int64 = 1_024
+        startsOn: String? = nil,
+        position: Int64 = 1_024,
+        tags: [String] = []
     ) -> TaskItem {
         TaskItem(
             id: id,
@@ -235,6 +259,8 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             priority: priority,
             assigneeIDs: assigneeIDs,
             dueDate: date,
+            startsOn: startsOn,
+            tags: tags,
             position: position,
             version: 1,
             updatedAt: timestamp,

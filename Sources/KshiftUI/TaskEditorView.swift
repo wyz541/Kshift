@@ -5,12 +5,14 @@ struct TaskEditorView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var draft: TaskDraft
+    @State private var tagText: String
     @State private var validationMessage: String?
     @State private var isSaving = false
 
     init(model: AppModel, initialDraft: TaskDraft) {
         self.model = model
         _draft = State(initialValue: initialDraft)
+        _tagText = State(initialValue: initialDraft.tags.joined(separator: ", "))
     }
 
     var body: some View {
@@ -82,15 +84,33 @@ struct TaskEditorView: View {
                             }
                             .pickerStyle(.menu)
                         }
-                        fieldGroup("日期") {
+                        fieldGroup("开始日期") {
                             DatePicker(
-                                "任务日期",
+                                "开始日期",
+                                selection: Binding(
+                                    get: { draft.startDate ?? draft.dueDate },
+                                    set: { draft.startDate = $0 }
+                                ),
+                                displayedComponents: .date
+                            )
+                            .labelsHidden()
+                            .environment(\.timeZone, model.projectTimeZone)
+                        }
+                        fieldGroup("截止日期") {
+                            DatePicker(
+                                "截止日期",
                                 selection: $draft.dueDate,
                                 displayedComponents: .date
                             )
                             .labelsHidden()
                             .environment(\.timeZone, model.projectTimeZone)
                         }
+                    }
+
+                    fieldGroup("标签") {
+                        TextField("例如：发布, 审核", text: $tagText)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("任务标签")
                     }
 
                     if draft.taskID != nil {
@@ -167,10 +187,18 @@ struct TaskEditorView: View {
             validationMessage = "任务标题不能超过 200 个字符。"
             return
         }
+        if let startDate = draft.startDate, startDate > draft.dueDate {
+            validationMessage = "开始日期不能晚于截止日期。"
+            return
+        }
         validationMessage = nil
         isSaving = true
         var submitted = draft
         submitted.title = trimmedTitle
+        submitted.tags = tagText
+            .components(separatedBy: CharacterSet(charactersIn: ",，\n"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
         Swift.Task {
             let saved = await model.saveTask(submitted)
             isSaving = false

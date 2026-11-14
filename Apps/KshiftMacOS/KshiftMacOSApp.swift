@@ -131,12 +131,14 @@
 
         Divider()
 
-        Button("看板") { model.viewMode = .board }
+        Button("人员排期") { model.viewMode = .peopleSchedule }
           .keyboardShortcut("1", modifiers: .command)
-        Button("日历") { model.viewMode = .calendar }
+        Button("看板") { model.viewMode = .board }
           .keyboardShortcut("2", modifiers: .command)
-        Button("表格") { model.viewMode = .table }
+        Button("日历") { model.viewMode = .calendar }
           .keyboardShortcut("3", modifiers: .command)
+        Button("表格") { model.viewMode = .table }
+          .keyboardShortcut("4", modifiers: .command)
 
         Divider()
 

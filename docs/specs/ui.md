@@ -11,12 +11,12 @@ keywords:
   - 无障碍
   - 性能
   - 平台边界
-description: 定义 Kshift 的平台范围、共享 SwiftUI、Liquid Glass、无障碍、性能与唯一日计划入口。
+description: 定义 Kshift 的平台范围、共享 SwiftUI、人员排期、Liquid Glass、无障碍、性能与唯一日计划入口。
 ---
 
 # KS-UI Kshift 界面与无障碍规范
 
-> 结论：macOS 和 iOS 共享一套 SwiftUI。平台差异只进入 adapter。Liquid Glass 只使用 Apple 原生材质。`KshiftRootView` 是唯一日计划 UI。
+> 结论：macOS 和 iOS 共享一套 SwiftUI。平台差异只进入 adapter。默认规划视图是人员排期。`KshiftRootView` 是唯一日计划 UI。
 
 ## 1. 适用范围
 
@@ -90,7 +90,7 @@ flowchart TB
 | 可拖拽、可选择、可执行命令的任务卡片 | `Glass.regular` 外表面 | 玻璃直接承载低对比文字 |
 | 同组相邻玻璃卡片 | 共用一个 `GlassEffectContainer` | 每卡片一个 container |
 | 纯展示卡片 | 标准材质或清晰内容底板 | 用玻璃作为唯一可读表面 |
-| 正文、密集表格、长文本编辑 | 清晰内容底板 | 低对比玻璃正文 |
+| 正文、密集表格、人员排期、长文本编辑 | 清晰内容底板 | 低对比玻璃正文 |
 | AppKit 专属区域 | `NSGlassEffectView` 和 SwiftUI wrapper | 另写一套 AppKit 产品 UI |
 
 - `UI-GLS-001`：只使用 Apple 原生材质和 API。
@@ -122,6 +122,23 @@ flowchart TB
 - `QA-UI-006`：自动无障碍审计、触控目标和系统文字大小测试通过。
 - `QA-UI-007`：iOS 滚动、拖拽和 Sheet 切换有 XCUITest 性能读数。
 
+## 7.1 人员排期工作区
+
+- `UI-PPL-001`：`PlannerViewMode` 必须包含人员排期。视图切换器和侧栏必须把人员排期放在首位。
+- `UI-PPL-002`：macOS 和 iOS 必须使用同一个 `PeopleScheduleView`。禁止复制平台页面。
+- `UI-PPL-003`：人员行必须显示头像、姓名、角色、任务数、进行中数量、P0 数量和折叠按钮。
+- `UI-PPL-004`：人员列默认宽度为 `196pt`。日期列宽度必须限制在 `96pt` 至 `360pt`。
+- `UI-PPL-005`：密度必须包含紧凑、标准和宽松。默认密度为紧凑。
+- `UI-PPL-006`：任务胶囊只显示状态图标和标题。优先级背景固定为 P0 红、P1 黄、P2 蓝、P3 灰。
+- `UI-PPL-007`：已完成任务必须降低透明度。状态按钮必须支持悬停或点击展开。
+- `UI-PPL-008`：任务泳道必须避免重叠。任务排序先使用优先级，再使用状态权重。
+- `UI-PPL-009`：横向裁切任务必须把标题吸附到视口可见边缘。完整可见任务必须把标题放回任务起点。
+- `UI-PPL-010`：每条泳道最多显示一个路标。路标不得覆盖可见任务。跨周期定位必须先切换周期。
+- `UI-PPL-011`：任务可以拖到其他人员或其他日期。任务边缘可以调整开始日期或截止日期。
+- `UI-PPL-012`：人员排期必须支持标题、说明和标签搜索，以及负责人、状态、优先级和标签筛选。
+- `UI-PPL-013`：项目偏好必须保存当前日期、横向位置、人员列宽度、日期列宽度、显示密度、折叠状态和视图选择。
+- `UI-PPL-014`：人员排期必须提供网格语义、图标按钮标签、键盘焦点、悬停预览和 Reduce Motion 行为。
+
 ## 8. 关联合同
 
 UI host 只消费 `kshift-ffi` 的 opaque handle、typed command、bounded snapshot/event 和稳定错误。
@@ -133,6 +150,8 @@ UI host 只消费 `kshift-ffi` 的 opaque handle、typed command、bounded snaps
 
 - 平台边界：`./scripts/check-platform-boundaries.sh`
 - Swift 测试：`swift test`
+- 人员排期单元测试：`swift test --filter PeopleScheduleTests`
+- 人员排期证据：[People Schedule Evidence](../evidence/people-schedule/README.md)
 - macOS/iOS live P0 E2E：`make live-ui-e2e`
 - 无障碍证据：[Accessibility Evidence](../evidence/accessibility/README.md)
 - 迁移来源：[ADR-0002](../adr/0002-macos-ios-first.md)、[ADR-0003](../adr/0003-native-liquid-glass-boundary.md)、[ADR-0009](../adr/0009-single-day-plan-ui.md)

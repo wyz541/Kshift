@@ -48,6 +48,8 @@ struct PlannerView: View {
 
                 Group {
                     switch model.viewMode {
+                    case .peopleSchedule:
+                        PeopleScheduleView(model: model)
                     case .board:
                         BoardView(model: model)
                     case .calendar:
@@ -56,30 +58,23 @@ struct PlannerView: View {
                         TaskTableView(model: model)
                     }
                 }
+                .padding(.bottom, showsFloatingAddButton ? 76 : 0)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
             .clipped()
             .background(.clear)
             .overlay(alignment: .bottomTrailing) {
-                if horizontalSizeClass != .regular, !usesAccessibilityLayout {
+                if showsFloatingAddButton {
                     Button {
                         model.presentNewTask(assigneeIDs: [])
                     } label: {
-                        if usesAccessibilityLayout {
-                            Image(systemName: "plus")
-                                .font(.title3.weight(.semibold))
-                                .frame(width: 44, height: 44)
-                                .contentShape(Rectangle())
-                        } else {
-                            Label("添加任务", systemImage: "plus")
-                                .font(.headline)
-                                .foregroundStyle(.white)
-                                .frame(minHeight: 44)
-                                .padding(.horizontal, 18)
-                                .background(Color(hex: "#003F80"), in: Capsule())
-                                .contentShape(Rectangle())
-                        }
+                        Image(systemName: "plus")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 48, height: 48)
+                            .background(Color(hex: "#003F80"), in: Circle())
+                            .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
                     .glassEffect(.regular, in: Capsule())
@@ -89,6 +84,10 @@ struct PlannerView: View {
                 }
             }
         }
+    }
+
+    private var showsFloatingAddButton: Bool {
+        horizontalSizeClass != .regular && !usesAccessibilityLayout
     }
 
     private var header: some View {

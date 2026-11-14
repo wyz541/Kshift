@@ -66,7 +66,7 @@ Kshift 对齐 `wooduan-taskboard` 的可观察用户能力。Kshift 不复制参
 | ID | 场景 | 结果 |
 | --- | --- | --- |
 | `SCN-001` | 用户切换到授权项目 | 只看到该项目数据 |
-| `SCN-002` | 用户按人员和自然日期查看看板 | 任务出现在正确列 |
+| `SCN-002` | 用户按人员和自然日期查看人员排期 | 任务出现在正确人员行和日期位置 |
 | `SCN-003` | 用户新建或编辑任务 | 服务端提交新 revision |
 | `SCN-004` | 用户拖拽任务到其他人员或日期 | 任务和事件原子更新 |
 | `SCN-005` | 两名用户编辑同一任务 | 过期写入被拒绝 |
@@ -82,7 +82,7 @@ Kshift 对齐 `wooduan-taskboard` 的可观察用户能力。Kshift 不复制参
 - Rust server 和 Rust client。
 - PostgreSQL 18 共享数据库。
 - 项目、成员、任务、状态、优先级、负责人和日期。
-- 人员与日期看板、日历、表格和基础统计。
+- 人员排期、人员与日期看板、日历、表格和基础统计。
 - 搜索、筛选、排序和批量处理。
 - 多人并发编辑、冲突提示和 revision 同步。
 - 子任务、依赖、甘特、历史、附件和报告。
@@ -126,7 +126,7 @@ flowchart LR
 | R0 | 可评审的 Active Spec、Decision Issue 和合同 | Active Spec 和 Decision Issue 已建立 | [#3](https://github.com/wyz541/Kshift/issues/3) |
 | R1 | 可运行的共享服务核心 | 并发、迁移和合同测试通过 | [#4](https://github.com/wyz541/Kshift/issues/4)、[#5](https://github.com/wyz541/Kshift/issues/5) |
 | R2 | macOS/iOS 日计划 MVP | P0 E2E、复用和 Liquid Glass 门禁通过 | [#6](https://github.com/wyz541/Kshift/issues/6)、[#7](https://github.com/wyz541/Kshift/issues/7) |
-| R3 | 计划深度与复盘 | 验收数据集通过 | [#8](https://github.com/wyz541/Kshift/issues/8) |
+| R3 | 计划深度与复盘 | 验收数据集通过 | [#8](https://github.com/wyz541/Kshift/issues/8)、[#42](https://github.com/wyz541/Kshift/issues/42) |
 | R4 | 可运营的内网产品 | 权限、备份和恢复演练通过 | [#9](https://github.com/wyz541/Kshift/issues/9) |
 | R5 | 可发布的内网产品 | 安装、升级、签名和回滚证据通过 | [#9](https://github.com/wyz541/Kshift/issues/9) |
 
