@@ -273,9 +273,9 @@ struct PeopleScheduleView: View {
 
     private var laneHeight: CGFloat {
         let base: CGFloat = switch model.scheduleDensity {
-        case .compact: 50
-        case .standard: 58
-        case .comfortable: 66
+        case .compact: 40
+        case .standard: 48
+        case .comfortable: 56
         }
         return base * typeScale
     }
@@ -302,7 +302,7 @@ struct PeopleScheduleView: View {
         if model.collapsedSchedulePersonIDs.contains(row.id) {
             return 58 * typeScale
         }
-        return max(64, CGFloat(max(row.laneCount, 1)) * laneHeight + 12)
+        return max(56, CGFloat(max(row.laneCount, 1)) * laneHeight + 8)
     }
 
     private func makeRow(id: String, person: Person?, tasks: [TaskItem]) -> PeopleScheduleRow {
@@ -394,7 +394,7 @@ private struct PeopleSchedulePersonHeader: View {
                 Spacer(minLength: 4)
                 Image(systemName: collapsed ? "chevron.right" : "chevron.down")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(strongTextColor)
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 44, maxHeight: .infinity, alignment: .leading)
@@ -408,12 +408,12 @@ private struct PeopleSchedulePersonHeader: View {
         .overlay(alignment: .bottomTrailing) {
             if !collapsed, !row.tasks.isEmpty, !dynamicTypeSize.isAccessibilitySize {
                 HStack(spacing: 5) {
-                    countBadge("\(row.tasks.count)", symbol: "list.bullet", color: .secondary)
+                    countBadge("\(row.tasks.count)", symbol: "list.bullet")
                     if row.inProgressCount > 0 {
-                        countBadge("\(row.inProgressCount)", symbol: "circle.lefthalf.filled", color: .blue)
+                        countBadge("\(row.inProgressCount)", symbol: "circle.lefthalf.filled")
                     }
                     if row.urgentCount > 0 {
-                        countBadge("\(row.urgentCount)", symbol: "flag.fill", color: .red)
+                        countBadge("\(row.urgentCount)", symbol: "flag.fill")
                     }
                 }
                 .padding(.trailing, 10)
@@ -451,14 +451,11 @@ private struct PeopleSchedulePersonHeader: View {
         return "\(name)，\(role)，\(row.tasks.count) 项任务，\(row.inProgressCount) 项进行中，\(row.urgentCount) 项 P0"
     }
 
-    private func countBadge(_ value: String, symbol: String, color: Color) -> some View {
+    private func countBadge(_ value: String, symbol: String) -> some View {
         Label(value, systemImage: symbol)
             .labelStyle(.titleAndIcon)
             .font(.caption2.monospacedDigit().weight(.semibold))
             .foregroundStyle(strongTextColor)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.1), in: Capsule())
     }
 }
 
@@ -607,7 +604,7 @@ private struct PeopleScheduleTimelineRow: View {
                     )
                     .frame(
                         width: max(CGFloat(slice.dayCount) * dateWidth - 6, 32),
-                        height: 44
+                        height: 36
                     )
                     .offset(
                         x: CGFloat(slice.startIndex) * dateWidth + 3,
@@ -625,7 +622,7 @@ private struct PeopleScheduleTimelineRow: View {
                         )
                         .frame(
                             width: min(max(viewportWidth * 0.34, 260), 380),
-                            height: max(laneHeight - 8, 28)
+                            height: max(laneHeight - 10, 26)
                         )
                         .offset(
                             x: max(horizontalOffset + viewportWidth - min(max(viewportWidth * 0.34, 260), 380) - 10, 6),
@@ -1001,9 +998,9 @@ private struct SchedulePriorityPalette {
 
     var fill: Color {
         switch priority {
-        case .urgent: Color(hex: "#B3261E")
-        case .high: Color(hex: "#B07F00")
-        case .medium: Color(hex: "#0B57D0")
+        case .urgent: Color(hex: "#D92D3A")
+        case .high: Color(hex: "#FFC400")
+        case .medium: Color(hex: "#0066FF")
         case .low: Color(hex: "#5F6368")
         }
     }
