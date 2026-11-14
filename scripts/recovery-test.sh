@@ -34,11 +34,12 @@ psql "$SOURCE_URL" -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
 INSERT INTO kshift.app_user (id, display_name, is_admin)
 VALUES ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'Recovery User', true);
 INSERT INTO kshift.project (
-  id, name, current_revision, created_by, created_at, updated_at
+  id, name, time_zone, current_revision, created_by, created_at, updated_at
 )
 VALUES (
   'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   'Recovery Project',
+  'UTC',
   1,
   'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   now(),

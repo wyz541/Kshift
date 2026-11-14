@@ -15,9 +15,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "632DF84CB567D9EE035E8C01"
-               BuildableName = "KshiftMac.app"
-               BlueprintName = "KshiftMac"
+               BlueprintIdentifier = "FCA3FD9883AC404850E7AD77"
+               BuildableName = "Kshift-macOS.app"
+               BlueprintName = "Kshift-macOS"
                ReferencedContainer = "container:Kshift.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -32,9 +32,9 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "632DF84CB567D9EE035E8C01"
-            BuildableName = "KshiftMac.app"
-            BlueprintName = "KshiftMac"
+            BlueprintIdentifier = "FCA3FD9883AC404850E7AD77"
+            BuildableName = "Kshift-macOS.app"
+            BlueprintName = "Kshift-macOS"
             ReferencedContainer = "container:Kshift.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -55,9 +55,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "632DF84CB567D9EE035E8C01"
-            BuildableName = "KshiftMac.app"
-            BlueprintName = "KshiftMac"
+            BlueprintIdentifier = "FCA3FD9883AC404850E7AD77"
+            BuildableName = "Kshift-macOS.app"
+            BlueprintName = "Kshift-macOS"
             ReferencedContainer = "container:Kshift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -74,9 +74,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "632DF84CB567D9EE035E8C01"
-            BuildableName = "KshiftMac.app"
-            BlueprintName = "KshiftMac"
+            BlueprintIdentifier = "FCA3FD9883AC404850E7AD77"
+            BuildableName = "Kshift-macOS.app"
+            BlueprintName = "Kshift-macOS"
             ReferencedContainer = "container:Kshift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

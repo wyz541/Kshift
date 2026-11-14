@@ -3,7 +3,7 @@ slug: /docs/r3-plan-depth
 title: R3 计划深度验收
 type: reference
 status: active
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - R3
   - 计划深度
@@ -48,8 +48,8 @@ description: 记录 R3 业务不变量、跨平台 UI 门禁和运行证据。
 | 过期 revision 被拒绝 | PostgreSQL 集成测试 | 通过 |
 | 报告使用同一 snapshot | Rust、Swift 和 PostgreSQL 测试 | 通过 |
 | 图片导出使用报告 revision | `testReportImageExportUsesTypedReportRevision` | 通过 |
-| macOS 构建 | `KshiftMac` Debug build | 通过 |
-| iOS 构建 | `KshiftIOS` Simulator build | 通过 |
+| macOS 构建 | `Kshift-macOS` Debug build | 通过 |
+| iOS 构建 | `Kshift-iOS` Simulator build | 通过 |
 | iOS P0 流程 | `testPlanDepthFlowAndAccessibilityAudit` | 通过 |
 | 触控区域、字号和对比度 | XCUI accessibility audit | 通过 |
 | Liquid Glass 卡片上限 | `testBoardCapsNativeGlassCardsAtSix` | 通过 |
@@ -70,9 +70,9 @@ description: 记录 R3 业务不变量、跨平台 UI 门禁和运行证据。
 运行结果如下。
 
 - Rust 领域测试：11 项通过。
-- Swift 测试：16 项通过。
-- iOS UI 测试：1 项通过。
-- PostgreSQL 18 集成测试：1 项通过。
+- Swift package tests：通过。
+- R3 iOS UI 测试：通过。
+- PostgreSQL 18 集成测试：通过。
 - macOS app：构建通过。
 - iOS app：构建通过。
 - 辅助功能大字号截图：筛选栏改为纵向布局，无文字重叠。

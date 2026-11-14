@@ -4,6 +4,8 @@ members = [
     "crates/kshift-domain",
     "crates/kshift-contract",
     "crates/kshift-server",
+    "crates/kshift-client",
+    "crates/kshift-ffi",
     "crates/kshift-core",
     "crates/kshift-plan-store",
 ]
@@ -19,6 +21,7 @@ authors = ["Kshift contributors"]
 anyhow = "1.0.104"
 async-trait = "0.1.89"
 chrono = { version = "0.4.45", features = ["serde"] }
+chrono-tz = "0.10.4"
 contract = { package = "kshift-contract", path = "crates/kshift-contract" }
 domain = { package = "kshift-domain", path = "crates/kshift-domain" }
 futures-util = "0.3.34"
@@ -41,3 +44,4 @@ tower-http = { version = "0.6.11", features = ["timeout", "trace"] }
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "json"] }
 uuid = { version = "1.29.2", features = ["serde", "v4"] }
+zeroize = { version = "1.8", features = ["derive"] }

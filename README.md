@@ -1,97 +1,306 @@
----
-title: "Kshift"
-status: "active"
-source: "https://github.com/wyz541/Kshift/issues/8"
----
-
 # Kshift
 
-R3 计划深度纵向切片已实现。这个切片包含子任务、依赖、跨日甘特、Markdown、附件、历史回退和报告。
+结论：Kshift 是只在内网运行的 macOS/iOS 共享任务工作台。Rust server 是业务状态唯一写入权威。
 
-## 当前交付
+## 当前状态
 
-- Rust 核心拥有 R3 业务不变量。
-- PostgreSQL 18 保存 snapshot、历史状态和附件内容。
-- macOS 与 iOS 使用同一个 SwiftUI 页面。
-- 任务卡使用原生 Liquid Glass。
-- 甘特、历史和报告使用稳定内容底板。
-- 打印和图片导出读取同一个 typed report snapshot。
+- 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
+- Spec 版本：`0.1`，状态 `active`。
+- 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
+- 实现状态：Rust server、Rust client、C ABI、R2 日计划 UI 和 R3 计划深度切片可构建；macOS/iOS live P0 E2E 已验证。
+- 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
+- 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
+- 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
 
-R1 server、R2 shared SwiftUI 和 R3 plan depth 位于同一 workspace。完整 R3 RPC 接线尚未完成。当前 R3 app 使用 typed in-memory boundary 提供运行样例。
+## 首版边界
 
-## 结构
+| 项目 | 首版决策 |
+| --- | --- |
+| 平台 | macOS 26.0+、iOS 26.0+ |
+| UI | 一套共享 SwiftUI；平台能力使用 adapter |
+| 视觉 | Apple 原生 Liquid Glass |
+| 业务逻辑 | Rust 唯一 owner |
+| 服务 | Rust server、gRPC、PostgreSQL 18 |
+| 部署 | 内网 macOS 开发机 |
+| 同步 | revisioned snapshot 和 transactional outbox |
+| 发布 | GitHub 多平台 Release |
+
+## 系统边界
+
+下图展示首版的唯一定位链。UI 不绕过 Rust client。
+
+```mermaid
+flowchart LR
+  UI["macOS / iOS SwiftUI UI"] -->|"C ABI"| FFI["kshift-ffi"]
+  FFI --> CL["Rust client"]
+  CL -->|"gRPC over TLS"| SV["Rust server"]
+  SV -->|"SQL transaction"| DB[("PostgreSQL 18")]
+  SV -->|"snapshot / events"| CL
+```
+
+## R1 服务核心
+
+- protobuf 契约使用 `kshift.v1` package。
+- gRPC 提供 `ListProjects`、`GetProjectSnapshot`、`ExecuteCommand` 和 `WatchProjectChanges`。
+- PostgreSQL 18 保存业务数据、审计、幂等结果和 transactional outbox。
+- 每个成功写入只增加一个 project revision，并生成一个 outbox event。
+- `expected_project_revision` 和 `expected_entity_version` 阻止静默覆盖。
+- 任务支持 0 至 20 个项目成员作为共同负责人。
+- 项目 IANA 时区决定自然日期。用户时区只显示绝对时间戳。
+- 协议上限固定为 request 1 MiB、response 和 snapshot 16 MiB、event 256 KiB、attachment 256 MiB。
+- revision gap 返回 `ResetRequired`。
+- Bearer token 先映射用户，再由数据库检查项目成员关系。
+- 标准 gRPC health、JSON 日志、TLS、有界队列和 graceful shutdown 已接入。
+- Rust client 提供 TLS、认证 metadata、deadline、取消、有限重试和 snapshot cache。
+- `kshift-ffi` 提供 opaque handle、bounded JSON buffer 和 panic containment。
+
+| 路径 | 作用 |
+| --- | --- |
+| `crates/kshift-domain` | 纯业务类型、校验和不变量 |
+| `crates/kshift-contract` | protobuf 生成代码、wire 转换和 typed error |
+| `crates/kshift-server` | gRPC、auth、SQLx 事务、outbox 和健康检查 |
+| `crates/kshift-client` | TLS channel、typed RPC、retry、revision tracking 和 cache |
+| `crates/kshift-ffi` | macOS/iOS C ABI、opaque handles 和 bounded buffers |
+| `crates/kshift-core` | R3 计划深度业务权威和报告生成 |
+| `crates/kshift-plan-store` | R3 PostgreSQL snapshot、历史状态和附件持久化 |
+| `include` | C header 和 Swift C module map |
+| `migrations` | PostgreSQL schema migration |
+| `proto` | `buf` 管理的 protobuf source |
+| `scripts/recovery-test.sh` | migration rollback 和 restore 演练 |
+
+### 服务启动
+
+1. 创建 PostgreSQL 18 数据库。
+2. 设置 `KSHIFT_DATABASE_URL`。
+3. 执行 migration。
+
+```sh
+export KSHIFT_DATABASE_URL='postgres://kshift_owner@127.0.0.1:5432/kshift'
+cargo run -p kshift-server -- migrate
+```
+
+4. 从 stdin 创建 Admin 用户。
+
+```sh
+printf '%s\n' '{"id":"11111111-1111-4111-8111-111111111111","display_name":"Kshift Admin","is_admin":true}' \
+  | cargo run -p kshift-server -- bootstrap-user
+```
+
+5. 从 stdin 计算 bearer token 的 SHA-256。
+
+```sh
+printf '%s\n' 'replace-with-a-random-token' \
+  | cargo run -p kshift-server -- hash-token
+```
+
+6. 创建 auth JSON 文件。
+
+```json
+{
+  "tokens": [
+    {
+      "sha256": "replace-with-hash-token-output",
+      "user_id": "11111111-1111-4111-8111-111111111111"
+    }
+  ]
+}
+```
+
+7. 限制 auth 文件权限。
+
+```sh
+chmod 600 /absolute/path/to/kshift-auth.json
+```
+
+8. 启动 TLS server。
+
+```sh
+export KSHIFT_AUTH_FILE='/absolute/path/to/kshift-auth.json'
+export KSHIFT_TLS_CERT_PATH='/absolute/path/to/server.crt'
+export KSHIFT_TLS_KEY_PATH='/absolute/path/to/server.key'
+cargo run -p kshift-server -- serve
+```
+
+本地测试可以显式禁用 TLS。禁止在内网 Stable 环境禁用 TLS。
+
+```sh
+export KSHIFT_ALLOW_INSECURE=true
+```
+
+### Rust 验证
+
+```sh
+cargo fmt --all -- --check
+buf format -d
+buf lint
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+TEST_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' cargo test --workspace
+cargo test --locked -p kshift-client -p kshift-ffi
+```
+
+`TEST_DATABASE_URL` 必须允许创建临时数据库。测试会为每个 case 创建独立测试库。
+
+恢复演练：
+
+```sh
+KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
+  ./scripts/recovery-test.sh
+```
+
+## 共享 SwiftUI 基座
 
 | 路径 | 职责 |
 | --- | --- |
-| `crates/kshift-domain` | R1 业务类型、校验和不变量 |
-| `crates/kshift-contract` | protobuf 生成代码、wire 转换和 typed error |
-| `crates/kshift-server` | gRPC、auth、SQLx 事务、outbox 和健康检查 |
-| `crates/kshift-core/src/plan_depth.rs` | R3 业务权威、命令、报告和单元测试 |
-| `crates/kshift-plan-store` | R3 PostgreSQL snapshot、历史状态和附件持久化 |
-| `migrations/0002_plan_depth.sql` | R3 schema |
-| `Sources/KshiftPresentation/PlanDepth` | typed snapshot、command、presentation mapping |
-| `Sources/KshiftUI/PlanDepth` | 共享 SwiftUI feature slice 和报告导出 |
-| `Sources/KshiftAppKitAdapter` | macOS 保存和打印能力 |
-| `Sources/KshiftUIKitAdapter` | iOS 分享和打印能力 |
-| `Apps/KshiftMacOS` | macOS 启动入口 |
-| `Apps/KshiftIOS` | iOS 启动入口 |
-| `Apps/KshiftIOSUITests` | 流程、触控区域、字号和对比度审计 |
+| `Sources/KshiftPresentation` | 共享平台 capability 类型 |
+| `Sources/KshiftFFI` | 正式 Rust C ABI wrapper |
+| `include` | `kshift-ffi` C header 和 Swift C module map |
+| `Sources/KshiftUI` | 共享 SwiftUI 页面、组件、语义色和 Liquid Glass 入口 |
+| `Sources/KshiftAppKitAdapter` | macOS 系统能力和 `NSViewRepresentable` |
+| `Sources/KshiftUIKitAdapter` | iOS 系统能力和 `UIViewControllerRepresentable` |
+| `Apps/KshiftMacOS` | macOS 最小启动入口 |
+| `Apps/KshiftIOS` | iOS 最小启动入口 |
+| `Kshift.xcodeproj` | 两个 app target 和共享 package 引用 |
 
-## 构建与测试
+当前边界：
 
-1. 生成 Xcode 工程。
+- macOS 和 iOS 的 P0 入口只组合同一个 `KshiftRootView`。
+- AppKit 和 UIKit 只处理系统能力，不承载产品页面。
+- 共享代码不使用 HTTP、PostgreSQL 或 protobuf 类型。
+- `#if os(...)` 只出现在 app entry。
+- `RustClient` 读取 `kshift-ffi` 的 bounded JSON，并映射为共享 UI 模型。
+- `KshiftRustClient` 保留底层 C ABI wrapper。`KshiftRootView` 通过 `RustClient` 读取数据。
+- 项目 IANA 时区决定今天按钮、日期选择、日历分桶和每日任务数。
+- 用户时区只格式化绝对时间戳。测试可设置 `KSHIFT_USER_TIME_ZONE` 和 `KSHIFT_NOW`。
+- Debug 截图使用 `DemoKshiftClient`。Release 入口使用 `RustClient`。
+- 当前构建使用 Xcode 27.2 SDK。部署目标为 macOS 26.0 和 iOS 26.0。
+
+### Swift 验证
+
+1. 检查共享边界。
 
    ```sh
-   xcodegen generate
+   ./scripts/check-platform-boundaries.sh
    ```
 
-2. 运行 Swift 测试。
+2. 构建 Rust static library。
+
+   ```sh
+   ./scripts/build-ffi.sh macos
+   ```
+
+3. 运行共享测试。
 
    ```sh
    swift test
    ```
 
-3. 构建 macOS app。
+4. 构建 macOS app。
 
    ```sh
-   xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS \
-     -configuration Debug -destination 'platform=macOS' \
-     build CODE_SIGNING_ALLOWED=NO
+   xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -destination 'platform=macOS' CODE_SIGNING_ALLOWED=NO build
    ```
 
-4. 构建 iOS app。
+5. 构建 iOS app。
 
    ```sh
-   xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
-     -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17e' \
-     build CODE_SIGNING_ALLOWED=NO
+   xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
    ```
 
-5. 运行 iOS UI 和无障碍审计。
+6. 运行 macOS/iOS live P0 E2E。
 
    ```sh
-   xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
-     -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17e' \
-     test CODE_SIGNING_ALLOWED=NO
+   make live-ui-e2e
    ```
 
-6. 运行 Rust 领域测试。
+## Rust client 与 C ABI
 
-   ```sh
-   cargo test -p kshift-core
-   ```
+Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只接收 JSON。Swift 不接收 protobuf、tonic 或 SQLx 类型。
 
-7. 运行 PostgreSQL 18 集成测试。
+| 验收项 | 命令 |
+| --- | --- |
+| Rust client/FFI tests | `cargo test --locked -p kshift-client -p kshift-ffi` |
+| Swift XCTest | `cargo build --locked -p kshift-ffi && swift test` |
+| C ABI end-to-end smoke test | `scripts/test-swift-smoke.sh` |
+| macOS/iOS XCFramework | `scripts/build-xcframework.sh` |
+| Build provenance check | `scripts/verify-xcframework.sh build/kshift-ffi.xcframework` |
 
-   ```sh
-   ./scripts/test-plan-store.sh
-   ```
+`scripts/test-swift-smoke.sh` 启动 loopback TLS gRPC fixture。测试通过 C ABI 调用 project list、snapshot、command 和 subscription。
 
-## 当前边界
+`kshift-ffi` 的安全规则：
 
-- App 当前使用 `InMemoryKshiftPlanDepthBoundary` 提供可运行样例。
-- 正式 Rust FFI 接线属于 Issue #5。
-- 当前 PostgreSQL 适配器保存 R3 snapshot。完整 server RPC 接线由后续集成完成。
-- 当前 SDK 为 Xcode 27.2。部署目标保持 macOS 26.0 和 iOS 26.0。
+- Handle 是不可解引用的 opaque token。
+- 每个 export 捕获 panic。
+- 每个 input 和 output 有 byte limit。
+- 释放后的 handle 返回 `KSHIFT_STATUS_INVALID_HANDLE`。
+- Token 不进入日志、URL、error projection 或 Release asset。
+- `unsafe` 只出现在 `kshift-ffi` 的适配层。
 
-验收证据见 [`docs/r3-plan-depth.md`](docs/r3-plan-depth.md)。
+## R3 计划深度
+
+R3 已进入共享 `KshiftRootView` 的“计划深度”入口。切片包含以下能力。
+
+- 子任务层级、依赖环检查、跨日排期和延迟任务统计。
+- 附件按 SHA-256 去重。单文件上限为 10 MiB。类型白名单校验扩展名和内容。
+- Admin 回退创建新 revision。审计记录保存恢复来源和内容摘要。
+- 报告固定 source revision。打印和 PNG 导出读取同一份报告。
+- 看板、甘特、历史、报告、Markdown 和附件视图在 macOS/iOS 共用。
+- 看板任务卡使用原生 Liquid Glass。甘特、历史和报告使用内容底板。
+
+R3 验收：
+
+```sh
+cargo test --workspace
+./Scripts/test-plan-store.sh
+swift test
+xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+```
+
+验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [ADR 0010](docs/adr/0010-plan-depth-snapshot-history.md)。
+
+## 文档入口
+
+| 内容 | 入口 |
+| --- | --- |
+| 产品、技术、UI 和验收规范 | [Spec v0.1](docs/spec/kshift-spec-v0.1.md) |
+| Discussion 到 Spec 的映射 | [Traceability](docs/spec/traceability.md) |
+| 关键决策状态 | [Decision Register](docs/decisions/decision-register.md) |
+| 未决项、owner 和截止日期 | [Open Questions](docs/decisions/open-questions.md) |
+| 架构决策记录 | [ADR Index](docs/adr/README.md) |
+| 协议和 Release 合同 | [Contracts](docs/contracts/README.md) |
+| R1 事务和同步 | [Architecture](docs/architecture.md) |
+| R1 运维和恢复 | [Operations](docs/operations.md) |
+| R1 验收证据 | [Acceptance](docs/r1-acceptance.md) |
+| R3 计划深度和报告 | [R3 Plan Depth](docs/r3-plan-depth.md) |
+| Rust client、cache 和 C ABI | [Client/FFI](docs/client-ffi.md) |
+| R2 功能和证据 | [MVP](docs/MVP.md) |
+| R2 截图和性能 | [Evidence](docs/evidence/README.md) |
+| 贡献与评审流程 | [CONTRIBUTING](CONTRIBUTING.md) |
+
+## 当前限制
+
+- 身份认证数据源尚未最终确认。R1 使用可控 bearer token hash。
+- Release app 需要配置 `KSHIFT_ENDPOINT`、CA 和 token。登录界面尚未实现。
+- UI 已通过 `kshift-ffi` 读取真实 gRPC/PostgreSQL server 数据。
+- macOS 和 iOS 分发方式尚未确认。
+- Release 仓库、通道和审批人尚未确认。
+- R3 当前通过 typed in-memory boundary 提供可运行切片。R3 正式 FFI/RPC 接线仍需后续集成。
+- 业务成功指标尚未确认。
+- PostgreSQL 高可用集群不在首版范围。
+
+## 安全边界
+
+- 数据库凭据只从 server 环境读取。
+- 客户端 token 只放在 gRPC `authorization: Bearer ...` metadata。
+- server 日志不记录 token、数据库 URL、密码或完整 command body。
+- auth 文件保存 token hash，不保存 raw token。
+- auth 文件必须为 `0600`。
+- server 默认拒绝无 TLS 启动。
+- FFI 释放后的 handle 返回明确错误。
+- FFI 不向 Swift 暴露 protobuf、tonic 或 SQLx 类型。
+
+## 来源
+
+- [Discussion #1：Kshift 内网 macOS/iOS Spec、路线与 Release](https://github.com/wyz541/Kshift/discussions/1)
+- [Issue #2：Kshift v1 总目标](https://github.com/wyz541/Kshift/issues/2)
+- [Apple HIG：Materials](https://developer.apple.com/design/human-interface-guidelines/materials)

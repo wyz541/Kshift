@@ -10,6 +10,10 @@ final class KshiftPlanDepthUITests: XCTestCase {
         let app = XCUIApplication()
         app.launch()
 
+        let openPlanDepth = app.buttons["open-plan-depth"]
+        XCTAssertTrue(openPlanDepth.waitForExistence(timeout: 8))
+        openPlanDepth.tap()
+
         XCTAssertTrue(app.staticTexts["计划深度"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons.matching(identifier: "甘特").firstMatch.exists)
 

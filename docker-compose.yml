@@ -13,7 +13,7 @@ services:
       timeout: 3s
       retries: 30
     volumes:
-      - kshift-postgres:/var/lib/postgresql/data
+      - kshift-postgres:/var/lib/postgresql
 
 volumes:
   kshift-postgres:

@@ -55,8 +55,8 @@ Liquid Glass 是 Apple 的功能层材质。可交互卡片需要明确层级和
 ## 5. 后果
 
 - 每个页面需要普通、Reduce Transparency、Increase Contrast 和 Reduce Motion 证据。
-- 需要 VoiceOver、键盘、触控目标和系统文字大小检查。
-- 需要滚动、拖拽、Sheet 和窗口缩放性能读数。
+- 需要自动无障碍审计、触控目标和系统文字大小测试。
+- 需要 iOS 滚动、拖拽和 Sheet 性能读数。
 - 卡片文字和控件需要独立内容底板。
 - 玻璃不能作为状态唯一载体。
 

@@ -82,12 +82,11 @@ async fn project_isolation_and_member_access_are_enforced() {
         ))
         .await
         .expect("member should read the project")
-        .into_inner()
-        .snapshot
-        .expect("snapshot should be present");
+        .into_inner();
     assert_eq!(snapshot.revision, 2);
     assert_eq!(snapshot.members.len(), 2);
-    assert_eq!(snapshot.project.as_ref().unwrap().current_revision, 2);
+    assert_eq!(snapshot.users.len(), 2);
+    assert_eq!(snapshot.project.as_ref().unwrap().revision, 2);
 
     let member_projects = api
         .api
@@ -97,6 +96,87 @@ async fn project_isolation_and_member_access_are_enforced() {
         .into_inner();
     assert_eq!(member_projects.projects.len(), 1);
     assert_eq!(member_projects.projects[0].id, project_id.to_string());
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn assignees_are_project_members_and_read_back_in_stable_order() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    let first_member = Uuid::new_v4();
+    let second_member = Uuid::new_v4();
+    let outsider = Uuid::new_v4();
+    db.seed_user(admin_id, "Admin", true).await;
+    db.seed_user(first_member, "First", false).await;
+    db.seed_user(second_member, "Second", false).await;
+    db.seed_user(outsider, "Outsider", false).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "admin-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Shared ownership"),
+            api.token(admin_id),
+        ))
+        .await
+        .unwrap();
+    for (revision, member_id) in [(1, first_member), (2, second_member)] {
+        api.api
+            .execute_command(request(
+                add_member(
+                    project_id,
+                    Uuid::new_v4(),
+                    member_id,
+                    v1::ProjectRole::Editor,
+                    revision,
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap();
+    }
+
+    let task = created_task(
+        api.api
+            .execute_command(request(
+                create_task_with_assignees(
+                    project_id,
+                    Uuid::new_v4(),
+                    "Two owners",
+                    3,
+                    vec![second_member, first_member],
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap()
+            .into_inner(),
+    );
+    let mut expected = vec![first_member.to_string(), second_member.to_string()];
+    expected.sort();
+    assert_eq!(task.assignee_ids, expected);
+
+    let error = api
+        .api
+        .execute_command(request(
+            create_task_with_assignees(
+                project_id,
+                Uuid::new_v4(),
+                "Invalid owner",
+                4,
+                vec![first_member, outsider],
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect_err("non-project members must not be assignees");
+    assert_eq!(error.code(), Code::InvalidArgument);
 
     db.cleanup().await;
 }
@@ -113,7 +193,6 @@ async fn concurrent_writes_do_not_silently_overwrite() {
         HashMap::from([(admin_id, "admin-token".to_owned())]),
     );
     let project_id = Uuid::new_v4();
-    let task_id = Uuid::new_v4();
 
     api.api
         .execute_command(request(
@@ -125,7 +204,7 @@ async fn concurrent_writes_do_not_silently_overwrite() {
     let task = created_task(
         api.api
             .execute_command(request(
-                create_task(project_id, Uuid::new_v4(), task_id, "Initial", "", 1),
+                create_task(project_id, Uuid::new_v4(), Uuid::new_v4(), "Initial", "", 1),
                 api.token(admin_id),
             ))
             .await
@@ -133,6 +212,7 @@ async fn concurrent_writes_do_not_silently_overwrite() {
             .into_inner(),
     );
     assert_eq!(task.version, 1);
+    let task_id = Uuid::parse_str(&task.id).unwrap();
 
     let first = api.api.execute_command(request(
         update_task_title(project_id, Uuid::new_v4(), task_id, "Writer A", 2, 1),
@@ -165,14 +245,196 @@ async fn concurrent_writes_do_not_silently_overwrite() {
         ))
         .await
         .expect("snapshot should succeed")
-        .into_inner()
-        .snapshot
-        .expect("snapshot should be present");
+        .into_inner();
     assert_eq!(snapshot.revision, 3);
     assert!(matches!(
         snapshot.tasks[0].title.as_str(),
         "Writer A" | "Writer B"
     ));
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn snapshot_maps_task_history_and_project_audit() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    db.seed_user(admin_id, "Audit User", true).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "audit-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Audit Project"),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("project should be created");
+    let task = created_task(
+        api.api
+            .execute_command(request(
+                create_task(
+                    project_id,
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    "Initial audit task",
+                    "",
+                    1,
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .expect("task should be created")
+            .into_inner(),
+    );
+    let task_id = Uuid::parse_str(&task.id).expect("task id should be a UUID");
+
+    api.api
+        .execute_command(request(
+            update_task_title(
+                project_id,
+                Uuid::new_v4(),
+                task_id,
+                "Updated audit task",
+                2,
+                1,
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("task should be updated");
+
+    let snapshot = api
+        .api
+        .get_project_snapshot(request(
+            v1::GetProjectSnapshotRequest {
+                project_id: project_id.to_string(),
+            },
+            api.token(admin_id),
+        ))
+        .await
+        .expect("snapshot should include audit data")
+        .into_inner();
+
+    assert_eq!(snapshot.revision, 3);
+    assert_eq!(snapshot.audit.len(), 3);
+    assert_eq!(snapshot.audit[0].action, "create_project");
+    assert_eq!(snapshot.audit[0].summary, "创建项目 Audit Project");
+    assert_eq!(snapshot.audit[0].revision, Some(1));
+    assert_eq!(snapshot.audit[1].action, "create_task");
+    assert_eq!(snapshot.audit[1].summary, "创建任务 Initial audit task");
+    assert_eq!(snapshot.audit[1].revision, Some(2));
+    assert_eq!(snapshot.audit[1].task_id.as_deref(), Some(task.id.as_str()));
+    assert_eq!(snapshot.audit[2].action, "update_task");
+    assert_eq!(snapshot.audit[2].summary, "更新任务 Updated audit task");
+    assert_eq!(snapshot.audit[2].revision, Some(3));
+    assert_eq!(snapshot.audit[2].actor_id, admin_id.to_string());
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn batch_status_update_is_atomic() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    db.seed_user(admin_id, "Admin", true).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "admin-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Batch"),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("project should be created");
+    let first = created_task(
+        api.api
+            .execute_command(request(
+                create_task(project_id, Uuid::new_v4(), Uuid::new_v4(), "First", "", 1),
+                api.token(admin_id),
+            ))
+            .await
+            .expect("first task should be created")
+            .into_inner(),
+    );
+    let second = created_task(
+        api.api
+            .execute_command(request(
+                create_task(project_id, Uuid::new_v4(), Uuid::new_v4(), "Second", "", 2),
+                api.token(admin_id),
+            ))
+            .await
+            .expect("second task should be created")
+            .into_inner(),
+    );
+    let first_id = Uuid::parse_str(&first.id).unwrap();
+    let second_id = Uuid::parse_str(&second.id).unwrap();
+
+    let response = api
+        .api
+        .execute_command(request(
+            batch_update_status(
+                project_id,
+                Uuid::new_v4(),
+                vec![(first_id, 1), (second_id, 1)],
+                v1::TaskStatus::Done,
+                3,
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect("batch should commit")
+        .into_inner();
+    assert_eq!(response_revision(&response), 4);
+    let event = response
+        .result
+        .and_then(|result| result.event)
+        .expect("batch event should be present");
+    assert_eq!(event.changes.len(), 2);
+
+    let conflict = api
+        .api
+        .execute_command(request(
+            batch_update_status(
+                project_id,
+                Uuid::new_v4(),
+                vec![(first_id, 2), (second_id, 1)],
+                v1::TaskStatus::Todo,
+                4,
+            ),
+            api.token(admin_id),
+        ))
+        .await
+        .expect_err("a stale entity version must reject the batch");
+    assert_eq!(conflict.code(), Code::Aborted);
+
+    let snapshot = api
+        .api
+        .get_project_snapshot(request(
+            v1::GetProjectSnapshotRequest {
+                project_id: project_id.to_string(),
+            },
+            api.token(admin_id),
+        ))
+        .await
+        .expect("snapshot should succeed")
+        .into_inner();
+    assert_eq!(snapshot.revision, 4);
+    assert!(snapshot
+        .tasks
+        .iter()
+        .all(|task| task.status == v1::TaskStatus::Done as i32));
 
     db.cleanup().await;
 }
@@ -244,6 +506,132 @@ async fn idempotent_command_replays_without_second_write() {
     assert_eq!(events, 1);
     assert_eq!(results, 1);
     assert_eq!(audits, 1);
+
+    db.cleanup().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn task_planning_fields_and_relations_round_trip() {
+    let Some(db) = TestDatabase::create().await else {
+        return;
+    };
+    let admin_id = Uuid::new_v4();
+    db.seed_user(admin_id, "Admin", true).await;
+    let api = TestApi::create(
+        db.pool.clone(),
+        HashMap::from([(admin_id, "admin-token".to_owned())]),
+    );
+    let project_id = Uuid::new_v4();
+    api.api
+        .execute_command(request(
+            create_project(project_id, Uuid::new_v4(), "Planning"),
+            api.token(admin_id),
+        ))
+        .await
+        .unwrap();
+    let dependency = created_task(
+        api.api
+            .execute_command(request(
+                create_task(
+                    project_id,
+                    Uuid::new_v4(),
+                    Uuid::new_v4(),
+                    "Dependency",
+                    "",
+                    1,
+                ),
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap()
+            .into_inner(),
+    );
+    let dependency_id = Uuid::parse_str(&dependency.id).unwrap();
+
+    let linked = created_task(
+        api.api
+            .execute_command(request(
+                v1::ExecuteCommandRequest {
+                    command: Some(v1::CommandEnvelope {
+                        client_id: Uuid::new_v4().to_string(),
+                        command_id: Uuid::new_v4().to_string(),
+                        project_id: project_id.to_string(),
+                        expected_project_revision: Some(2),
+                        command: Some(v1::command_envelope::Command::CreateTask(
+                            v1::CreateTaskCommand {
+                                draft: Some(v1::TaskDraft {
+                                    title: "Linked".to_owned(),
+                                    description_markdown: "Planning body".to_owned(),
+                                    status: v1::TaskStatus::InProgress as i32,
+                                    priority: v1::TaskPriority::High as i32,
+                                    assignee_ids: vec![admin_id.to_string()],
+                                    planned_on: "2026-11-20".to_owned(),
+                                    starts_on: Some("2026-11-18".to_owned()),
+                                    due_on: Some("2026-11-22".to_owned()),
+                                    tags: vec!["alpha".to_owned()],
+                                    parent_task_id: Some(dependency_id.to_string()),
+                                    dependency_task_ids: vec![dependency_id.to_string()],
+                                }),
+                            },
+                        )),
+                    }),
+                },
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap()
+            .into_inner(),
+    );
+    assert_eq!(linked.assignee_ids, vec![admin_id.to_string()]);
+    assert_eq!(linked.tags, vec!["alpha"]);
+    assert_eq!(linked.parent_task_id, Some(dependency_id.to_string()));
+    assert_eq!(linked.dependency_task_ids, vec![dependency_id.to_string()]);
+
+    let linked_id = Uuid::parse_str(&linked.id).unwrap();
+    let updated = created_task(
+        api.api
+            .execute_command(request(
+                v1::ExecuteCommandRequest {
+                    command: Some(v1::CommandEnvelope {
+                        client_id: Uuid::new_v4().to_string(),
+                        command_id: Uuid::new_v4().to_string(),
+                        project_id: project_id.to_string(),
+                        expected_project_revision: Some(3),
+                        command: Some(v1::command_envelope::Command::UpdateTask(
+                            v1::UpdateTaskCommand {
+                                task_id: linked_id.to_string(),
+                                expected_entity_version: 1,
+                                patch: Some(v1::TaskPatch {
+                                    title: None,
+                                    description_markdown: None,
+                                    status: None,
+                                    priority: None,
+                                    assignee_ids: Some(v1::StringList { values: Vec::new() }),
+                                    planned_on: None,
+                                    starts_on: None,
+                                    due_on: Some(String::new()),
+                                    tags: Some(v1::StringList { values: Vec::new() }),
+                                    parent_task_id: Some(String::new()),
+                                    dependency_task_ids: Some(v1::StringList {
+                                        values: Vec::new(),
+                                    }),
+                                }),
+                            },
+                        )),
+                    }),
+                },
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap()
+            .into_inner(),
+    );
+    assert!(updated.assignee_ids.is_empty());
+    assert!(updated.tags.is_empty());
+    assert!(updated.due_on.is_none());
+    assert!(updated.parent_task_id.is_none());
+    assert!(updated.dependency_task_ids.is_empty());
+    assert_eq!(updated.version, 2);
 
     db.cleanup().await;
 }
@@ -322,7 +710,6 @@ async fn watch_replays_outbox_and_reports_retention_gap() {
         HashMap::from([(admin_id, "admin-token".to_owned())]),
     );
     let project_id = Uuid::new_v4();
-    let task_id = Uuid::new_v4();
     api.api
         .execute_command(request(
             create_project(project_id, Uuid::new_v4(), "Events"),
@@ -330,13 +717,17 @@ async fn watch_replays_outbox_and_reports_retention_gap() {
         ))
         .await
         .unwrap();
-    api.api
-        .execute_command(request(
-            create_task(project_id, Uuid::new_v4(), task_id, "First", "", 1),
-            api.token(admin_id),
-        ))
-        .await
-        .unwrap();
+    let task = created_task(
+        api.api
+            .execute_command(request(
+                create_task(project_id, Uuid::new_v4(), Uuid::new_v4(), "First", "", 1),
+                api.token(admin_id),
+            ))
+            .await
+            .unwrap()
+            .into_inner(),
+    );
+    let task_id = Uuid::parse_str(&task.id).unwrap();
 
     let mut stream = api
         .api
@@ -352,11 +743,14 @@ async fn watch_replays_outbox_and_reports_retention_gap() {
         .into_inner();
     let event = stream.next().await.unwrap().unwrap();
     match event.payload {
-        Some(v1::watch_project_changes_response::Payload::Change(change)) => {
-            assert_eq!(change.revision, 2);
+        Some(v1::watch_project_changes_response::Payload::Event(event)) => {
+            assert_eq!(event.revision, 2);
             assert!(matches!(
-                change.change,
-                Some(v1::project_change_event::Change::TaskCreated(_))
+                event
+                    .changes
+                    .first()
+                    .and_then(|change| change.change.as_ref()),
+                Some(v1::change::Change::TaskUpserted(_))
             ));
         }
         other => panic!("expected change event, got {other:?}"),
@@ -393,7 +787,7 @@ async fn watch_replays_outbox_and_reports_retention_gap() {
         Some(v1::watch_project_changes_response::Payload::ResetRequired(reset)) => {
             assert_eq!(reset.current_revision, 3);
             assert_eq!(reset.minimum_retained_revision, 3);
-            assert_eq!(reset.reason, v1::ResetReason::RetentionGap as i32);
+            assert_eq!(reset.reason, "retention_gap");
         }
         other => panic!("expected reset required, got {other:?}"),
     }

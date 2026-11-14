@@ -2,12 +2,7 @@
 
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
-use contract::{
-    v1,
-    v1::{
-        command_envelope::Command as ProtoCommand, execute_command_response::Result as ProtoResult,
-    },
-};
+use contract::{v1, v1::command_envelope::Command as ProtoCommand};
 use kshift_server::{
     auth::TokenAuthenticator,
     config::{ApiLimits, ApiTimeouts, DatabaseConfig},
@@ -180,6 +175,7 @@ pub fn create_project(project_id: Uuid, command_id: Uuid, name: &str) -> v1::Exe
         0,
         ProtoCommand::CreateProject(v1::CreateProjectCommand {
             name: name.to_owned(),
+            time_zone: "UTC".to_owned(),
         }),
     )
 }
@@ -206,7 +202,7 @@ pub fn add_member(
 pub fn create_task(
     project_id: Uuid,
     command_id: Uuid,
-    task_id: Uuid,
+    _task_id: Uuid,
     title: &str,
     description: &str,
     expected_revision: u64,
@@ -216,13 +212,48 @@ pub fn create_task(
         command_id,
         expected_revision,
         ProtoCommand::CreateTask(v1::CreateTaskCommand {
-            task_id: task_id.to_string(),
-            title: title.to_owned(),
-            description: description.to_owned(),
-            status: v1::TaskStatus::Todo as i32,
-            priority: v1::TaskPriority::Medium as i32,
-            assignee_id: None,
-            due_date: None,
+            draft: Some(v1::TaskDraft {
+                title: title.to_owned(),
+                description_markdown: description.to_owned(),
+                status: v1::TaskStatus::Todo as i32,
+                priority: v1::TaskPriority::Medium as i32,
+                assignee_ids: Vec::new(),
+                planned_on: "2026-11-13".to_owned(),
+                starts_on: None,
+                due_on: None,
+                tags: Vec::new(),
+                parent_task_id: None,
+                dependency_task_ids: Vec::new(),
+            }),
+        }),
+    )
+}
+
+pub fn create_task_with_assignees(
+    project_id: Uuid,
+    command_id: Uuid,
+    title: &str,
+    expected_revision: u64,
+    assignee_ids: Vec<Uuid>,
+) -> v1::ExecuteCommandRequest {
+    execute_envelope(
+        project_id,
+        command_id,
+        expected_revision,
+        ProtoCommand::CreateTask(v1::CreateTaskCommand {
+            draft: Some(v1::TaskDraft {
+                title: title.to_owned(),
+                description_markdown: String::new(),
+                status: v1::TaskStatus::Todo as i32,
+                priority: v1::TaskPriority::Medium as i32,
+                assignee_ids: assignee_ids.into_iter().map(|id| id.to_string()).collect(),
+                planned_on: "2026-11-13".to_owned(),
+                starts_on: None,
+                due_on: None,
+                tags: Vec::new(),
+                parent_task_id: None,
+                dependency_task_ids: Vec::new(),
+            }),
         }),
     )
 }
@@ -242,26 +273,86 @@ pub fn update_task_title(
         ProtoCommand::UpdateTask(v1::UpdateTaskCommand {
             task_id: task_id.to_string(),
             expected_entity_version,
-            title: Some(title.to_owned()),
-            description: None,
-            status: None,
-            priority: None,
-            assignee_id: None,
-            due_date: None,
+            patch: Some(v1::TaskPatch {
+                title: Some(title.to_owned()),
+                description_markdown: None,
+                status: None,
+                priority: None,
+                assignee_ids: None,
+                planned_on: None,
+                starts_on: None,
+                due_on: None,
+                tags: None,
+                parent_task_id: None,
+                dependency_task_ids: None,
+            }),
         }),
     )
 }
 
+pub fn batch_update_status(
+    project_id: Uuid,
+    command_id: Uuid,
+    items: Vec<(Uuid, u64)>,
+    status: v1::TaskStatus,
+    expected_revision: u64,
+) -> v1::ExecuteCommandRequest {
+    let mutations = items
+        .into_iter()
+        .map(|(task_id, expected_entity_version)| v1::TaskMutation {
+            mutation: Some(v1::task_mutation::Mutation::UpdateTask(
+                v1::UpdateTaskCommand {
+                    task_id: task_id.to_string(),
+                    expected_entity_version,
+                    patch: Some(v1::TaskPatch {
+                        title: None,
+                        description_markdown: None,
+                        status: Some(status as i32),
+                        priority: None,
+                        assignee_ids: None,
+                        planned_on: None,
+                        starts_on: None,
+                        due_on: None,
+                        tags: None,
+                        parent_task_id: None,
+                        dependency_task_ids: None,
+                    }),
+                },
+            )),
+        })
+        .collect();
+    execute_envelope(
+        project_id,
+        command_id,
+        expected_revision,
+        ProtoCommand::BatchUpdateTasks(v1::BatchUpdateTasksCommand { mutations }),
+    )
+}
+
 pub fn response_revision(response: &v1::ExecuteCommandResponse) -> u64 {
-    response.revision
+    response
+        .result
+        .as_ref()
+        .expect("command result should be present")
+        .project_revision
 }
 
 pub fn created_task(response: v1::ExecuteCommandResponse) -> v1::Task {
-    match response.result {
-        Some(ProtoResult::CreateTask(result)) => result
-            .task
-            .expect("create task result should contain a task"),
-        other => panic!("expected create task result, got {other:?}"),
+    let event = response
+        .result
+        .and_then(|result| result.event)
+        .expect("command result event should be present");
+    let change = event
+        .changes
+        .into_iter()
+        .next()
+        .and_then(|change| change.change)
+        .expect("event change should be present");
+    match change {
+        v1::change::Change::TaskUpserted(change) => {
+            change.task.expect("task upsert should contain a task")
+        }
+        other => panic!("expected task upsert, got {other:?}"),
     }
 }
 
@@ -272,7 +363,7 @@ fn execute_envelope(
     command: ProtoCommand,
 ) -> v1::ExecuteCommandRequest {
     v1::ExecuteCommandRequest {
-        envelope: Some(v1::CommandEnvelope {
+        command: Some(v1::CommandEnvelope {
             client_id: Uuid::new_v4().to_string(),
             command_id: command_id.to_string(),
             project_id: project_id.to_string(),

@@ -1,5 +1,10 @@
 // swift-tools-version: 6.1
+import Foundation
 import PackageDescription
+
+let packageDirectory = URL(fileURLWithPath: #filePath)
+  .deletingLastPathComponent()
+  .path
 
 let package = Package(
   name: "Kshift",
@@ -9,6 +14,7 @@ let package = Package(
     .iOS("26.0"),
   ],
   products: [
+    .library(name: "KshiftCore", targets: ["KshiftCore"]),
     .library(name: "KshiftPresentation", targets: ["KshiftPresentation"]),
     .library(name: "KshiftFFI", targets: ["KshiftFFI"]),
     .library(name: "KshiftUI", targets: ["KshiftUI"]),
@@ -16,14 +22,20 @@ let package = Package(
     .library(name: "KshiftUIKitAdapter", targets: ["KshiftUIKitAdapter"]),
   ],
   targets: [
+    .target(name: "KshiftCore", dependencies: ["KshiftFFI"]),
     .target(name: "KshiftPresentation"),
+    .systemLibrary(name: "CKshiftFFI", path: "include"),
     .target(
       name: "KshiftFFI",
-      dependencies: ["KshiftPresentation"]
+      dependencies: ["KshiftPresentation", "CKshiftFFI"],
+      linkerSettings: [
+        .unsafeFlags(["-L", "\(packageDirectory)/target/debug"]),
+        .linkedLibrary("kshift_ffi"),
+      ]
     ),
     .target(
       name: "KshiftUI",
-      dependencies: ["KshiftPresentation", "KshiftFFI"]
+      dependencies: ["KshiftCore", "KshiftPresentation"]
     ),
     .target(
       name: "KshiftAppKitAdapter",
@@ -34,12 +46,17 @@ let package = Package(
       dependencies: ["KshiftPresentation"]
     ),
     .testTarget(
-      name: "KshiftPresentationTests",
-      dependencies: ["KshiftPresentation"]
+      name: "KshiftCoreTests",
+      dependencies: [
+        "KshiftCore",
+        "KshiftUI",
+        "KshiftPresentation",
+        "KshiftAppKitAdapter",
+      ]
     ),
     .testTarget(
-      name: "KshiftFeatureTests",
-      dependencies: ["KshiftPresentation", "KshiftFFI", "KshiftUI"]
+      name: "KshiftFFITests",
+      dependencies: ["KshiftFFI"]
     ),
     .testTarget(
       name: "KshiftAdapterBoundaryTests",

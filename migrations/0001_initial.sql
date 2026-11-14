@@ -19,6 +19,7 @@ CREATE TABLE kshift.app_user (
 CREATE TABLE kshift.project (
     id uuid PRIMARY KEY,
     name text NOT NULL CHECK (length(name) BETWEEN 1 AND 120),
+    time_zone text NOT NULL CHECK (length(time_zone) BETWEEN 1 AND 64),
     current_revision bigint NOT NULL DEFAULT 0 CHECK (current_revision >= 0),
     created_by uuid NOT NULL REFERENCES kshift.app_user(id),
     created_at timestamptz NOT NULL,
@@ -28,7 +29,7 @@ CREATE TABLE kshift.project (
 CREATE TABLE kshift.project_member (
     project_id uuid NOT NULL REFERENCES kshift.project(id) ON DELETE CASCADE,
     user_id uuid NOT NULL REFERENCES kshift.app_user(id),
-    role text NOT NULL CHECK (role IN ('viewer', 'editor', 'owner')),
+    role text NOT NULL CHECK (role IN ('viewer', 'editor', 'admin')),
     created_at timestamptz NOT NULL,
     updated_at timestamptz NOT NULL,
     PRIMARY KEY (project_id, user_id)
@@ -41,27 +42,45 @@ CREATE TABLE kshift.task (
     id uuid PRIMARY KEY,
     project_id uuid NOT NULL REFERENCES kshift.project(id) ON DELETE CASCADE,
     title text NOT NULL CHECK (length(title) BETWEEN 1 AND 200),
-    description text NOT NULL DEFAULT '' CHECK (length(description) <= 20000),
+    description_markdown text NOT NULL DEFAULT '' CHECK (length(description_markdown) <= 20000),
     status text NOT NULL CHECK (status IN ('todo', 'in_progress', 'blocked', 'done')),
-    priority smallint NOT NULL CHECK (priority BETWEEN 1 AND 4),
-    assignee_id uuid REFERENCES kshift.app_user(id),
-    due_date date,
+    priority smallint NOT NULL CHECK (priority BETWEEN 1 AND 5),
+    planned_on date NOT NULL,
+    starts_on date,
+    due_on date,
+    tags text[] NOT NULL DEFAULT ARRAY[]::text[],
+    parent_task_id uuid REFERENCES kshift.task(id),
     version bigint NOT NULL DEFAULT 1 CHECK (version > 0),
     created_by uuid NOT NULL REFERENCES kshift.app_user(id),
     updated_by uuid NOT NULL REFERENCES kshift.app_user(id),
     created_at timestamptz NOT NULL,
     updated_at timestamptz NOT NULL,
     deleted_at timestamptz,
-    deleted_by uuid REFERENCES kshift.app_user(id)
+    deleted_by uuid REFERENCES kshift.app_user(id),
+    CHECK (starts_on IS NULL OR starts_on <= planned_on),
+    CHECK (due_on IS NULL OR due_on >= planned_on),
+    CHECK (due_on IS NULL OR starts_on IS NULL OR due_on >= starts_on)
 );
 
 CREATE INDEX task_project_active_idx
-    ON kshift.task (project_id, due_date, created_at)
+    ON kshift.task (project_id, planned_on, created_at)
     WHERE deleted_at IS NULL;
 
-CREATE INDEX task_assignee_active_idx
-    ON kshift.task (assignee_id, due_date)
-    WHERE deleted_at IS NULL;
+CREATE TABLE kshift.task_assignee (
+    task_id uuid NOT NULL REFERENCES kshift.task(id) ON DELETE CASCADE,
+    user_id uuid NOT NULL REFERENCES kshift.app_user(id),
+    PRIMARY KEY (task_id, user_id)
+);
+
+CREATE INDEX task_assignee_user_idx
+    ON kshift.task_assignee (user_id, task_id);
+
+CREATE TABLE kshift.task_dependency (
+    task_id uuid NOT NULL REFERENCES kshift.task(id) ON DELETE CASCADE,
+    depends_on_task_id uuid NOT NULL REFERENCES kshift.task(id),
+    PRIMARY KEY (task_id, depends_on_task_id),
+    CHECK (task_id <> depends_on_task_id)
+);
 
 CREATE TABLE kshift.audit_log (
     id uuid PRIMARY KEY,

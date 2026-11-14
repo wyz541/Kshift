@@ -192,8 +192,8 @@ async fn insert_project(
     .await?;
     sqlx::query(
         "INSERT INTO kshift.project (
-            id, name, current_revision, created_by, created_at, updated_at
-         ) VALUES ($1, $2, 7, $3, $4, $4)",
+            id, name, current_revision, time_zone, created_by, created_at, updated_at
+         ) VALUES ($1, $2, 7, 'UTC', $3, $4, $4)",
     )
     .bind(project_id)
     .bind(format!("R3 project {suffix}"))
@@ -204,7 +204,7 @@ async fn insert_project(
     sqlx::query(
         "INSERT INTO kshift.project_member (
             project_id, user_id, role, created_at, updated_at
-         ) VALUES ($1, $2, 'owner', $3, $3)",
+         ) VALUES ($1, $2, 'admin', $3, $3)",
     )
     .bind(project_id)
     .bind(actor_id)

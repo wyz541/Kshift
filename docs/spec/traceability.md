@@ -2,7 +2,7 @@
 slug: /spec/traceability
 title: Kshift Spec v0.1 追踪表
 type: reference
-status: review
+status: active
 updated: "2026-11-13"
 keywords:
   - 追踪
@@ -24,7 +24,8 @@ source: https://github.com/wyz541/Kshift/discussions/1
 | Discussion | [#1](https://github.com/wyz541/Kshift/discussions/1) |
 | Discussion 更新时间 | `2026-11-13T02:22:36Z` |
 | Spec | [Kshift Spec v0.1](kshift-spec-v0.1.md) |
-| 评审截止 | `2026-11-20` |
+| 正式评审 | [2026-11-13 R0 Spec Review](../reviews/2026-11-13-r0-spec-review.md) |
+| Spec 状态 | `active` |
 
 ## 2. 章节映射
 
@@ -40,6 +41,7 @@ source: https://github.com/wyz541/Kshift/discussions/1
 | UI 验收门禁 | [6.4 无障碍与性能](kshift-spec-v0.1.md#64-无障碍与性能) | `DEC-005`、`DEC-016` | [0003](../adr/0003-native-liquid-glass-boundary.md) |
 | 产品路线 | [4. 产品路线](kshift-spec-v0.1.md#4-产品路线) | `DEC-015` | [0002](../adr/0002-macos-ios-first.md) |
 | R2 日计划 MVP | [5. 功能规范](kshift-spec-v0.1.md#5-功能规范) | `DEC-015` | [0002](../adr/0002-macos-ios-first.md) |
+| 负责人和时区语义 | [5.1 项目与成员](kshift-spec-v0.1.md#51-项目与成员)、[5.2 任务](kshift-spec-v0.1.md#52-任务) | `DEC-028` 至 `DEC-030` | [0008](../adr/0008-task-ownership-and-time-zones.md) |
 | 跨阶段门禁 | [13. 质量与发布](kshift-spec-v0.1.md#13-质量与发布) | `DEC-008`、`DEC-016` | [0001](../adr/0001-rust-authority-and-swiftui-host.md) |
 | 技术决策摘要 | [7.3 服务与数据库](kshift-spec-v0.1.md#73-服务与数据库) | `DEC-006` 至 `DEC-009` | [0004](../adr/0004-postgresql18-single-host.md) |
 | 组件边界 | [7.2 Rust workspace](kshift-spec-v0.1.md#72-rust-workspace) | `DEC-007`、`DEC-008` | [0006](../adr/0006-grpc-protobuf-ffi.md) |
@@ -51,7 +53,8 @@ source: https://github.com/wyz541/Kshift/discussions/1
 | 备份、恢复与保留 | [11. 备份与恢复](kshift-spec-v0.1.md#11-备份与恢复) | `DEC-011` | [0004](../adr/0004-postgresql18-single-host.md) |
 | 客户端缓存 | [8.2 客户端缓存](kshift-spec-v0.1.md#82-客户端缓存) | `DEC-012` | [0005](../adr/0005-revisioned-snapshot-outbox.md) |
 | Rust 质量门禁 | [13.1 Rust 门禁](kshift-spec-v0.1.md#131-rust-门禁) | `DEC-008`、`DEC-014` | [0006](../adr/0006-grpc-protobuf-ffi.md) |
-| 仍需确认的 Spec 问题 | [15. 开放决策](kshift-spec-v0.1.md#15-开放决策) | `DEC-017` 至 `DEC-027` | [0007](../adr/0007-github-release-orchestrator.md) |
+| 仍需确认的 Spec 问题 | [15. 开放决策](kshift-spec-v0.1.md#15-开放决策) | `DEC-017` 至 `DEC-026` | [0007](../adr/0007-github-release-orchestrator.md) |
+| 协议大小上限 | [12. 合同与兼容](kshift-spec-v0.1.md#12-合同与兼容) | `DEC-027` | [0006](../adr/0006-grpc-protobuf-ffi.md) |
 | GitHub 多平台 Release Spec | [13.3 Release 门禁](kshift-spec-v0.1.md#133-release-门禁) | `DEC-013` | [0007](../adr/0007-github-release-orchestrator.md) |
 | GitHub 事项分流与治理 | [14. 项目治理](kshift-spec-v0.1.md#14-项目治理) | `DEC-016` | [README](../adr/README.md) |
 

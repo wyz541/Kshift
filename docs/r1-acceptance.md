@@ -3,7 +3,7 @@ slug: /docs/r1-acceptance
 title: Kshift R1 acceptance evidence
 type: evidence
 status: verified
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - acceptance
   - integration test
@@ -26,9 +26,10 @@ description: 记录 Issue #4 的质量门禁、migration digest 和恢复演练�
 | `buf format -d` | 通过 |
 | `buf lint` | 通过 |
 | `cargo clippy --workspace --all-targets --all-features -- -D warnings` | 通过 |
-| 单元测试 | 7 个通过 |
-| PostgreSQL 集成测试 | 8 个通过 |
+| 单元测试 | 8 个通过 |
+| PostgreSQL 集成测试 | 9 个通过 |
 | `kshift-server check` | `healthy=true` |
+| GitHub Actions `R1 service` | 通过 |
 
 集成测试覆盖以下验收项。
 
@@ -38,6 +39,7 @@ description: 记录 Issue #4 的质量门禁、migration digest 和恢复演练�
 - 过期 revision 返回 `ABORTED` 和 typed conflict detail。
 - 幂等重放不增加 revision、audit、command result 或 outbox。
 - 事务失败不留下业务数据或 outbox。
+- task planning fields、assignees、tags、parent 和 dependency 往返成功。
 - outbox 连续回放成功。
 - retention gap 返回 `ResetRequired`。
 - 日志不包含 token、数据库 URL 或完整 command body。
@@ -47,10 +49,13 @@ description: 记录 Issue #4 的质量门禁、migration digest 和恢复演练�
 
 ## Migration evidence
 
+R3 adds `0002_plan_depth.sql`。当前 schema version 为 `3`，migration count 为 `2`。
+以下 digest 保留为 R3 之前的 R1 历史证据。
+
 ```text
 schema_version=2
-migration_count=2
-migration_digest=fa49681fad66429cf62f457b02ac2b43624e929ec7b36702dc0282ec81699290
+migration_count=1
+migration_digest=aeb741b70beef004eb4d8a5db3d183466a042cf40d91b1e6118d3b8f643b8e49
 postgres_version=18.6 (Homebrew)
 postgres_version_num=180006
 ```
@@ -70,7 +75,7 @@ KSHIFT_DATABASE_URL='postgres://wyz@127.0.0.1:54329/kshift_test' \
 rollback=verified
 restore=verified
 projects=1
-migration_digest=fa49681fad66429cf62f457b02ac2b43624e929ec7b36702dc0282ec81699290
+migration_digest=aeb741b70beef004eb4d8a5db3d183466a042cf40d91b1e6118d3b8f643b8e49
 ```
 
 脚本执行以下步骤。

@@ -1,0 +1,4 @@
+module CKshiftFFI [system] {
+  header "kshift_ffi.h"
+  export *
+}

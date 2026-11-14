@@ -1,49 +1,59 @@
 SHELL := /bin/zsh
 RUST_BIN := $(HOME)/.rustup/toolchains/stable-aarch64-apple-darwin/bin
-export PATH := $(RUST_BIN):$(PATH)
+CARGO_HOME := $(CURDIR)/.build/cargo-home
+CARGO := $(RUST_BIN)/cargo
+RUST_ENV := PATH="$(RUST_BIN):$$PATH" CARGO_HOME="$(CARGO_HOME)"
+.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test postgres-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e test verify clean
 
-.PHONY: bootstrap rust-fmt rust-lint rust-test postgres-test swift-build swift-test project mac-build ios-build ios-test test clean
+prepare-cargo-home:
+	@mkdir -p "$(CARGO_HOME)"
+	@if [[ ! -e "$(CARGO_HOME)/registry" && -d "$(HOME)/.cargo/registry" ]]; then ln -s "$(HOME)/.cargo/registry" "$(CARGO_HOME)/registry"; fi
 
-bootstrap: project
+bootstrap: prepare-cargo-home ffi project
 	swift package resolve
 
 rust-fmt:
-	cargo fmt --all -- --check
+	$(RUST_ENV) $(CARGO) fmt --all -- --check
 
-rust-lint:
-	cargo clippy --workspace --all-targets -- -D warnings
+rust-lint: prepare-cargo-home
+	$(RUST_ENV) $(CARGO) clippy --workspace --all-targets -- -D warnings
 
-rust-test:
-	cargo test --workspace
+rust-test: prepare-cargo-home
+	$(RUST_ENV) $(CARGO) test --workspace
 
-postgres-test:
-	./scripts/test-plan-store.sh
+postgres-test: prepare-cargo-home
+	$(RUST_ENV) ./Scripts/test-plan-store.sh
+
+ffi:
+	$(RUST_ENV) ./scripts/build-ffi.sh all
 
 swift-build:
 	swift build
 
-swift-test:
-	swift test
+swift-test: prepare-cargo-home
+	$(RUST_ENV) ./scripts/build-ffi.sh macos
+	KSHIFT_FFI_PATH="$(CURDIR)/.build/ffi/macos/libkshift_ffi.a" swift test
 
 project:
 	xcodegen generate
 
-mac-build: project
-	xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS \
-		-configuration Debug -destination 'platform=macOS' \
-		build CODE_SIGNING_ALLOWED=NO
+mac-build: ffi project
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-macOS -configuration Debug -destination 'platform=macOS' build
 
-ios-build: project
-	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
-		-configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17e' \
-		build CODE_SIGNING_ALLOWED=NO
+ios-build: ffi project
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
 
-ios-test: project
-	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
-		-configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17e' \
-		test CODE_SIGNING_ALLOWED=NO
+ios-test: ffi project
+	xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
 
-test: rust-fmt rust-lint rust-test postgres-test swift-test ios-test
+live-ui-e2e:
+	KSHIFT_CARGO_OFFLINE=1 ./scripts/run-live-ui-e2e.sh
+
+test: rust-fmt rust-lint rust-test postgres-test swift-test
+	KSHIFT_SKIP_XCODE_TESTS=1 ./scripts/verify.sh
+
+verify: test
+	./scripts/verify.sh
 
 clean:
 	rm -rf .build target
