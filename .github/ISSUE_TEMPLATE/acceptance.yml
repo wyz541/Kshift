@@ -1,0 +1,94 @@
+name: Acceptance
+description: 执行 Feature 或阶段验收，记录证据并给出结论。
+title: "[Acceptance] "
+body:
+  - type: checkboxes
+    id: acceptance-boundary
+    attributes:
+      label: 验收边界
+      description: Acceptance Issue 只承担验收，不承担产品实现。
+      options:
+        - label: 本 Issue 只执行验收、记录证据并给出结论。它不包含产品实现。
+          required: true
+  - type: textarea
+    id: acceptance-target
+    attributes:
+      label: 验收对象
+      description: 写出被验收的 Feature、阶段或交付物。
+      placeholder: ...
+    validations:
+      required: true
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: 前置条件
+      description: 写出必需交付物、环境、权限、数据和审批。没有时写“无”。
+      placeholder: |-
+        - 必需交付：
+        - 环境：
+        - 权限：
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-matrix
+    attributes:
+      label: 验收矩阵
+      description: 每一行只写一个验收项。列出场景、步骤、预期、实际和结论。
+      placeholder: |-
+        | 场景 | 步骤 | 预期 | 实际 | 结论 |
+        | --- | --- | --- | --- | --- |
+        | ... | ... | ... | 待验收 | 待验收 |
+    validations:
+      required: true
+  - type: textarea
+    id: environment-data
+    attributes:
+      label: 环境与数据
+      description: 写出设备、系统、版本、提交、数据集和初始状态。
+      placeholder: |-
+        - 设备：
+        - 系统：
+        - 版本：
+        - 提交：
+        - 数据：
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据
+      description: 链接命令结果、测试、日志和截图。未运行项必须标明未运行。
+      placeholder: |-
+        - 命令：
+        - 日志：
+        - 截图：
+    validations:
+      required: true
+  - type: textarea
+    id: blockers
+    attributes:
+      label: 阻断问题
+      description: 列出阻断验收的问题和 Issue 链接。没有时写“无”。
+      placeholder: 无
+    validations:
+      required: true
+  - type: textarea
+    id: conclusion
+    attributes:
+      label: 结论
+      description: 开始时写“待验收”。完成后只写“通过”或“失败”。失败时写明原因。
+      placeholder: 待验收
+    validations:
+      required: true
+  - type: textarea
+    id: relationships
+    attributes:
+      label: 关系
+      description: 写出父 Feature、交付子 Issue、Release Issue 和阻塞关系。
+      placeholder: |-
+        - 父 Feature：
+        - 交付子 Issue：
+        - Release Issue：
+        - 阻塞关系：
+    validations:
+      required: true

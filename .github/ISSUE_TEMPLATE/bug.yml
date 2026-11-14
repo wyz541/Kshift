@@ -1,0 +1,87 @@
+name: Bug
+description: 记录一个可复现的用户可见错误。
+title: "[Bug] "
+body:
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境
+      description: 写出应用版本、提交、平台、系统、服务端版本和相关配置。
+      placeholder: |-
+        - 版本：
+        - 平台：
+        - 系统：
+        - 服务端：
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: 复现步骤
+      description: 按顺序写出最小复现步骤。每一步只写一个动作。
+      placeholder: |-
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 写出用户应观察到的正确结果。
+      placeholder: ...
+    validations:
+      required: true
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: 实际行为
+      description: 写出实际观察结果，并给出复现频率。
+      placeholder: ...
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响
+      description: 写出受影响用户、数据、权限、兼容性和可能的绕过方法。
+      placeholder: |-
+        - 用户影响：
+        - 数据影响：
+        - 绕过方法：
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 验收标准
+      description: 写出修复后可观察的结果，并写出回归检查。
+      placeholder: |-
+        - [ ] 原复现步骤不再出现错误。
+        - [ ] 回归检查通过。
+    validations:
+      required: true
+  - type: textarea
+    id: evidence-plan
+    attributes:
+      label: 证据计划
+      description: 写出复现证据和修复证据的位置。未运行项必须标明未运行。
+      placeholder: |-
+        - 复现证据：
+        - 修复证据：
+    validations:
+      required: true
+  - type: textarea
+    id: relationships
+    attributes:
+      label: 关系
+      description: 写出 Spec、Decision、Contract、父 Issue、关联 Issue 和阻塞关系。
+      placeholder: |-
+        - Spec：
+        - Decision：
+        - Contract：
+        - 关联 Issue：
+        - 阻塞关系：
+    validations:
+      required: true
