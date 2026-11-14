@@ -721,8 +721,8 @@ private struct PeopleScheduleTaskCapsule: View {
         SchedulePriorityPalette(priority: task.priority)
     }
 
-    private var taskShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 7, style: .continuous)
+    private var taskShape: Capsule {
+        Capsule(style: .continuous)
     }
 
     private var taskFill: Color {

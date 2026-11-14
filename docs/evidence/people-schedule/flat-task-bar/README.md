@@ -21,7 +21,8 @@ description: 记录人员排期任务条改为纯色、扁平、单行紧凑样�
 
 ## 修复内容
 
-- 任务条使用纯色优先级背景，不使用 Glass、渐变、模糊和阴影。
+- 任务条使用 SwiftUI `Capsule(style: .continuous)` 椭圆形形状和纯色优先级背景。
+- 不使用 Glass、渐变、模糊和阴影。
 - 任务条固定为 44pt 高，标题限制为一行。
 - 状态控件位于任务条前端，保留 44pt 触控区域。
 - 状态选择继续使用原生 `Menu`。
@@ -42,14 +43,14 @@ description: 记录人员排期任务条改为纯色、扁平、单行紧凑样�
 | iOS accessibility audit | 通过 |
 | `./scripts/check-r0.sh` | 通过 |
 | `make check-build-governance` | 通过 |
-| Operations CI | 通过 |
+| Operations CI | 见 PR #68 checks |
 
 ## 候选截图
 
 | 文件 | 内容 | SHA-256 |
 | --- | --- | --- |
-| `macos-task-bar-2026-11-14.png` | macOS Dark Mode Demo 人员排期任务条 | `2630eb8166204b8edec6bb3895d22637454ce2dcd752e7b0c36d3be40d06e7a6` |
-| `ios-task-bar-2026-11-14.png` | iPhone 18 Pro Simulator Light Mode 人员排期任务条 | `a1ee7e011b2b1c133c8f695ccc35a5a9437271400ad34f3bf6f21ea0814ecb39` |
+| `macos-task-bar-2026-11-14.png` | macOS Dark Mode Demo 人员排期任务条 | `8dd0d40b3e33dbc5df76f7709e48a7625dbe4750afd9214b2f7e6f632b77ae5e` |
+| `ios-task-bar-2026-11-14.png` | iPhone 18 Pro Simulator Light Mode 人员排期任务条 | `dc526253ea7637bd23a233304387fd7455e2c7605db5dbec02fabda7e1c56af4` |
 
 ## 未覆盖
 
