@@ -1,12 +1,13 @@
 import Foundation
 import KshiftFFI
+import KshiftPresentation
 
 /// Production client adapter for the bounded C ABI in `kshift-ffi`.
 ///
 /// The shared UI only sees `KshiftClientProtocol`. This type keeps the
 /// protobuf and transport details below the Swift package boundary and maps
 /// the FFI JSON projection into the presentation models used by the planner.
-public final class RustClient: KshiftClientProtocol, @unchecked Sendable {
+public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @unchecked Sendable {
     public let actorID: String
 
     private let clientID: String
@@ -737,5 +738,642 @@ private struct FFIDeleteTask: Encodable {
     enum CodingKeys: String, CodingKey {
         case taskID = "task_id"
         case expectedEntityVersion = "expected_entity_version"
+    }
+}
+
+extension RustClient {
+    public func fetchPlanDepth(projectID: UUID) async throws -> KshiftPlanDepthSession {
+        do {
+            let client = try requireClient()
+            let deadline = deadlineMilliseconds
+            return try await Task.detached {
+                let data = try client.planDepthSnapshot(
+                    projectID: projectID.uuidString,
+                    deadlineMilliseconds: deadline
+                )
+                return try Self.decodePlanDepthSession(data)
+            }.value
+        } catch let error as KshiftCFFIError {
+            throw Self.planDepthError(error)
+        } catch let error as KshiftPlanDepthError {
+            throw error
+        } catch {
+            throw KshiftPlanDepthError.unavailable
+        }
+    }
+
+    public func execute(
+        projectID: UUID,
+        _ command: KshiftPlanDepthCommand
+    ) async throws -> KshiftPlanDepthSnapshot {
+        let request = Self.planDepthCommandRequest(projectID: projectID, command: command)
+        let commandData: Data
+        do {
+            commandData = try JSONEncoder().encode(request)
+        } catch {
+            throw KshiftPlanDepthError.invalidResponse
+        }
+        do {
+            let client = try requireClient()
+            let deadline = deadlineMilliseconds
+            return try await Task.detached {
+                let data = try client.executePlanDepthCommand(
+                    commandData,
+                    deadlineMilliseconds: deadline
+                )
+                return try Self.decodePlanDepthSession(data).snapshot
+            }.value
+        } catch let error as KshiftCFFIError {
+            throw Self.planDepthError(error)
+        } catch let error as KshiftPlanDepthError {
+            throw error
+        } catch {
+            throw KshiftPlanDepthError.unavailable
+        }
+    }
+
+    public func fetchReport(
+        projectID: UUID,
+        range: KshiftReportRange
+    ) async throws -> KshiftWorkReport {
+        do {
+            let client = try requireClient()
+            let deadline = deadlineMilliseconds
+            return try await Task.detached {
+                let data = try client.planDepthReport(
+                    projectID: projectID.uuidString,
+                    startsOn: Self.planDepthDateString(range.startsOn),
+                    endsOn: Self.planDepthDateString(range.endsOn),
+                    today: Self.planDepthDateString(.now),
+                    deadlineMilliseconds: deadline
+                )
+                return try Self.decodePlanReport(data)
+            }.value
+        } catch let error as KshiftCFFIError {
+            throw Self.planDepthError(error)
+        } catch let error as KshiftPlanDepthError {
+            throw error
+        } catch {
+            throw KshiftPlanDepthError.unavailable
+        }
+    }
+
+    private static func planDepthCommandRequest(
+        projectID: UUID,
+        command: KshiftPlanDepthCommand
+    ) -> FFIPlanDepthCommandRequest {
+        switch command {
+        case let .setTaskStatus(taskID, status, expectedTaskVersion, expectedRevision):
+            return FFIPlanDepthCommandRequest(
+                requestID: UUID().uuidString,
+                projectID: projectID.uuidString,
+                expectedRevision: expectedRevision,
+                command: .setTaskStatus(
+                    taskID: taskID.uuidString,
+                    status: status.rawValue,
+                    expectedVersion: expectedTaskVersion
+                )
+            )
+        case let .rollback(targetRevision, reason, expectedRevision):
+            return FFIPlanDepthCommandRequest(
+                requestID: UUID().uuidString,
+                projectID: projectID.uuidString,
+                expectedRevision: expectedRevision,
+                command: .rollback(targetRevision: targetRevision, reason: reason)
+            )
+        }
+    }
+
+    private static func decodePlanDepthSession(_ data: Data) throws -> KshiftPlanDepthSession {
+        let dto = try JSONDecoder().decode(RustPlanDepthSessionDTO.self, from: data)
+        let snapshot = try mapPlanDepthSnapshot(dto.snapshot)
+        guard let role = KshiftPlanRole(rawValue: dto.actorRole) else {
+            throw KshiftPlanDepthError.invalidResponse
+        }
+        return KshiftPlanDepthSession(snapshot: snapshot, viewerRole: role)
+    }
+
+    private static func mapPlanDepthSnapshot(
+        _ dto: RustPlanDepthSnapshotDTO
+    ) throws -> KshiftPlanDepthSnapshot {
+        guard let projectID = UUID(uuidString: dto.project.id) else {
+            throw KshiftPlanDepthError.invalidResponse
+        }
+        let people = try dto.people.map { person -> KshiftPlanPerson in
+            guard let id = UUID(uuidString: person.id) else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftPlanPerson(
+                id: id,
+                name: person.name,
+                initials: person.initials,
+                colorHex: person.colorHex
+            )
+        }
+        let tasks = try dto.tasks.map { task -> KshiftPlanTask in
+            guard let id = UUID(uuidString: task.id),
+                  let taskProjectID = UUID(uuidString: task.projectID),
+                  let status = KshiftPlanTaskStatus(rawValue: task.status),
+                  let priority = planDepthPriority(task.priority),
+                  let startsOn = planDepthDate(task.startsOn),
+                  let dueOn = planDepthDate(task.dueOn)
+            else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            let parentID = task.parentID.flatMap(UUID.init(uuidString:))
+            let assigneeID = task.assigneeID.flatMap(UUID.init(uuidString:))
+            let completedAt = task.completedAt.flatMap(planDepthTimestamp)
+            return KshiftPlanTask(
+                id: id,
+                projectID: taskProjectID,
+                parentID: parentID,
+                title: task.title,
+                descriptionMarkdown: task.descriptionMarkdown,
+                status: status,
+                priority: priority,
+                assigneeID: assigneeID,
+                startsOn: startsOn,
+                dueOn: dueOn,
+                estimateMinutes: task.estimateMinutes,
+                position: task.position,
+                version: task.version,
+                completedAt: completedAt
+            )
+        }
+        let dependencies = try dto.dependencies.map { dependency -> KshiftPlanDependency in
+            guard let taskID = UUID(uuidString: dependency.taskID),
+                  let dependsOnTaskID = UUID(uuidString: dependency.dependsOnTaskID)
+            else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftPlanDependency(taskID: taskID, dependsOnTaskID: dependsOnTaskID)
+        }
+        let attachments = try dto.attachments.map { attachment -> KshiftPlanAttachment in
+            guard let id = UUID(uuidString: attachment.id) else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftPlanAttachment(
+                id: id,
+                sha256: attachment.sha256,
+                mediaType: attachment.mediaType,
+                byteSize: attachment.byteSize,
+                filename: attachment.filename
+            )
+        }
+        let attachmentLinks = try dto.attachmentLinks.map { link -> KshiftPlanAttachmentLink in
+            guard let attachmentID = UUID(uuidString: link.attachmentID),
+                  let taskID = UUID(uuidString: link.taskID)
+            else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftPlanAttachmentLink(attachmentID: attachmentID, taskID: taskID)
+        }
+        let history = try dto.history.map { entry -> KshiftPlanHistoryEntry in
+            guard let id = UUID(uuidString: entry.id),
+                  let actorID = UUID(uuidString: entry.actorID),
+                  let occurredAt = planDepthTimestamp(entry.occurredAt)
+            else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftPlanHistoryEntry(
+                id: id,
+                revision: entry.revision,
+                actorID: actorID,
+                action: entry.action,
+                summary: entry.summary,
+                occurredAt: occurredAt,
+                restoredFromRevision: entry.restoredFromRevision,
+                contentSHA256: entry.contentSHA256
+            )
+        }
+        return KshiftPlanDepthSnapshot(
+            projectID: projectID,
+            projectName: dto.project.name,
+            revision: dto.project.revision,
+            people: people,
+            tasks: tasks,
+            dependencies: dependencies,
+            attachments: attachments,
+            attachmentLinks: attachmentLinks,
+            history: history
+        )
+    }
+
+    private static func decodePlanReport(_ data: Data) throws -> KshiftWorkReport {
+        let dto = try JSONDecoder().decode(RustPlanReportDTO.self, from: data)
+        guard let startsOn = planDepthDate(dto.range.startsOn),
+              let endsOn = planDepthDate(dto.range.endsOn),
+              let generatedAt = planDepthTimestamp(dto.generatedAt)
+        else {
+            throw KshiftPlanDepthError.invalidResponse
+        }
+        let tasks = try dto.tasks.map { task -> KshiftReportTask in
+            guard let id = UUID(uuidString: task.id),
+                  let status = KshiftPlanTaskStatus(rawValue: task.status),
+                  let priority = planDepthPriority(task.priority),
+                  let taskStartsOn = planDepthDate(task.startsOn),
+                  let taskDueOn = planDepthDate(task.dueOn)
+            else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftReportTask(
+                id: id,
+                title: task.title,
+                parentTitle: task.parentTitle,
+                status: status,
+                priority: priority,
+                assigneeName: task.assigneeName,
+                startsOn: taskStartsOn,
+                dueOn: taskDueOn,
+                estimateMinutes: task.estimateMinutes,
+                crossDay: task.crossDay,
+                overdue: task.overdue,
+                dependencyCount: task.dependencyCount,
+                subtaskCount: task.subtaskCount,
+                attachmentCount: task.attachmentCount
+            )
+        }
+        return KshiftWorkReport(
+            sourceRevision: dto.sourceRevision,
+            generatedAt: generatedAt,
+            range: KshiftReportRange(startsOn: startsOn, endsOn: endsOn),
+            tasks: tasks,
+            statistics: KshiftReportStatistics(
+                taskCount: dto.statistics.taskCount,
+                completedCount: dto.statistics.completedCount,
+                overdueCount: dto.statistics.overdueCount,
+                crossDayCount: dto.statistics.crossDayCount,
+                totalEstimateMinutes: dto.statistics.totalEstimateMinutes
+            ),
+            html: dto.html
+        )
+    }
+
+    private static func planDepthError(_ error: KshiftCFFIError) -> KshiftPlanDepthError {
+        if error.entityVersion != nil {
+            return .versionConflict(currentVersion: error.entityVersion ?? 0)
+        }
+        if error.currentRevision != nil {
+            return .revisionConflict(currentRevision: error.currentRevision ?? 0)
+        }
+        if error.status == KshiftFFIStatus.permissionDenied
+            || error.status == KshiftFFIStatus.unauthenticated
+        {
+            return .unauthorized
+        }
+        if error.status == KshiftFFIStatus.notFound {
+            return .notFound
+        }
+        if error.status == KshiftFFIStatus.conflict {
+            return .revisionConflict(currentRevision: 0)
+        }
+        if error.status == KshiftFFIStatus.invalidState {
+            if error.message.contains("依赖") || error.message.contains("循环") {
+                return .dependencyCycle
+            }
+            if error.message.contains("回退") {
+                return .rollbackUnavailable
+            }
+            if error.message.contains("附件") {
+                return .invalidAttachment
+            }
+        }
+        if error.status == KshiftFFIStatus.invalidArgument,
+           error.message.contains("附件")
+        {
+            return .invalidAttachment
+        }
+        if error.status == KshiftFFIStatus.protocolError {
+            return .invalidResponse
+        }
+        return .unavailable
+    }
+
+    private static func planDepthPriority(_ value: String) -> KshiftPlanPriority? {
+        switch value {
+        case "none", "low": .low
+        case "medium": .medium
+        case "high": .high
+        case "urgent": .urgent
+        default: nil
+        }
+    }
+
+    private static func planDepthDate(_ value: String) -> Date? {
+        let parts = value.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2]))
+    }
+
+    private static func planDepthDateString(_ value: Date) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let components = calendar.dateComponents([.year, .month, .day], from: value)
+        return String(
+            format: "%04d-%02d-%02d",
+            components.year ?? 1970,
+            components.month ?? 1,
+            components.day ?? 1
+        )
+    }
+
+    private static func planDepthTimestamp(_ value: String) -> Date? {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = formatter.date(from: value) {
+            return date
+        }
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter.date(from: value)
+    }
+}
+
+private struct FFIPlanDepthCommandRequest: Encodable {
+    let requestID: String
+    let projectID: String
+    let expectedRevision: UInt64
+    let command: FFIPlanDepthCommand
+
+    enum CodingKeys: String, CodingKey {
+        case requestID = "request_id"
+        case projectID = "project_id"
+        case expectedRevision = "expected_revision"
+        case command
+    }
+}
+
+private enum FFIPlanDepthCommand: Encodable {
+    case setTaskStatus(taskID: String, status: String, expectedVersion: UInt64)
+    case rollback(targetRevision: UInt64, reason: String)
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case value
+    }
+
+    private struct SetTaskStatus: Encodable {
+        let taskID: String
+        let status: String
+        let expectedVersion: UInt64
+
+        enum CodingKeys: String, CodingKey {
+            case taskID = "task_id"
+            case status
+            case expectedVersion = "expected_version"
+        }
+    }
+
+    private struct Rollback: Encodable {
+        let targetRevision: UInt64
+        let reason: String
+
+        enum CodingKeys: String, CodingKey {
+            case targetRevision = "target_revision"
+            case reason
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        switch self {
+        case let .setTaskStatus(taskID, status, expectedVersion):
+            try container.encode("set_task_status", forKey: .type)
+            try container.encode(
+                SetTaskStatus(
+                    taskID: taskID,
+                    status: status,
+                    expectedVersion: expectedVersion
+                ),
+                forKey: .value
+            )
+        case let .rollback(targetRevision, reason):
+            try container.encode("rollback", forKey: .type)
+            try container.encode(
+                Rollback(targetRevision: targetRevision, reason: reason),
+                forKey: .value
+            )
+        }
+    }
+}
+
+private struct RustPlanDepthSessionDTO: Decodable {
+    let snapshot: RustPlanDepthSnapshotDTO
+    let actorRole: String
+
+    enum CodingKeys: String, CodingKey {
+        case snapshot
+        case actorRole = "actor_role"
+    }
+}
+
+private struct RustPlanDepthSnapshotDTO: Decodable {
+    let project: RustPlanProjectDTO
+    let people: [RustPlanPersonDTO]
+    let tasks: [RustPlanTaskDTO]
+    let dependencies: [RustPlanDependencyDTO]
+    let attachments: [RustPlanAttachmentDTO]
+    let attachmentLinks: [RustPlanAttachmentLinkDTO]
+    let history: [RustPlanHistoryDTO]
+
+    enum CodingKeys: String, CodingKey {
+        case project
+        case people
+        case tasks
+        case dependencies
+        case attachments
+        case attachmentLinks = "attachment_links"
+        case history
+    }
+}
+
+private struct RustPlanProjectDTO: Decodable {
+    let id: String
+    let name: String
+    let revision: UInt64
+}
+
+private struct RustPlanPersonDTO: Decodable {
+    let id: String
+    let name: String
+    let initials: String
+    let colorHex: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case initials
+        case colorHex = "color_hex"
+    }
+}
+
+private struct RustPlanTaskDTO: Decodable {
+    let id: String
+    let projectID: String
+    let parentID: String?
+    let title: String
+    let descriptionMarkdown: String
+    let status: String
+    let priority: String
+    let assigneeID: String?
+    let startsOn: String
+    let dueOn: String
+    let estimateMinutes: UInt32
+    let position: Int64
+    let version: UInt64
+    let completedAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case projectID = "project_id"
+        case parentID = "parent_id"
+        case title
+        case descriptionMarkdown = "description_markdown"
+        case status
+        case priority
+        case assigneeID = "assignee_id"
+        case startsOn = "starts_on"
+        case dueOn = "due_on"
+        case estimateMinutes = "estimate_minutes"
+        case position
+        case version
+        case completedAt = "completed_at"
+    }
+}
+
+private struct RustPlanDependencyDTO: Decodable {
+    let taskID: String
+    let dependsOnTaskID: String
+
+    enum CodingKeys: String, CodingKey {
+        case taskID = "task_id"
+        case dependsOnTaskID = "depends_on_task_id"
+    }
+}
+
+private struct RustPlanAttachmentDTO: Decodable {
+    let id: String
+    let sha256: String
+    let mediaType: String
+    let byteSize: UInt64
+    let filename: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case sha256
+        case mediaType = "media_type"
+        case byteSize = "byte_size"
+        case filename
+    }
+}
+
+private struct RustPlanAttachmentLinkDTO: Decodable {
+    let attachmentID: String
+    let taskID: String
+
+    enum CodingKeys: String, CodingKey {
+        case attachmentID = "attachment_id"
+        case taskID = "task_id"
+    }
+}
+
+private struct RustPlanHistoryDTO: Decodable {
+    let id: String
+    let revision: UInt64
+    let actorID: String
+    let action: String
+    let summary: String
+    let occurredAt: String
+    let restoredFromRevision: UInt64?
+    let contentSHA256: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case revision
+        case actorID = "actor_id"
+        case action
+        case summary
+        case occurredAt = "occurred_at"
+        case restoredFromRevision = "restored_from_revision"
+        case contentSHA256 = "content_sha256"
+    }
+}
+
+private struct RustPlanReportDTO: Decodable {
+    let sourceRevision: UInt64
+    let generatedAt: String
+    let range: RustPlanReportRangeDTO
+    let tasks: [RustPlanReportTaskDTO]
+    let statistics: RustPlanReportStatisticsDTO
+    let html: String
+
+    enum CodingKeys: String, CodingKey {
+        case sourceRevision = "source_revision"
+        case generatedAt = "generated_at"
+        case range
+        case tasks
+        case statistics
+        case html
+    }
+}
+
+private struct RustPlanReportRangeDTO: Decodable {
+    let startsOn: String
+    let endsOn: String
+
+    enum CodingKeys: String, CodingKey {
+        case startsOn = "starts_on"
+        case endsOn = "ends_on"
+    }
+}
+
+private struct RustPlanReportTaskDTO: Decodable {
+    let id: String
+    let title: String
+    let parentTitle: String?
+    let status: String
+    let priority: String
+    let assigneeName: String?
+    let startsOn: String
+    let dueOn: String
+    let estimateMinutes: UInt32
+    let crossDay: Bool
+    let overdue: Bool
+    let dependencyCount: UInt32
+    let subtaskCount: UInt32
+    let attachmentCount: UInt32
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case parentTitle = "parent_title"
+        case status
+        case priority
+        case assigneeName = "assignee_name"
+        case startsOn = "starts_on"
+        case dueOn = "due_on"
+        case estimateMinutes = "estimate_minutes"
+        case crossDay = "cross_day"
+        case overdue
+        case dependencyCount = "dependency_count"
+        case subtaskCount = "subtask_count"
+        case attachmentCount = "attachment_count"
+    }
+}
+
+private struct RustPlanReportStatisticsDTO: Decodable {
+    let taskCount: UInt32
+    let completedCount: UInt32
+    let overdueCount: UInt32
+    let crossDayCount: UInt32
+    let totalEstimateMinutes: UInt32
+
+    enum CodingKeys: String, CodingKey {
+        case taskCount = "task_count"
+        case completedCount = "completed_count"
+        case overdueCount = "overdue_count"
+        case crossDayCount = "cross_day_count"
+        case totalEstimateMinutes = "total_estimate_minutes"
     }
 }

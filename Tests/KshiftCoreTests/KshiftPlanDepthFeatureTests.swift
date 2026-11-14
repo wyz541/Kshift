@@ -35,6 +35,7 @@ final class KshiftPlanDepthFeatureTests: XCTestCase {
             return XCTFail("sample task missing")
         }
         _ = try? await boundary.execute(
+            projectID: KshiftPlanSampleData.projectID,
             .setTaskStatus(
                 taskID: task.id,
                 status: task.status == .done ? .todo : .done,
@@ -44,6 +45,7 @@ final class KshiftPlanDepthFeatureTests: XCTestCase {
         )
         do {
             _ = try await boundary.execute(
+                projectID: KshiftPlanSampleData.projectID,
                 .setTaskStatus(
                     taskID: task.id,
                     status: .done,
@@ -59,5 +61,19 @@ final class KshiftPlanDepthFeatureTests: XCTestCase {
         } catch {
             XCTFail("unexpected error: \(error)")
         }
+    }
+
+    func testFeatureModelUsesServerAuthoritativeViewerRole() async {
+        let snapshot = KshiftPlanSampleData.makeSnapshot()
+        let boundary = InMemoryKshiftPlanDepthBoundary(
+            snapshot: snapshot,
+            viewerRole: .viewer
+        )
+        let model = KshiftPlanDepthFeatureModel(
+            boundary: boundary,
+            capabilities: KshiftNoopPlatformCapabilities()
+        )
+        await model.load()
+        XCTAssertEqual(model.viewerRole, .viewer)
     }
 }

@@ -29,7 +29,7 @@ public final class KshiftPlanDepthFeatureModel {
     }
     public var rollbackCandidate: KshiftPlanHistoryEntry?
 
-    public let viewerRole: KshiftPlanRole
+    public private(set) var viewerRole: KshiftPlanRole
 
     @ObservationIgnored private let boundary: any KshiftPlanDepthBoundary
     @ObservationIgnored private let capabilities: any KshiftPlatformCapabilities
@@ -67,8 +67,9 @@ public final class KshiftPlanDepthFeatureModel {
         phase = .loading
         exportStatus = nil
         do {
-            let snapshot = try await boundary.fetchPlanDepth(projectID: projectID)
-            apply(snapshot)
+            let session = try await boundary.fetchPlanDepth(projectID: projectID)
+            viewerRole = session.viewerRole
+            apply(session.snapshot)
             phase = .loaded
         } catch {
             phase = .failed(errorMessage(error))
@@ -82,6 +83,7 @@ public final class KshiftPlanDepthFeatureModel {
         defer { pendingTaskID = nil }
         do {
             let updated = try await boundary.execute(
+                projectID: projectID,
                 .setTaskStatus(
                     taskID: task.id,
                     status: nextStatus,
@@ -108,6 +110,7 @@ public final class KshiftPlanDepthFeatureModel {
         rollbackCandidate = nil
         do {
             let updated = try await boundary.execute(
+                projectID: projectID,
                 .rollback(
                     targetRevision: candidate.revision,
                     reason: "恢复版本 r\(candidate.revision)",

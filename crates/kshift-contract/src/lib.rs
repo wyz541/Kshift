@@ -1,5 +1,14 @@
 //! Shared protobuf contract and wire/domain conversions.
 
+mod plan_depth;
+
+pub use plan_depth::{
+    parse_execute_plan_depth_command, plan_actor_role_from_proto, plan_actor_role_to_proto,
+    plan_command_response_to_proto, plan_depth_command_to_proto, plan_depth_snapshot_from_proto,
+    plan_depth_snapshot_to_proto, plan_error_to_api, plan_report_from_proto, plan_report_to_proto,
+    PlanDepthCommandInput,
+};
+
 use std::collections::HashSet;
 
 use chrono::{DateTime, NaiveDate, Utc};

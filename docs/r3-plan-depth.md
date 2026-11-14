@@ -32,6 +32,8 @@ description: 记录 R3 业务不变量、跨平台 UI 门禁和运行证据。
 | 回退 | `kshift-core` | Admin 限制、目标版本、恢复证据 |
 | 报告 | `kshift-core` | 单一 source revision、统计和工作报告 |
 | 持久化 | `kshift-plan-store` | snapshot、历史状态、附件内容 |
+| gRPC 边界 | `kshift-server` | R3 snapshot、status/rollback command 和 report RPC |
+| FFI 边界 | `kshift-ffi` / `KshiftCore.RustClient` | 有界 JSON、server role 和 typed Swift view |
 | 双平台 UI | `KshiftUI` | 同一页面和同一 presentation mapping |
 
 ## 2. 验收矩阵
@@ -47,6 +49,8 @@ description: 记录 R3 业务不变量、跨平台 UI 门禁和运行证据。
 | PostgreSQL 重启后读取 | `persistent_plan_depth_survives_conflict_attachment_and_rollback` | 通过 |
 | 过期 revision 被拒绝 | PostgreSQL 集成测试 | 通过 |
 | 报告使用同一 snapshot | Rust、Swift 和 PostgreSQL 测试 | 通过 |
+| gRPC snapshot/command/report | `plan_depth_snapshot_command_and_report_use_typed_grpc` | 通过 |
+| Swift 到 FFI 的 R3 读写和报告 | `testRustClientReadsSnapshotWhenServerConfigurationIsProvided` | 通过 |
 | 图片导出使用报告 revision | `testReportImageExportUsesTypedReportRevision` | 通过 |
 | macOS 构建 | `Kshift-macOS` Debug build | 通过 |
 | iOS 构建 | `Kshift-iOS` Simulator build | 通过 |
@@ -80,6 +84,7 @@ description: 记录 R3 业务不变量、跨平台 UI 门禁和运行证据。
 
 ## 4. 当前限制
 
-- 共享 UI 当前连接内存边界。正式 gRPC 和 FFI 接线属于 Issue #5。
-- PostgreSQL 适配器当前保存 R3 snapshot。完整 server RPC 接线是后续集成项。
+- 生产 `RustClient` 通过 R3 gRPC/FFI 边界读取 snapshot、执行 status/rollback command 并读取报告。内存边界只用于 sample 和 preview client。
+- R3 snapshot revision 必须等于项目 revision。两者不一致时，server 拒绝 R3 请求，避免覆盖较新的项目数据。
+- 当前 R3 UI 只写入任务状态和执行回退。附件上传、依赖编辑和子任务编辑仍使用通用 Task RPC 或后续 UI slice。
 - 外部导入、Web、Windows、Android 和离线写入不在本切片范围。

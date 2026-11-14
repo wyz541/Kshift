@@ -24,6 +24,7 @@ use kshift_client::{
     AuthToken, ClientConfig, ClientEvent, KshiftClient, ReconnectNotice, ResetNotice,
     DEFAULT_DEADLINE, MAX_RESPONSE_BYTES,
 };
+use serde::Serialize;
 use serde_json::json;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
@@ -41,6 +42,8 @@ const MAX_COMMAND_BYTES: usize = MAX_UNARY_REQUEST_BYTES;
 const MAX_SNAPSHOT_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
 const MAX_LIST_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
 const MAX_EXECUTE_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
+const MAX_PLAN_DEPTH_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
+const MAX_PLAN_REPORT_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
 const MAX_STREAM_ITEM_BYTES: usize = MAX_UNARY_RESPONSE_BYTES;
 const EVENT_QUEUE_ITEMS: usize = 64;
 const EVENT_QUEUE_BYTES: usize = 32 * 1024 * 1024;
@@ -233,6 +236,28 @@ pub extern "C" fn kshift_client_get_snapshot(
     })
 }
 
+/// Fetch one R3 plan-depth snapshot and the caller role.
+#[no_mangle]
+pub extern "C" fn kshift_client_get_plan_depth_snapshot(
+    client: *mut c_void,
+    project_id_utf8: KshiftSlice,
+    deadline_ms: u64,
+    cancel: *mut c_void,
+    out_json: *mut KshiftBuffer,
+) -> KshiftStatus {
+    run(|| {
+        let slot = client_slot(client)?;
+        let project_id = read_project_id(project_id_utf8)?;
+        let cancel = resolve_cancel(cancel)?;
+        let session = slot.runtime.block_on(slot.core.get_plan_depth_snapshot(
+            project_id,
+            Some(deadline(deadline_ms)),
+            &cancel,
+        ))?;
+        write_bounded_json(&session, out_json, MAX_PLAN_DEPTH_BYTES)
+    })
+}
+
 /// Return a cached project snapshot without a network request.
 #[no_mangle]
 pub extern "C" fn kshift_client_get_cached_snapshot(
@@ -286,6 +311,69 @@ pub unsafe extern "C" fn kshift_client_execute_command(
             });
         }
         unsafe { write_buffer(bytes, out_json) }
+    })
+}
+
+/// Execute one typed R3 command.
+///
+/// # Safety
+/// `command_json` must describe readable bytes for the call duration and
+/// `out_json` must be null or writable storage for one output buffer.
+#[no_mangle]
+pub unsafe extern "C" fn kshift_client_execute_plan_depth_command(
+    client: *mut c_void,
+    command_json: KshiftSlice,
+    deadline_ms: u64,
+    cancel: *mut c_void,
+    out_json: *mut KshiftBuffer,
+) -> KshiftStatus {
+    run(|| {
+        let slot = client_slot(client)?;
+        let bytes = unsafe { copy_slice(command_json, "command_json", MAX_COMMAND_BYTES)? };
+        std::str::from_utf8(&bytes).map_err(|_| FfiError::InvalidUtf8)?;
+        let command = command::plan_depth_command_from_json(&bytes)?;
+        let cancel = resolve_cancel(cancel)?;
+        let session = slot.runtime.block_on(slot.core.execute_plan_depth_command(
+            &command,
+            Some(deadline(deadline_ms)),
+            &cancel,
+        ))?;
+        write_bounded_json(&session, out_json, MAX_PLAN_DEPTH_BYTES)
+    })
+}
+
+/// Build one revision-pinned R3 work report.
+#[no_mangle]
+pub extern "C" fn kshift_client_get_plan_depth_report(
+    client: *mut c_void,
+    project_id_utf8: KshiftSlice,
+    starts_on_utf8: KshiftSlice,
+    ends_on_utf8: KshiftSlice,
+    today_utf8: KshiftSlice,
+    deadline_ms: u64,
+    cancel: *mut c_void,
+    out_json: *mut KshiftBuffer,
+) -> KshiftStatus {
+    run(|| {
+        let slot = client_slot(client)?;
+        let project_id = read_project_id(project_id_utf8)?;
+        let starts_on = read_date("starts_on", starts_on_utf8)?;
+        let ends_on = read_date("ends_on", ends_on_utf8)?;
+        let today = read_date("today", today_utf8)?;
+        let range = kshift_core::ReportRange { starts_on, ends_on };
+        let cancel = resolve_cancel(cancel)?;
+        let report = slot.runtime.block_on(slot.core.get_plan_depth_report(
+            project_id,
+            &range,
+            today,
+            Some(deadline(deadline_ms)),
+            &cancel,
+        ))?;
+        let value = PlanReportJson {
+            report: &report,
+            html: kshift_core::build_report_html(&report),
+        };
+        write_bounded_json(&value, out_json, MAX_PLAN_REPORT_BYTES)
     })
 }
 
@@ -538,6 +626,12 @@ fn read_project_id(slice: KshiftSlice) -> Result<Uuid, FfiError> {
         .map_err(|_| FfiError::InvalidArgument("project_id must be a UUID".to_owned()))
 }
 
+fn read_date(field: &'static str, slice: KshiftSlice) -> Result<chrono::NaiveDate, FfiError> {
+    let value = read_utf8(slice, field, 10, false)?;
+    chrono::NaiveDate::parse_from_str(&value, "%Y-%m-%d")
+        .map_err(|_| FfiError::InvalidArgument(format!("{field} must use YYYY-MM-DD")))
+}
+
 fn deadline(value: u64) -> Duration {
     if value == 0 {
         DEFAULT_DEADLINE
@@ -560,6 +654,13 @@ fn write_bounded_json<T: serde::Serialize>(
         });
     }
     unsafe { write_buffer(bytes, output) }
+}
+
+#[derive(Serialize)]
+struct PlanReportJson<'a> {
+    #[serde(flatten)]
+    report: &'a kshift_core::WorkReport,
+    html: String,
 }
 
 fn client_event_json(event: &ClientEvent) -> Result<Vec<u8>, FfiError> {

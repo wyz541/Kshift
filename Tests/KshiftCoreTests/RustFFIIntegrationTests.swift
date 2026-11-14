@@ -1,8 +1,17 @@
 import Foundation
+import KshiftPresentation
 import XCTest
 @testable import KshiftCore
 
 final class RustFFIIntegrationTests: XCTestCase {
+    func testRustClientImplementsTheSharedPlanDepthBoundary() {
+        let _: any KshiftPlanDepthBoundary = RustClient(
+            endpoint: nil,
+            caPEM: nil,
+            token: nil
+        )
+    }
+
     func testRustClientReportsMissingConfigurationExplicitly() async {
         let client = RustClient(
             endpoint: nil,
@@ -41,5 +50,32 @@ final class RustFFIIntegrationTests: XCTestCase {
         let first = try XCTUnwrap(projects.first)
         let snapshot = try await client.snapshot(projectID: first.id)
         XCTAssertEqual(snapshot.project.id, first.id)
+
+        let projectID = try XCTUnwrap(UUID(uuidString: first.id))
+        let planDepth = try await client.fetchPlanDepth(projectID: projectID)
+        XCTAssertEqual(planDepth.snapshot.projectID, projectID)
+        XCTAssertEqual(planDepth.viewerRole, .admin)
+        let task = try XCTUnwrap(planDepth.snapshot.tasks.first)
+        let updated = try await client.execute(
+            projectID: projectID,
+            .setTaskStatus(
+                taskID: task.id,
+                status: .done,
+                expectedTaskVersion: task.version,
+                expectedRevision: planDepth.snapshot.revision
+            )
+        )
+        XCTAssertEqual(updated.projectID, projectID)
+        XCTAssertEqual(updated.tasks.first?.status, .done)
+
+        let report = try await client.fetchReport(
+            projectID: projectID,
+            range: KshiftReportRange(
+                startsOn: task.startsOn,
+                endsOn: task.dueOn
+            )
+        )
+        XCTAssertEqual(report.sourceRevision, updated.revision)
+        XCTAssertTrue(report.html.contains("R3 smoke task"))
     }
 }

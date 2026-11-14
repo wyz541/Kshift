@@ -80,6 +80,11 @@ KshiftStatus kshift_client_get_snapshot(KshiftClientHandle client,
                                          uint64_t deadline_ms,
                                          KshiftCancelHandle cancel,
                                          KshiftBuffer *out_json);
+KshiftStatus kshift_client_get_plan_depth_snapshot(KshiftClientHandle client,
+                                                     KshiftSlice project_id_utf8,
+                                                     uint64_t deadline_ms,
+                                                     KshiftCancelHandle cancel,
+                                                     KshiftBuffer *out_json);
 KshiftStatus kshift_client_get_cached_snapshot(KshiftClientHandle client,
                                                 KshiftSlice project_id_utf8,
                                                 KshiftBuffer *out_json);
@@ -88,6 +93,19 @@ KshiftStatus kshift_client_execute_command(KshiftClientHandle client,
                                             uint64_t deadline_ms,
                                             KshiftCancelHandle cancel,
                                             KshiftBuffer *out_json);
+KshiftStatus kshift_client_execute_plan_depth_command(KshiftClientHandle client,
+                                                       KshiftSlice command_json,
+                                                       uint64_t deadline_ms,
+                                                       KshiftCancelHandle cancel,
+                                                       KshiftBuffer *out_json);
+KshiftStatus kshift_client_get_plan_depth_report(KshiftClientHandle client,
+                                                  KshiftSlice project_id_utf8,
+                                                  KshiftSlice starts_on_utf8,
+                                                  KshiftSlice ends_on_utf8,
+                                                  KshiftSlice today_utf8,
+                                                  uint64_t deadline_ms,
+                                                  KshiftCancelHandle cancel,
+                                                  KshiftBuffer *out_json);
 
 KshiftStatus kshift_client_watch_project(KshiftClientHandle client,
                                           KshiftSlice project_id_utf8,

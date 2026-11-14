@@ -348,8 +348,21 @@ public enum KshiftPlanDepthError: Error, Equatable, Sendable {
     case released
 }
 
+public struct KshiftPlanDepthSession: Sendable {
+    public let snapshot: KshiftPlanDepthSnapshot
+    public let viewerRole: KshiftPlanRole
+
+    public init(snapshot: KshiftPlanDepthSnapshot, viewerRole: KshiftPlanRole) {
+        self.snapshot = snapshot
+        self.viewerRole = viewerRole
+    }
+}
+
 public protocol KshiftPlanDepthBoundary: Sendable {
-    func fetchPlanDepth(projectID: UUID) async throws -> KshiftPlanDepthSnapshot
-    func execute(_ command: KshiftPlanDepthCommand) async throws -> KshiftPlanDepthSnapshot
+    func fetchPlanDepth(projectID: UUID) async throws -> KshiftPlanDepthSession
+    func execute(
+        projectID: UUID,
+        _ command: KshiftPlanDepthCommand
+    ) async throws -> KshiftPlanDepthSnapshot
     func fetchReport(projectID: UUID, range: KshiftReportRange) async throws -> KshiftWorkReport
 }

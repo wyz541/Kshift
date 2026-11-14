@@ -2,11 +2,15 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, NaiveDate, Utc};
-use contract::{v1, MAX_UNARY_REQUEST_BYTES};
+use contract::{
+    plan_actor_role_from_proto, plan_depth_command_to_proto, plan_depth_snapshot_from_proto,
+    plan_report_from_proto, v1, PlanDepthCommandInput, MAX_UNARY_REQUEST_BYTES,
+};
 use domain::{
     ChangeEvent, Command, CommandEnvelope, Maybe, Project, ProjectAuditEntry, ProjectMember,
     ProjectSnapshot, ResetReason, Task, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
 };
+use kshift_core::{PlanActorRole, PlanDepthSnapshot, WorkReport};
 use prost_types::Timestamp;
 use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, RwLock};
@@ -45,6 +49,15 @@ pub struct CommandOutcome {
     pub revision: u64,
     /// Single normalized change committed by the command.
     pub event: ChangeEvent,
+}
+
+/// R3 snapshot and the server-authoritative role for the caller.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct PlanDepthSession {
+    /// Immutable R3 snapshot.
+    pub snapshot: PlanDepthSnapshot,
+    /// Role used by the server for this request.
+    pub actor_role: PlanActorRole,
 }
 
 /// Event delivered to a Swift subscription.
@@ -350,6 +363,199 @@ impl KshiftClient {
             | EventApplyResult::BudgetExceeded => {}
         }
         Ok(outcome)
+    }
+
+    /// Fetch one R3 plan-depth snapshot and the caller role.
+    pub async fn get_plan_depth_snapshot(
+        &self,
+        project_id: Uuid,
+        deadline: Option<Duration>,
+        cancel: &CancellationToken,
+    ) -> Result<PlanDepthSession, ClientError> {
+        if project_id.is_nil() {
+            return Err(ClientError::InvalidArgument(
+                "project_id must not be nil".to_owned(),
+            ));
+        }
+        let token = self.required_token().await?;
+        let effective_deadline = self.config.effective_deadline(deadline);
+        let deadline_at = Instant::now()
+            .checked_add(effective_deadline)
+            .ok_or(ClientError::DeadlineExceeded)?;
+        let service = self.service.clone();
+        let response = retry_with_deadline(
+            self.config.retry_policy(),
+            deadline_at,
+            cancel,
+            |remaining| {
+                let mut service = service.clone();
+                let token = token.clone();
+                let request = self.request(
+                    v1::GetPlanDepthSnapshotRequest {
+                        project_id: project_id.to_string(),
+                    },
+                    remaining,
+                    &token,
+                );
+                async move {
+                    service
+                        .get_plan_depth_snapshot(request?)
+                        .await
+                        .map(|response| response.into_inner())
+                        .map_err(ClientError::from)
+                }
+            },
+        )
+        .await
+        .map_err(|error| normalize_deadline_error(error, deadline_at));
+        let response = match response {
+            Ok(response) => response,
+            Err(error) => {
+                self.update_cache_for_error(&error, Some(project_id)).await;
+                return Err(error);
+            }
+        };
+        let snapshot = plan_depth_snapshot_from_proto(response.snapshot.ok_or_else(|| {
+            ClientError::Protocol("plan depth response has no snapshot".to_owned())
+        })?)
+        .map_err(|error| ClientError::Protocol(error.to_string()))?;
+        if snapshot.project.id != project_id.to_string() {
+            return Err(ClientError::Protocol(
+                "plan depth snapshot project does not match request".to_owned(),
+            ));
+        }
+        let actor_role = plan_actor_role_from_proto(response.actor_role)
+            .map_err(|error| ClientError::Protocol(error.to_string()))?;
+        Ok(PlanDepthSession {
+            snapshot,
+            actor_role,
+        })
+    }
+
+    /// Execute one typed R3 plan-depth command.
+    pub async fn execute_plan_depth_command(
+        &self,
+        command: &PlanDepthCommandInput,
+        deadline: Option<Duration>,
+        cancel: &CancellationToken,
+    ) -> Result<PlanDepthSession, ClientError> {
+        if command.request_id.is_nil() || command.project_id.is_nil() {
+            return Err(ClientError::InvalidArgument(
+                "R3 command identifiers must not be nil".to_owned(),
+            ));
+        }
+        let token = self.required_token().await?;
+        let wire_command = plan_depth_command_to_proto(command)
+            .map_err(|error| ClientError::InvalidArgument(error.to_string()))?;
+        let effective_deadline = self.config.effective_deadline(deadline);
+        let deadline_at = Instant::now()
+            .checked_add(effective_deadline)
+            .ok_or(ClientError::DeadlineExceeded)?;
+        let service = self.service.clone();
+        let response = retry_with_deadline(
+            self.config.retry_policy(),
+            deadline_at,
+            cancel,
+            |remaining| {
+                let mut service = service.clone();
+                let token = token.clone();
+                let command = wire_command.clone();
+                let request = self.request(command, remaining, &token);
+                async move {
+                    service
+                        .execute_plan_depth_command(request?)
+                        .await
+                        .map(|response| response.into_inner())
+                        .map_err(ClientError::from)
+                }
+            },
+        )
+        .await
+        .map_err(|error| normalize_deadline_error(error, deadline_at));
+        let response = match response {
+            Ok(response) => response,
+            Err(error) => {
+                self.update_cache_for_error(&error, Some(command.project_id))
+                    .await;
+                return Err(error);
+            }
+        };
+        let snapshot = plan_depth_snapshot_from_proto(response.snapshot.ok_or_else(|| {
+            ClientError::Protocol("plan depth command response has no snapshot".to_owned())
+        })?)
+        .map_err(|error| ClientError::Protocol(error.to_string()))?;
+        if snapshot.project.id != command.project_id.to_string() {
+            return Err(ClientError::Protocol(
+                "plan depth command snapshot project does not match request".to_owned(),
+            ));
+        }
+        let actor_role = plan_actor_role_from_proto(response.actor_role)
+            .map_err(|error| ClientError::Protocol(error.to_string()))?;
+        Ok(PlanDepthSession {
+            snapshot,
+            actor_role,
+        })
+    }
+
+    /// Build one revision-pinned R3 work report.
+    pub async fn get_plan_depth_report(
+        &self,
+        project_id: Uuid,
+        range: &kshift_core::ReportRange,
+        today: NaiveDate,
+        deadline: Option<Duration>,
+        cancel: &CancellationToken,
+    ) -> Result<WorkReport, ClientError> {
+        if project_id.is_nil() {
+            return Err(ClientError::InvalidArgument(
+                "project_id must not be nil".to_owned(),
+            ));
+        }
+        let token = self.required_token().await?;
+        let effective_deadline = self.config.effective_deadline(deadline);
+        let deadline_at = Instant::now()
+            .checked_add(effective_deadline)
+            .ok_or(ClientError::DeadlineExceeded)?;
+        let service = self.service.clone();
+        let response = retry_with_deadline(
+            self.config.retry_policy(),
+            deadline_at,
+            cancel,
+            |remaining| {
+                let mut service = service.clone();
+                let token = token.clone();
+                let request = self.request(
+                    v1::GetPlanDepthReportRequest {
+                        project_id: project_id.to_string(),
+                        starts_on: range.starts_on.to_string(),
+                        ends_on: range.ends_on.to_string(),
+                        today: today.to_string(),
+                    },
+                    remaining,
+                    &token,
+                );
+                async move {
+                    service
+                        .get_plan_depth_report(request?)
+                        .await
+                        .map(|response| response.into_inner())
+                        .map_err(ClientError::from)
+                }
+            },
+        )
+        .await
+        .map_err(|error| normalize_deadline_error(error, deadline_at));
+        let response = match response {
+            Ok(response) => response,
+            Err(error) => {
+                self.update_cache_for_error(&error, Some(project_id)).await;
+                return Err(error);
+            }
+        };
+        plan_report_from_proto(response.report.ok_or_else(|| {
+            ClientError::Protocol("plan depth report response has no report".to_owned())
+        })?)
+        .map_err(|error| ClientError::Protocol(error.to_string()))
     }
 
     /// Keep a project snapshot synchronized until cancellation.

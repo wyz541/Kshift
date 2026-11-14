@@ -173,6 +173,11 @@ pub enum PlanCommand {
         expected_version: u64,
         depends_on_task_ids: Vec<String>,
     },
+    SetTaskStatus {
+        task_id: String,
+        status: TaskStatus,
+        expected_version: u64,
+    },
     AttachFile {
         task_id: String,
         expected_version: u64,
@@ -436,6 +441,11 @@ impl PlanDepthStore {
                 *expected_version,
                 depends_on_task_ids,
             ),
+            PlanCommand::SetTaskStatus {
+                task_id,
+                status,
+                expected_version,
+            } => apply_set_task_status(&mut next, task_id, *status, *expected_version),
             PlanCommand::AttachFile {
                 task_id,
                 expected_version,
@@ -491,7 +501,7 @@ impl PlanDepthStore {
         next.history.insert(
             0,
             PlanHistoryEntry {
-                id: format!("history-{}", next.project.revision),
+                id: envelope.request_id.clone(),
                 revision: next.project.revision,
                 actor_id: envelope.actor_id.clone(),
                 action: action.to_owned(),
@@ -798,6 +808,23 @@ fn apply_replace_dependencies(
     Ok(())
 }
 
+fn apply_set_task_status(
+    snapshot: &mut PlanDepthSnapshot,
+    task_id: &str,
+    status: TaskStatus,
+    expected_version: u64,
+) -> Result<(), PlanError> {
+    let index = task_index(snapshot, task_id)?;
+    if snapshot.tasks[index].version != expected_version {
+        return Err(version_conflict(snapshot.tasks[index].version, task_id));
+    }
+    let task = &mut snapshot.tasks[index];
+    task.status = status;
+    task.completed_at = (status == TaskStatus::Done).then(|| Utc::now().to_rfc3339());
+    task.version = expected_version.saturating_add(1);
+    Ok(())
+}
+
 fn apply_attachment(
     snapshot: &mut PlanDepthSnapshot,
     attachment_bytes: &mut HashMap<String, Vec<u8>>,
@@ -820,7 +847,7 @@ fn apply_attachment(
         existing.clone()
     } else {
         let attachment = AttachmentMetadata {
-            id: format!("attachment-{}", &prepared.sha256[..12]),
+            id: Uuid::new_v4().to_string(),
             sha256: prepared.sha256.clone(),
             media_type: prepared.media_type,
             byte_size: prepared.byte_size,
@@ -1138,6 +1165,7 @@ fn affected_task_id(command: &PlanCommand) -> Vec<String> {
         | PlanCommand::DeleteTask { task_id, .. }
         | PlanCommand::SetParent { task_id, .. }
         | PlanCommand::ReplaceDependencies { task_id, .. }
+        | PlanCommand::SetTaskStatus { task_id, .. }
         | PlanCommand::AttachFile { task_id, .. } => vec![task_id.clone()],
         PlanCommand::Rollback { .. } => Vec::new(),
     }
@@ -1150,6 +1178,7 @@ fn action_name(command: &PlanCommand) -> &'static str {
         PlanCommand::DeleteTask { .. } => "deleted",
         PlanCommand::SetParent { .. } => "parent_changed",
         PlanCommand::ReplaceDependencies { .. } => "dependencies_replaced",
+        PlanCommand::SetTaskStatus { .. } => "status_changed",
         PlanCommand::AttachFile { .. } => "attachment_added",
         PlanCommand::Rollback { .. } => "rollback",
     }
@@ -1163,6 +1192,11 @@ fn command_summary(command: &PlanCommand) -> String {
         PlanCommand::SetParent { task_id, .. } => format!("调整任务 {task_id} 的父任务"),
         PlanCommand::ReplaceDependencies { task_id, .. } => {
             format!("替换任务 {task_id} 的依赖")
+        }
+        PlanCommand::SetTaskStatus {
+            task_id, status, ..
+        } => {
+            format!("将任务 {task_id} 状态改为 {}", status.label())
         }
         PlanCommand::AttachFile { filename, .. } => format!("添加附件「{filename}」"),
         PlanCommand::Rollback {
@@ -1463,6 +1497,30 @@ mod tests {
             actor_role: role,
             command,
         }
+    }
+
+    #[test]
+    fn set_task_status_updates_version_and_completion_time() {
+        let mut store = store();
+        let response = store.execute(&envelope(
+            "status-change",
+            PlanActorRole::Editor,
+            PlanCommand::SetTaskStatus {
+                task_id: "task-plan".to_owned(),
+                status: TaskStatus::Done,
+                expected_version: 1,
+            },
+        ));
+        assert!(response.ok, "unexpected error: {:?}", response.error);
+        let task = response
+            .snapshot
+            .tasks
+            .iter()
+            .find(|task| task.id == "task-plan")
+            .expect("task should exist");
+        assert_eq!(task.status, TaskStatus::Done);
+        assert_eq!(task.version, 2);
+        assert!(task.completed_at.is_some());
     }
 
     #[test]

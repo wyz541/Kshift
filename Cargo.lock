@@ -863,6 +863,7 @@ dependencies = [
  "chrono",
  "futures-util",
  "kshift-contract",
+ "kshift-core",
  "kshift-domain",
  "prost",
  "prost-types",
@@ -883,6 +884,7 @@ name = "kshift-contract"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "kshift-core",
  "kshift-domain",
  "prost",
  "prost-types",
@@ -924,6 +926,7 @@ dependencies = [
  "chrono",
  "kshift-client",
  "kshift-contract",
+ "kshift-core",
  "kshift-domain",
  "serde",
  "serde_json",
@@ -957,7 +960,9 @@ dependencies = [
  "futures-util",
  "hex",
  "kshift-contract",
+ "kshift-core",
  "kshift-domain",
+ "kshift-plan-store",
  "prost",
  "prost-types",
  "serde",

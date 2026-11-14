@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -9,6 +10,7 @@ use domain::{
     TaskPriority, TaskStatus,
 };
 use kshift_client::{AuthToken, ClientConfig, ClientError, ClientEvent, KshiftClient};
+use kshift_core::{PlanActorRole, PlanCommand, PlanCommandEnvelope};
 use tokio::sync::{mpsc, oneshot};
 use tokio_stream::wrappers::{ReceiverStream, TcpListenerStream};
 use tonic::transport::{Identity, Server, ServerTlsConfig};
@@ -73,6 +75,71 @@ fn snapshot(revision: u64) -> ProjectSnapshot {
         audit: Vec::new(),
         generated_at: now(),
     }
+}
+
+fn plan_snapshot() -> kshift_core::PlanDepthSnapshot {
+    let mut snapshot = kshift_core::demo_snapshot(NaiveDate::from_ymd_opt(2026, 11, 13).unwrap());
+    snapshot.project.id = project_id().to_string();
+    let task_ids = snapshot
+        .tasks
+        .iter()
+        .enumerate()
+        .map(|(index, task)| {
+            (
+                task.id.clone(),
+                Uuid::from_u128(0xe0000000_0000_4000_8000_000000000000_u128 + index as u128)
+                    .to_string(),
+            )
+        })
+        .collect::<HashMap<_, _>>();
+    for task in &mut snapshot.tasks {
+        task.project_id = project_id().to_string();
+        if let Some(id) = task_ids.get(&task.id) {
+            task.id = id.clone();
+        }
+        task.parent_id = task
+            .parent_id
+            .as_ref()
+            .and_then(|id| task_ids.get(id).cloned());
+    }
+    for dependency in &mut snapshot.dependencies {
+        if let Some(id) = task_ids.get(&dependency.task_id) {
+            dependency.task_id = id.clone();
+        }
+        if let Some(id) = task_ids.get(&dependency.depends_on_task_id) {
+            dependency.depends_on_task_id = id.clone();
+        }
+    }
+    let attachment_ids = snapshot
+        .attachments
+        .iter()
+        .enumerate()
+        .map(|(index, attachment)| {
+            (
+                attachment.id.clone(),
+                Uuid::from_u128(0xf0000000_0000_4000_8000_000000000000_u128 + index as u128)
+                    .to_string(),
+            )
+        })
+        .collect::<HashMap<_, _>>();
+    for attachment in &mut snapshot.attachments {
+        if let Some(id) = attachment_ids.get(&attachment.id) {
+            attachment.id = id.clone();
+        }
+    }
+    for link in &mut snapshot.attachment_links {
+        if let Some(id) = attachment_ids.get(&link.attachment_id) {
+            link.attachment_id = id.clone();
+        }
+        if let Some(id) = task_ids.get(&link.task_id) {
+            link.task_id = id.clone();
+        }
+    }
+    for (index, entry) in snapshot.history.iter_mut().enumerate() {
+        entry.id = Uuid::from_u128(0xa0000000_0000_4000_8000_000000000000_u128 + index as u128)
+            .to_string();
+    }
+    snapshot
 }
 
 struct MockState {
@@ -227,6 +294,80 @@ impl contract::KshiftService for MockService {
                 project_revision: revision,
                 event: Some(contract::change_event_to_proto(&event)),
             }),
+        }))
+    }
+
+    async fn get_plan_depth_snapshot(
+        &self,
+        request: Request<v1::GetPlanDepthSnapshotRequest>,
+    ) -> Result<Response<v1::GetPlanDepthSnapshotResponse>, Status> {
+        authorize(&request)?;
+        let requested = Uuid::parse_str(&request.into_inner().project_id)
+            .map_err(|_| Status::invalid_argument("project_id must be a UUID"))?;
+        if requested != project_id() {
+            return Err(Status::not_found("project not found"));
+        }
+        Ok(Response::new(v1::GetPlanDepthSnapshotResponse {
+            snapshot: Some(contract::plan_depth_snapshot_to_proto(&plan_snapshot())),
+            actor_role: v1::PlanActorRole::Admin as i32,
+        }))
+    }
+
+    async fn execute_plan_depth_command(
+        &self,
+        request: Request<v1::ExecutePlanDepthCommandRequest>,
+    ) -> Result<Response<v1::ExecutePlanDepthCommandResponse>, Status> {
+        authorize(&request)?;
+        let input = contract::parse_execute_plan_depth_command(request.get_ref())
+            .map_err(|error| error.to_status())?;
+        let mut store = kshift_core::PlanDepthStore::new(plan_snapshot())
+            .map_err(|error| Status::failed_precondition(error.to_string()))?;
+        let envelope = PlanCommandEnvelope {
+            request_id: input.request_id.to_string(),
+            project_id: input.project_id,
+            expected_revision: input.expected_revision,
+            actor_id: "d0000000-0000-4000-8000-000000000002".to_owned(),
+            actor_role: PlanActorRole::Admin,
+            command: input.command,
+        };
+        let response = store.execute(&envelope);
+        if let Some(error) = response.error {
+            return Err(contract::plan_error_to_api(error).to_status());
+        }
+        Ok(Response::new(contract::plan_command_response_to_proto(
+            &response,
+            PlanActorRole::Admin,
+        )))
+    }
+
+    #[allow(clippy::result_large_err)]
+    async fn get_plan_depth_report(
+        &self,
+        request: Request<v1::GetPlanDepthReportRequest>,
+    ) -> Result<Response<v1::GetPlanDepthReportResponse>, Status> {
+        authorize(&request)?;
+        let request = request.into_inner();
+        let project = Uuid::parse_str(&request.project_id)
+            .map_err(|_| Status::invalid_argument("project_id must be a UUID"))?;
+        if project != project_id() {
+            return Err(Status::not_found("project not found"));
+        }
+        let parse = |value: &str, field: &str| {
+            NaiveDate::parse_from_str(value, "%Y-%m-%d")
+                .map_err(|_| Status::invalid_argument(format!("{field} must use YYYY-MM-DD")))
+        };
+        let range = kshift_core::ReportRange {
+            starts_on: parse(&request.starts_on, "starts_on")?,
+            ends_on: parse(&request.ends_on, "ends_on")?,
+        };
+        let today = parse(&request.today, "today")?;
+        let store = kshift_core::PlanDepthStore::new(plan_snapshot())
+            .map_err(|error| Status::failed_precondition(error.to_string()))?;
+        let report = store
+            .report(&range, today)
+            .map_err(|error| Status::failed_precondition(error.to_string()))?;
+        Ok(Response::new(v1::GetPlanDepthReportResponse {
+            report: Some(contract::plan_report_to_proto(&report)),
         }))
     }
 
@@ -422,6 +563,67 @@ async fn tls_snapshot_and_retry_work() {
         .changes
         .iter()
         .any(|change| matches!(change, Change::TaskUpdated { .. })));
+
+    let _ = shutdown.send(());
+    server.await.expect("server shutdown");
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn plan_depth_snapshot_command_and_report_use_typed_grpc() {
+    let state = Arc::new(MockState::default());
+    let (endpoint, shutdown, server) = start_server(state).await;
+    let client = client(&endpoint);
+    client.set_token(AuthToken::new(TOKEN).unwrap()).await;
+    let cancel = tokio_util::sync::CancellationToken::new();
+
+    let session = client
+        .get_plan_depth_snapshot(project_id(), None, &cancel)
+        .await
+        .expect("plan depth snapshot");
+    assert_eq!(session.actor_role, PlanActorRole::Admin);
+    assert_eq!(session.snapshot.project.revision, 7);
+    let task = session
+        .snapshot
+        .tasks
+        .first()
+        .expect("demo task should exist")
+        .clone();
+
+    let input = contract::PlanDepthCommandInput {
+        request_id: Uuid::new_v4(),
+        project_id: project_id(),
+        expected_revision: 7,
+        command: PlanCommand::SetTaskStatus {
+            task_id: task.id,
+            status: kshift_core::TaskStatus::Done,
+            expected_version: task.version,
+        },
+    };
+    let updated = client
+        .execute_plan_depth_command(&input, None, &cancel)
+        .await
+        .expect("plan depth command");
+    assert_eq!(updated.snapshot.project.revision, 8);
+    assert_eq!(
+        updated.snapshot.tasks[0].status,
+        kshift_core::TaskStatus::Done
+    );
+
+    let report = client
+        .get_plan_depth_report(
+            project_id(),
+            &kshift_core::ReportRange {
+                starts_on: NaiveDate::from_ymd_opt(2026, 11, 1).unwrap(),
+                ends_on: NaiveDate::from_ymd_opt(2026, 11, 30).unwrap(),
+            },
+            NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
+            None,
+            &cancel,
+        )
+        .await
+        .expect("plan depth report");
+    assert_eq!(report.source_revision, 7);
+    assert!(!report.tasks.is_empty());
 
     let _ = shutdown.send(());
     server.await.expect("server shutdown");

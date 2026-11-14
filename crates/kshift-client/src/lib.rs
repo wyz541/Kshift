@@ -17,8 +17,8 @@ mod secret;
 
 pub use cache::{AttachmentCache, CacheStats, EventApplyResult, SnapshotCache};
 pub use client::{
-    ClientEvent, CommandOutcome, KshiftClient, ProjectSummary, ReconnectNotice, ResetNotice,
-    WatchExit,
+    ClientEvent, CommandOutcome, KshiftClient, PlanDepthSession, ProjectSummary, ReconnectNotice,
+    ResetNotice, WatchExit,
 };
 pub use config::{ClientConfig, RetryPolicy, DEFAULT_DEADLINE, MAX_DEADLINE, MAX_RESPONSE_BYTES};
 pub use error::{ClientError, ClientErrorView, ConflictDetails};
