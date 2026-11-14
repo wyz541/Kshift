@@ -1,0 +1,14 @@
+ Container task-39-acceptance-postgres-1 Running 
+ Container task-39-acceptance-postgres-1 Waiting 
+ Container task-39-acceptance-postgres-1 Healthy 
+   Compiling kshift-contract v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-contract)
+   Compiling kshift-server v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-server)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.08s
+   Compiling kshift-domain v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-domain)
+   Compiling kshift-contract v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-contract)
+   Compiling kshift-client v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-client)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.79s
+Error: migration count mismatch: expected 1, database has 2
+real 7.00
+user 2.67
+sys 2.58

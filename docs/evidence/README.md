@@ -74,3 +74,11 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 ## 性能
 
 性能读数见 [performance.md](performance.md)。读数是 `XCTClockMetric`，不是帧耗时。
+
+## v1 验收
+
+| 项目 | 入口 |
+| --- | --- |
+| Kshift v1 构建与人工验收 | [acceptance-v1](acceptance-v1/README.md) |
+
+v1 验收当前为失败。阻断项见验收报告。

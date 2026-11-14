@@ -1,0 +1,21 @@
+docs: 59 Markdown files checked
+json: 4 JSON files parsed
+slugs: 56 unique slugs
+..........
+----------------------------------------------------------------------
+Ran 10 tests in 0.000s
+
+OK
+Spec-first governance: OK
+Active specs: 7
+Unique rule IDs: 228
+Unique rule texts: 228
+Historical ADRs: 10 superseded
+npm notice run npx
+npm notice run 'ajv' validate --spec=draft2019 --strict=false -c ajv-formats -s schemas/release-manifest.schema.json -d schemas/examples/release-manifest.example.json
+schemas/examples/release-manifest.example.json valid
+npm notice run npx
+npm notice run 'ajv' validate --spec=draft2019 --strict=false -c ajv-formats -s schemas/release-fragment.schema.json -r schemas/release-manifest.schema.json -d schemas/examples/release-fragment.example.json
+schemas/examples/release-fragment.example.json valid
+mermaid: skipped; set MERMAID_EXTRACTOR to enable parsing
+R0 checks passed

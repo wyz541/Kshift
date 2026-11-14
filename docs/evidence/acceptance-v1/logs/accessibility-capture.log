@@ -1,0 +1,30 @@
+Monitoring boot status for iPhone 18 Pro (062A2669-EC77-4241-9DE9-B2A7667AC126).
+Device already booted, nothing to do.
+
+Detected file type from extension: PNG
+Note: No display specified. Defaulting to display: 299BED12-F2EC-4D71-A43A-39FC35DA5A61 (screenID: 1, name: LCD)
+Wrote screenshot to: /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-light.png
+Captured /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-light.png
+Detected file type from extension: PNG
+Note: No display specified. Defaulting to display: 299BED12-F2EC-4D71-A43A-39FC35DA5A61 (screenID: 1, name: LCD)
+Wrote screenshot to: /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-dark.png
+Captured /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-dark.png
+Detected file type from extension: PNG
+Note: No display specified. Defaulting to display: 299BED12-F2EC-4D71-A43A-39FC35DA5A61 (screenID: 1, name: LCD)
+Wrote screenshot to: /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-increase-contrast.png
+Captured /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-increase-contrast.png
+Detected file type from extension: PNG
+Note: No display specified. Defaulting to display: 299BED12-F2EC-4D71-A43A-39FC35DA5A61 (screenID: 1, name: LCD)
+Wrote screenshot to: /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-large-text.png
+Captured /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-large-text.png
+Detected file type from extension: PNG
+Note: No display specified. Defaulting to display: 299BED12-F2EC-4D71-A43A-39FC35DA5A61 (screenID: 1, name: LCD)
+Wrote screenshot to: /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-reduce-transparency.png
+Captured /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-reduce-transparency.png
+Detected file type from extension: PNG
+Note: No display specified. Defaulting to display: 299BED12-F2EC-4D71-A43A-39FC35DA5A61 (screenID: 1, name: LCD)
+Wrote screenshot to: /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-reduce-motion.png
+Captured /Users/wyz/workspace/scratch/kShift-issue-39-acceptance/d964c11/accessibility/ios-reduce-motion.png
+real 37.98
+user 2.98
+sys 3.19

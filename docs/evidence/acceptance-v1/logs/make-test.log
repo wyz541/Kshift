@@ -1,0 +1,473 @@
+PATH="/Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH" CARGO_HOME="/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/cargo-home" /Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo fmt --all -- --check
+PATH="/Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH" CARGO_HOME="/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/cargo-home" /Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo clippy --workspace --all-targets -- -D warnings
+   Compiling kshift-contract v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-contract)
+    Checking kshift-domain v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-domain)
+   Compiling kshift-server v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-server)
+    Checking kshift-core v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-core)
+    Checking kshift-plan-store v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-plan-store)
+    Checking kshift-client v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-client)
+    Checking kshift-ffi v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-ffi)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.29s
+PATH="/Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH" CARGO_HOME="/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/cargo-home" /Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo test --workspace
+   Compiling kshift-domain v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-domain)
+   Compiling kshift-core v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-core)
+   Compiling kshift-contract v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-contract)
+   Compiling kshift-server v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-server)
+   Compiling kshift-client v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-client)
+   Compiling kshift-plan-store v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-plan-store)
+   Compiling kshift-ffi v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-ffi)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.25s
+     Running unittests src/lib.rs (target/debug/deps/kshift_client-a4a28725654a77aa)
+
+running 6 tests
+test retry::tests::backoff_is_bounded_and_jittered ... ok
+test error::tests::conflict_detail_is_preserved ... ok
+test error::tests::error_view_is_bounded_and_control_free ... ok
+test cache::tests::upserts_member_on_event ... ok
+test cache::tests::evicts_least_recent_project ... ok
+test cache::tests::applies_consecutive_event_and_rejects_gap ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/tls_client.rs (target/debug/deps/tls_client-4962f709f857847b)
+
+running 3 tests
+test revision_gap_resets_and_refetches_snapshot ... ok
+test cancellation_and_deadline_are_typed ... ok
+test tls_snapshot_and_retry_work ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.54s
+
+     Running unittests src/lib.rs (target/debug/deps/kshift_contract-526d700be28bb588)
+
+running 2 tests
+test tests::invalid_typed_command_is_rejected ... ok
+test tests::error_status_contains_typed_conflict_detail ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kshift_core-106aeadd6a12acf1)
+
+running 11 tests
+test store::tests::projects_are_isolated ... ok
+test store::tests::batch_update_is_atomic ... ok
+test store::tests::request_id_is_idempotent ... ok
+test store::tests::create_update_and_conflict_are_audited ... ok
+test store::tests::stale_project_revision_is_rejected ... ok
+test plan_depth::tests::work_report_and_html_share_one_source_revision ... ok
+test plan_depth::tests::rejects_subtask_cycles_and_cross_day_errors ... ok
+test plan_depth::tests::attachment_is_type_checked_and_deduplicated_by_sha256 ... ok
+test plan_depth::tests::command_replay_does_not_increment_revision_twice ... ok
+test plan_depth::tests::rejects_direct_and_indirect_dependency_cycles ... ok
+test plan_depth::tests::rollback_requires_admin_and_records_restore_evidence ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kshift_domain-bd101a69576a22a2)
+
+running 6 tests
+test tests::empty_command_patch_is_rejected ... ok
+test tests::time_zone_accepts_iana_names_only ... ok
+test tests::assignees_form_a_bounded_unique_set ... ok
+test tests::null_is_rejected_for_required_fields ... ok
+test tests::update_increments_version_and_changes_fields ... ok
+test tests::dependency_cannot_reference_itself ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kshift_ffi-a1a33df120a56797)
+
+running 5 tests
+test command::tests::parses_atomic_batch_update ... ok
+test tests::panic_is_contained_at_the_boundary ... ok
+test tests::invalid_utf8_oversize_json_and_buffer_lifecycle_are_explicit ... ok
+test tests::attachment_cache_round_trips_bounded_bytes ... ok
+test tests::create_call_destroy_and_stale_handle_are_explicit ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/lib.rs (target/debug/deps/kshift_plan_store-a28d277af62e7646)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/postgres_plan_store.rs (target/debug/deps/postgres_plan_store-ac6197770cfb8881)
+
+running 1 test
+test persistent_plan_depth_survives_conflict_attachment_and_rollback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/kshift_server-4a6393161db04845)
+
+running 2 tests
+test auth::tests::bearer_authentication_accepts_valid_token ... ok
+test auth::tests::bearer_metadata_rejects_non_bearer_scheme ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/kshift_server-767840e4ac584260)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/grpc_transport.rs (target/debug/deps/grpc_transport-62bb6cb0d06066be)
+
+running 1 test
+test grpc_health_and_graceful_shutdown_work ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/load_integration.rs (target/debug/deps/load_integration-c2df354a024fa679)
+
+running 1 test
+test two_times_target_concurrency_holds ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/migration_integration.rs (target/debug/deps/migration_integration-fc8a37fd4397f6c1)
+
+running 1 test
+test migration_digest_mismatch_blocks_startup ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/restart_integration.rs (target/debug/deps/restart_integration-c9846ee6d6e7ce91)
+
+running 1 test
+test api_restart_replays_outbox_and_continues_revision ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/service_integration.rs (target/debug/deps/service_integration-116a2b9e855dbfbd)
+
+running 10 tests
+test logs_do_not_contain_token_or_command_body ... ok
+test assignees_are_project_members_and_read_back_in_stable_order ... ok
+test idempotent_command_replays_without_second_write ... ok
+test task_planning_fields_and_relations_round_trip ... ok
+test concurrent_writes_do_not_silently_overwrite ... ok
+test project_isolation_and_member_access_are_enforced ... ok
+test snapshot_maps_task_history_and_project_audit ... ok
+test watch_replays_outbox_and_reports_retention_gap ... ok
+test batch_status_update_is_atomic ... ok
+test failed_transaction_rolls_back_business_and_outbox ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_client
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_contract
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_domain
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_ffi
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_plan_store
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kshift_server
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+PATH="/Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH" CARGO_HOME="/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/cargo-home" ./scripts/test-plan-store.sh
+   Compiling serde_core v1.0.229
+   Compiling syn v3.0.10
+   Compiling syn v2.0.119
+   Compiling futures-sink v0.3.34
+   Compiling rustls v0.23.46
+   Compiling slab v0.4.12
+   Compiling base64 v0.22.1
+   Compiling tokio-stream v0.1.19
+   Compiling futures-channel v0.3.34
+   Compiling futures-util v0.3.34
+   Compiling serde_json v1.0.154
+   Compiling uuid v1.29.2
+   Compiling synstructure v0.14.0
+   Compiling tracing-attributes v0.1.31
+   Compiling zerofrom-derive v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling serde_derive v1.0.229
+   Compiling zerovec-derive v0.11.7
+   Compiling displaydoc v0.2.7
+   Compiling thiserror-impl v2.0.21
+   Compiling tokio-macros v2.7.2
+   Compiling tokio v1.54.1
+   Compiling tracing v0.1.44
+   Compiling zerofrom v0.1.8
+   Compiling thiserror v2.0.21
+   Compiling yoke v0.8.4
+   Compiling zerovec v0.11.9
+   Compiling zerotrie v0.2.5
+   Compiling serde v1.0.229
+   Compiling tinystr v0.8.5
+   Compiling potential_utf v0.1.6
+   Compiling icu_collections v2.4.0
+   Compiling icu_locale_core v2.4.0
+   Compiling smallvec v1.16.5
+   Compiling either v1.19.0
+   Compiling chrono v0.4.45
+   Compiling parking_lot_core v0.9.12
+   Compiling parking_lot v0.12.5
+   Compiling icu_provider v2.4.0
+   Compiling futures-intrusive v0.5.0
+   Compiling icu_properties v2.4.0
+   Compiling icu_normalizer v2.4.0
+   Compiling kshift-core v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-core)
+   Compiling idna_adapter v1.2.2
+   Compiling idna v1.1.0
+   Compiling url v2.5.8
+   Compiling sqlx-core v0.8.6
+   Compiling sqlx-postgres v0.8.6
+   Compiling sqlx-macros-core v0.8.6
+   Compiling sqlx-macros v0.8.6
+   Compiling sqlx v0.8.6
+   Compiling kshift-plan-store v0.1.0 (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/crates/kshift-plan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.64s
+     Running unittests src/lib.rs (target/debug/deps/kshift_plan_store-dd7ad82dd57adcc6)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/postgres_plan_store.rs (target/debug/deps/postgres_plan_store-ce57d009bf70c18a)
+
+running 1 test
+test persistent_plan_depth_survives_conflict_attachment_and_rollback ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.18s
+
+   Doc-tests kshift_plan_store
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+PATH="/Users/wyz/.rustup/toolchains/stable-aarch64-apple-darwin/bin:$PATH" CARGO_HOME="/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/cargo-home" ./scripts/build-ffi.sh macos
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
+Built /Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/ffi/macos/libkshift_ffi.a
+KSHIFT_FFI_PATH="/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/.build/ffi/macos/libkshift_ffi.a" swift test
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 444]
+[Planning deferred tasks]
+[3 / 7]
+[4 / 8] KshiftPresentation
+[5 / 9] KshiftPresentation
+[10 / 14] KshiftAppKitAdapter
+[11 / 15] KshiftAppKitAdapter
+[17 / 21] KshiftUIKitAdapter
+[26 / 31] KshiftPresentation
+[29 / 33] KshiftAppKitAdapter
+[35 / 37] KshiftAdapterBoundaryTests-product
+[37 / 39] KshiftAdapterBoundaryTests-product
+[41 / 42] KshiftAdapterBoundaryTests-product
+[50 / 71] KshiftUI
+[61 / 82] KshiftUI
+[63 / 84] KshiftUI
+[67 / 80] KshiftUI
+[71 / 80] KshiftCoreTests-product
+[78 / 87] KshiftCoreTests-product
+[82 / 86] KshiftCoreTests-product
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[555](b9fed4bd5e786284-curve25519.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[556](2b18790154092d07-aes_nohw.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[557](20d6a080d7761227-montgomery.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[558](20d6a080d7761227-montgomery_inv.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[559](abdfa25550f18ac7-ecp_nistz.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[561](abdfa25550f18ac7-gfp_p384.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[563](9fa4cd275cb9daeb-limbs.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[564](8948ea8e62ee340e-mem.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[565](e288d65bf9bc9ef0-poly1305.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[566](abdfa25550f18ac7-p256-nistz.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[567](4f701d2e06800872-chacha-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[568](4f701d2e06800872-chacha20_poly1305_armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[569](4f701d2e06800872-aesv8-armx-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[570](4f701d2e06800872-aesv8-gcm-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[571](4f701d2e06800872-ghash-neon-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[572](4f701d2e06800872-ghashv8-armx-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[573](4f701d2e06800872-vpaes-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[574](4f701d2e06800872-armv8-mont-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[575](4f701d2e06800872-p256-armv8-asm-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[576](4f701d2e06800872-sha512-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftCoreTests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[577](4f701d2e06800872-sha256-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+[84 / 86] KshiftCoreTests-product
+[86 / 86] KshiftCoreTests-product
+[88 / 89] KshiftFFITests-product/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[555](b9fed4bd5e786284-curve25519.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[556](2b18790154092d07-aes_nohw.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[557](20d6a080d7761227-montgomery.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[558](20d6a080d7761227-montgomery_inv.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[559](abdfa25550f18ac7-ecp_nistz.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[561](abdfa25550f18ac7-gfp_p384.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[563](9fa4cd275cb9daeb-limbs.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[564](8948ea8e62ee340e-mem.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[565](e288d65bf9bc9ef0-poly1305.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[566](abdfa25550f18ac7-p256-nistz.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[567](4f701d2e06800872-chacha-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[568](4f701d2e06800872-chacha20_poly1305_armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[569](4f701d2e06800872-aesv8-armx-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[570](4f701d2e06800872-aesv8-gcm-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[571](4f701d2e06800872-ghash-neon-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[572](4f701d2e06800872-ghashv8-armx-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[573](4f701d2e06800872-vpaes-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[574](4f701d2e06800872-armv8-mont-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[575](4f701d2e06800872-p256-armv8-asm-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[576](4f701d2e06800872-sha512-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Package.swift: KshiftFFITests-product: ld: warning: object file (/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/target/debug/libkshift_ffi.a[577](4f701d2e06800872-sha256-armv8-ios64.o)) was built for newer 'macOS' version (27.2) than being linked (26.0)
+
+Build complete! (8.60 sec)
+Test Suite 'All tests' started at 2026-11-14 14:32:03.193.
+Test Suite 'KshiftFFITests.xctest' started at 2026-11-14 14:32:03.194.
+Test Suite 'KshiftFFITests' started at 2026-11-14 14:32:03.194.
+Test Case '-[KshiftFFITests.KshiftFFITests testCancelTokenLifecycle]' started.
+Test Case '-[KshiftFFITests.KshiftFFITests testCancelTokenLifecycle]' passed (0.002 seconds).
+Test Case '-[KshiftFFITests.KshiftFFITests testCreateInvalidCommandAndDestroy]' started.
+Test Case '-[KshiftFFITests.KshiftFFITests testCreateInvalidCommandAndDestroy]' passed (0.007 seconds).
+Test Suite 'KshiftFFITests' passed at 2026-11-14 14:32:03.203.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.009 (0.009) seconds
+Test Suite 'KshiftFFITests.xctest' passed at 2026-11-14 14:32:03.203.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.009 (0.009) seconds
+Test Suite 'All tests' passed at 2026-11-14 14:32:03.203.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.009 (0.011) seconds
+Test Suite 'All tests' started at 2026-11-14 14:32:03.620.
+Test Suite 'KshiftCoreTests.xctest' started at 2026-11-14 14:32:03.621.
+Test Suite 'AppModelTests' started at 2026-11-14 14:32:03.621.
+Test Case '-[KshiftCoreTests.AppModelTests testBootstrapLoadsFirstProjectAndDailyBoard]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testBootstrapLoadsFirstProjectAndDailyBoard]' passed (0.002 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testConflictIsExplicitAndDoesNotReplaceSnapshot]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testConflictIsExplicitAndDoesNotReplaceSnapshot]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testCreateCommandUsesCurrentRevision]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testCreateCommandUsesCurrentRevision]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testInvalidUserTimeZoneFallsBackToProjectTimeZone]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testInvalidUserTimeZoneFallsBackToProjectTimeZone]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testMultiAssigneeFilterAndBoardColumnsUseAnyMatch]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testMultiAssigneeFilterAndBoardColumnsUseAnyMatch]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testProjectSwitchKeepsDataIsolated]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testProjectSwitchKeepsDataIsolated]' passed (0.001 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testProjectSwitchUsesEachProjectTimeZoneForToday]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testProjectSwitchUsesEachProjectTimeZoneForToday]' passed (0.002 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testProjectTimeZoneControlsTodayDateSelectionAndDailyCounts]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testProjectTimeZoneControlsTodayDateSelectionAndDailyCounts]' passed (0.001 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testSearchAndFiltersReduceDailyTasks]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testSearchAndFiltersReduceDailyTasks]' passed (0.001 seconds).
+Test Case '-[KshiftCoreTests.AppModelTests testSelectProjectLoadsSnapshotWhenSelectionWasAlreadyUpdated]' started.
+Test Case '-[KshiftCoreTests.AppModelTests testSelectProjectLoadsSnapshotWhenSelectionWasAlreadyUpdated]' passed (0.000 seconds).
+Test Suite 'AppModelTests' passed at 2026-11-14 14:32:03.630.
+	 Executed 10 tests, with 0 failures (0 unexpected) in 0.008 (0.009) seconds
+Test Suite 'KshiftPlanDepthFeatureTests' started at 2026-11-14 14:32:03.630.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthFeatureTests testFeatureModelRejectsStaleRevision]' started.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthFeatureTests testFeatureModelRejectsStaleRevision]' passed (0.008 seconds).
+Test Case '-[KshiftCoreTests.KshiftPlanDepthFeatureTests testReportImageExportUsesTypedReportRevision]' started.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthFeatureTests testReportImageExportUsesTypedReportRevision]' passed (0.101 seconds).
+Test Suite 'KshiftPlanDepthFeatureTests' passed at 2026-11-14 14:32:03.739.
+	 Executed 2 tests, with 0 failures (0 unexpected) in 0.109 (0.110) seconds
+Test Suite 'KshiftPlanDepthPresentationTests' started at 2026-11-14 14:32:03.739.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testBoardCapsNativeGlassCardsAtSix]' started.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testBoardCapsNativeGlassCardsAtSix]' passed (0.005 seconds).
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testGanttFractionsStayInsideWindowAndMarkCrossDayTasks]' started.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testGanttFractionsStayInsideWindowAndMarkCrossDayTasks]' passed (0.005 seconds).
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testReportPrintAndImageShareSourceRevision]' started.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testReportPrintAndImageShareSourceRevision]' passed (0.003 seconds).
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testSearchAndAssigneeFilterUseOneSnapshot]' started.
+Test Case '-[KshiftCoreTests.KshiftPlanDepthPresentationTests testSearchAndAssigneeFilterUseOneSnapshot]' passed (0.002 seconds).
+Test Suite 'KshiftPlanDepthPresentationTests' passed at 2026-11-14 14:32:03.755.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.015 (0.015) seconds
+Test Suite 'LiveP0E2ETests' started at 2026-11-14 14:32:03.755.
+Test Case '-[KshiftCoreTests.LiveP0E2ETests testMacOSLiveP0Scenario]' started.
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Tests/KshiftCoreTests/LiveP0E2ETests.swift:17: -[KshiftCoreTests.LiveP0E2ETests testMacOSLiveP0Scenario] : Test skipped - Set live P0 E2E environment to run the macOS scenario.
+Test Case '-[KshiftCoreTests.LiveP0E2ETests testMacOSLiveP0Scenario]' skipped (0.001 seconds).
+Test Suite 'LiveP0E2ETests' passed at 2026-11-14 14:32:03.756.
+	 Executed 1 test, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'ModelEncodingTests' started at 2026-11-14 14:32:03.756.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testAbsoluteTimestampUsesUserTimeZoneForDisplay]' started.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testAbsoluteTimestampUsesUserTimeZoneForDisplay]' passed (0.001 seconds).
+Test Case '-[KshiftCoreTests.ModelEncodingTests testCommandEncodingUsesCStableWireKeys]' started.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testCommandEncodingUsesCStableWireKeys]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.ModelEncodingTests testCreateTaskKeepsEveryAssignee]' started.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testCreateTaskKeepsEveryAssignee]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.ModelEncodingTests testDateConversionRoundTripsWithoutTimezoneShift]' started.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testDateConversionRoundTripsWithoutTimezoneShift]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.ModelEncodingTests testProjectDatesDoNotMoveWhenUserTimeZoneChanges]' started.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testProjectDatesDoNotMoveWhenUserTimeZoneChanges]' passed (0.000 seconds).
+Test Case '-[KshiftCoreTests.ModelEncodingTests testSnapshotMappingGroupsAuditHistoryByTask]' started.
+Test Case '-[KshiftCoreTests.ModelEncodingTests testSnapshotMappingGroupsAuditHistoryByTask]' passed (0.001 seconds).
+Test Suite 'ModelEncodingTests' passed at 2026-11-14 14:32:03.759.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'RustFFIIntegrationTests' started at 2026-11-14 14:32:03.759.
+Test Case '-[KshiftCoreTests.RustFFIIntegrationTests testRustClientReadsSnapshotWhenServerConfigurationIsProvided]' started.
+/Users/wyz/repo/_worktrees/Kshift/task-39-acceptance/Tests/KshiftCoreTests/RustFFIIntegrationTests.swift:32: -[KshiftCoreTests.RustFFIIntegrationTests testRustClientReadsSnapshotWhenServerConfigurationIsProvided] : Test skipped - Set KSHIFT_ENDPOINT and KSHIFT_CA_PATH to run the live FFI test.
+Test Case '-[KshiftCoreTests.RustFFIIntegrationTests testRustClientReadsSnapshotWhenServerConfigurationIsProvided]' skipped (0.000 seconds).
+Test Case '-[KshiftCoreTests.RustFFIIntegrationTests testRustClientReportsMissingConfigurationExplicitly]' started.
+Test Case '-[KshiftCoreTests.RustFFIIntegrationTests testRustClientReportsMissingConfigurationExplicitly]' passed (0.000 seconds).
+Test Suite 'RustFFIIntegrationTests' passed at 2026-11-14 14:32:03.760.
+	 Executed 2 tests, with 1 test skipped and 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'KshiftCoreTests.xctest' passed at 2026-11-14 14:32:03.760.
+	 Executed 25 tests, with 2 tests skipped and 0 failures (0 unexpected) in 0.136 (0.139) seconds
+Test Suite 'All tests' passed at 2026-11-14 14:32:03.760.
+	 Executed 25 tests, with 2 tests skipped and 0 failures (0 unexpected) in 0.136 (0.140) seconds
+Test Suite 'All tests' started at 2026-11-14 14:32:03.899.
+Test Suite 'KshiftAdapterBoundaryTests.xctest' started at 2026-11-14 14:32:03.900.
+Test Suite 'KshiftAdapterBoundaryTests' started at 2026-11-14 14:32:03.900.
+Test Case '-[KshiftAdapterBoundaryTests.KshiftAdapterBoundaryTests testAppKitAdapterUsesInjectedSystemBoundary]' started.
+Test Case '-[KshiftAdapterBoundaryTests.KshiftAdapterBoundaryTests testAppKitAdapterUsesInjectedSystemBoundary]' passed (0.001 seconds).
+Test Suite 'KshiftAdapterBoundaryTests' passed at 2026-11-14 14:32:03.901.
+	 Executed 1 test, with 0 failures (0 unexpected) in 0.001 (0.001) seconds
+Test Suite 'KshiftPlatformIsolationTests' started at 2026-11-14 14:32:03.901.
+Test Case '-[KshiftAdapterBoundaryTests.KshiftPlatformIsolationTests testBothAppEntrypointsComposeTheSameSharedFeature]' started.
+Test Case '-[KshiftAdapterBoundaryTests.KshiftPlatformIsolationTests testBothAppEntrypointsComposeTheSameSharedFeature]' passed (0.004 seconds).
+Test Case '-[KshiftAdapterBoundaryTests.KshiftPlatformIsolationTests testConditionalOSCompilationIsConfinedToAllowedBoundaries]' started.
+Test Case '-[KshiftAdapterBoundaryTests.KshiftPlatformIsolationTests testConditionalOSCompilationIsConfinedToAllowedBoundaries]' passed (0.013 seconds).
+Test Case '-[KshiftAdapterBoundaryTests.KshiftPlatformIsolationTests testSharedTargetsDoNotImportPlatformOrTransportFrameworks]' started.
+Test Case '-[KshiftAdapterBoundaryTests.KshiftPlatformIsolationTests testSharedTargetsDoNotImportPlatformOrTransportFrameworks]' passed (0.066 seconds).
+Test Suite 'KshiftPlatformIsolationTests' passed at 2026-11-14 14:32:03.983.
+	 Executed 3 tests, with 0 failures (0 unexpected) in 0.082 (0.083) seconds
+Test Suite 'KshiftAdapterBoundaryTests.xctest' passed at 2026-11-14 14:32:03.983.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.083 (0.084) seconds
+Test Suite 'All tests' passed at 2026-11-14 14:32:03.984.
+	 Executed 4 tests, with 0 failures (0 unexpected) in 0.083 (0.085) seconds
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+◇ Test run started.
+↳ Testing Library Version: 2403
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+KSHIFT_SKIP_XCODE_TESTS=1 ./scripts/verify.sh
+ERROR: README.md:265: xcodebuild command has no -derivedDataPath
+make: *** [test] Error 1
+real 38.92
+user 80.43
+sys 20.54
