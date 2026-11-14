@@ -28,6 +28,7 @@ description: 提供 Kshift Spec、ADR、决策和合同的阅读入口。
 | 6 | [ADR Index](adr/README.md) | 理解关键决策的原因和取舍 |
 | 7 | [Contracts](contracts/README.md) | 实现协议和 Release 规则 |
 | 8 | [Issue Relations](governance/issue-relations.md) | 查询原生事项关系和执行审计 |
+| 9 | [Labels and Project](governance/labels-and-project.md) | 查看标签、Project 字段和迁移映射 |
 
 ## 状态说明
 

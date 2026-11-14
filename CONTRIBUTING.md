@@ -29,6 +29,14 @@ Research 必须在“来源 Discussion”章节写 1 个 Discussion 链接。直
 
 关系规则见 [`docs/governance/issue-relations.md`](docs/governance/issue-relations.md)。GitHub 原生关系是父子、硬阻塞和重复事项的真源。
 
+## 标签与 Project
+
+- 每个开放 Issue 只增加 1 个 `type:` 标签。
+- 每个开放 Issue 至少增加 1 个 `area:` 标签。
+- `risk:`、`needs:` 和 `accessibility` 按影响增加。
+- Project `Status` 是唯一状态来源。
+- 配置、迁移和审计见 [Kshift 标签与 Project 配置](docs/governance/labels-and-project.md)。
+
 ## 工作流
 
 1. 从 `main` 创建短生命周期分支。
