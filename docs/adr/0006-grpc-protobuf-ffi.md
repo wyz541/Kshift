@@ -2,7 +2,7 @@
 slug: /adr/0006-grpc-protobuf-ffi
 title: ADR-0006 gRPC、protobuf 和 C ABI
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 Rust client/server 使用 gRPC 和 protobuf，Swift host 使
 # ADR-0006 gRPC、protobuf 和 C ABI
 
 > 结论：Rust client 和 server 使用 gRPC over HTTP/2 + TLS。接口由 protobuf 定义。SwiftUI host 只使用 `kshift-ffi` 的 C ABI。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-ARCH`。
 
 ## 1. 状态
 

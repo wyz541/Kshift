@@ -34,7 +34,15 @@ xcuserdata/
 # Node tooling used for documentation checks
 node_modules/
 
+# Kshift release and operations output
+/dist/
+/release/tmp/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+
 # Test and build evidence
 *.xcresult
-
 /Kshift.xcodeproj/project.xcworkspace/

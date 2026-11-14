@@ -1,0 +1,120 @@
+name: Research
+description: 完成调查并给出决策结论、不采纳结论或后续 Issue。
+title: "[Research] "
+body:
+  - type: textarea
+    id: decision-question
+    attributes:
+      label: 决策问题
+      description: 写一个需要决定的问题。不要写多个问题。
+      placeholder: 是否采用...
+    validations:
+      required: true
+  - type: input
+    id: source-discussion
+    attributes:
+      label: 来源 Discussion
+      description: 链接来源 Discussion。直接创建的 Research 写“无”。
+      placeholder: https://github.com/wyz541/Kshift/discussions/1 或 无
+    validations:
+      required: true
+  - type: input
+    id: owner
+    attributes:
+      label: Owner
+      description: 写执行调查的负责人。
+      placeholder: "@wyz541"
+    validations:
+      required: true
+  - type: input
+    id: decision-owner
+    attributes:
+      label: Decision owner
+      description: 写有权确认最终决定的负责人。
+      placeholder: "@wyz541"
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: 约束
+      description: 写出时间、成本、兼容、安全和其他限制。
+      placeholder: |-
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: options
+    attributes:
+      label: 选项
+      description: 列出可比较的选项。没有选项时写“无”。
+      placeholder: |-
+        - A：
+        - B：
+    validations:
+      required: true
+  - type: textarea
+    id: judgment-criteria
+    attributes:
+      label: 判断标准
+      description: 写出选择方案的标准。标准必须可以复核。
+      placeholder: |-
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected-output
+    attributes:
+      label: 预期输出
+      description: 写出决策结论、不采纳结论和后续 Issue 等交付结果。
+      placeholder: |-
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 证据
+      description: 写出调查命令、数据、文档和证据位置。未运行项必须标明未运行。
+      placeholder: |-
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: decision-record
+    attributes:
+      label: 决策结论
+      description: 完成后写本次 Issue 的决策摘要和 Active Spec 链接。尚未决定时写“待完成”，不适用时写“无”。
+      placeholder: 待完成
+    validations:
+      required: true
+  - type: textarea
+    id: rejected-options
+    attributes:
+      label: 不采纳结论
+      description: 写出不采纳的选项和原因。没有时写“无”。
+      placeholder: |-
+        - 选项：
+        - 不采纳原因：
+    validations:
+      required: true
+  - type: textarea
+    id: follow-up-issues
+    attributes:
+      label: 后续 Issue
+      description: 链接后续交付 Issue。没有时写“无”。
+      placeholder: 无
+    validations:
+      required: true
+  - type: textarea
+    id: relationships
+    attributes:
+      label: 关系
+      description: 写出 Spec、父 Issue、阻塞关系和受本决定影响的事项。
+      placeholder: |-
+        - Spec：
+        - 父 Issue：
+        - 阻塞关系：
+        - 受影响事项：
+    validations:
+      required: true

@@ -1,0 +1,201 @@
+name: Release candidates
+
+on:
+  workflow_dispatch:
+    inputs:
+      channel:
+        description: 'Release channel'
+        required: true
+        type: choice
+        options: [preview, stable, hotfix]
+        default: preview
+      version:
+        description: 'SemVer core MAJOR.MINOR.PATCH without the leading v'
+        required: true
+        default: '0.1.0'
+      preview_number:
+        description: 'Positive preview number; required for preview'
+        required: false
+        default: '1'
+      build_macos:
+        description: 'Build a macOS fragment'
+        required: true
+        type: boolean
+        default: true
+      build_ios:
+        description: 'Build an iOS fragment'
+        required: true
+        type: boolean
+        default: true
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: release-candidate-${{ inputs.channel }}-${{ inputs.version }}-${{ inputs.preview_number }}
+  cancel-in-progress: false
+
+jobs:
+  candidate:
+    name: candidate-contract
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      source_commit: ${{ steps.meta.outputs.source_commit }}
+      tag: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+      channel: ${{ steps.meta.outputs.channel }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - id: meta
+        name: Validate candidate contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${{ inputs.version }}"
+          channel="${{ inputs.channel }}"
+          preview_number="${{ inputs.preview_number }}"
+          if [[ ! "$version" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo 'version must be SemVer core MAJOR.MINOR.PATCH' >&2
+            exit 1
+          fi
+          if [[ "$channel" == 'stable' || "$channel" == 'hotfix' ]]; then
+            tag="v$version"
+            test "${{ inputs.build_macos }}" = true
+            test "${{ inputs.build_ios }}" = true
+          else
+            if [[ ! "$preview_number" =~ ^[1-9][0-9]*$ ]]; then
+              echo 'preview_number must be a positive integer' >&2
+              exit 1
+            fi
+            tag="v$version-preview.$preview_number"
+          fi
+          source_commit="$(git rev-parse HEAD)"
+          test "$source_commit" = "$GITHUB_SHA"
+          {
+            echo "version=$version"
+            echo "channel=$channel"
+            echo "tag=$tag"
+            echo "source_commit=$source_commit"
+          } >> "$GITHUB_OUTPUT"
+          echo "candidate tag $tag source $source_commit" >> "$GITHUB_STEP_SUMMARY"
+
+  server:
+    name: server
+    needs: candidate
+    uses: ./.github/workflows/release-platform-server.yml
+    with:
+      version: ${{ needs.candidate.outputs.version }}
+      channel: ${{ needs.candidate.outputs.channel }}
+      source_commit: ${{ needs.candidate.outputs.source_commit }}
+      tag: ${{ needs.candidate.outputs.tag }}
+    secrets: inherit
+
+  macos:
+    name: macos
+    needs: candidate
+    if: ${{ inputs.build_macos }}
+    uses: ./.github/workflows/release-platform-macos.yml
+    with:
+      version: ${{ needs.candidate.outputs.version }}
+      channel: ${{ needs.candidate.outputs.channel }}
+      source_commit: ${{ needs.candidate.outputs.source_commit }}
+      tag: ${{ needs.candidate.outputs.tag }}
+    secrets: inherit
+
+  ios:
+    name: ios
+    needs: candidate
+    if: ${{ inputs.build_ios }}
+    uses: ./.github/workflows/release-platform-ios.yml
+    with:
+      version: ${{ needs.candidate.outputs.version }}
+      channel: ${{ needs.candidate.outputs.channel }}
+      source_commit: ${{ needs.candidate.outputs.source_commit }}
+      tag: ${{ needs.candidate.outputs.tag }}
+    secrets: inherit
+
+  source:
+    name: source
+    needs: candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ needs.candidate.outputs.source_commit }}
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Create source archive and fragment
+        shell: bash
+        env:
+          VERSION: ${{ needs.candidate.outputs.version }}
+          CHANNEL: ${{ needs.candidate.outputs.channel }}
+          SOURCE_COMMIT: ${{ needs.candidate.outputs.source_commit }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$SOURCE_COMMIT"
+          mkdir -p "$RUNNER_TEMP/release"
+          archive="$RUNNER_TEMP/release/kshift-$VERSION-source.tar.gz"
+          git archive --format=tar.gz --output="$archive" "$SOURCE_COMMIT"
+          jq -n \
+            --arg version "$VERSION" \
+            --arg channel "$CHANNEL" \
+            --arg source "$SOURCE_COMMIT" \
+            --arg asset "$(basename "$archive")" \
+            --arg workflow "$GITHUB_WORKFLOW" \
+            --arg run_id "$GITHUB_RUN_ID" \
+            --argjson run_attempt "$GITHUB_RUN_ATTEMPT" \
+            --arg generated "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              schema_version: "1",
+              product: "Kshift",
+              version: $version,
+              channel: $channel,
+              source_commit: $source,
+              platform: "source",
+              architecture: "all",
+              generated_at: $generated,
+              signing: {status: "unsigned", identity: null, notarization: "not-applicable"},
+              provenance: {
+                workflow: $workflow,
+                run_id: $run_id,
+                run_attempt: $run_attempt,
+                artifact_id: "release-fragment-source"
+              },
+              assets: [{
+                name: $asset,
+                platform: "source",
+                architecture: "all",
+                role: "source",
+                signing_status: "not-applicable"
+              }],
+              gates: [{name: "source-archive", status: "passed", evidence: "git archive from the candidate source commit"}],
+              limitations: []
+            }' > "$RUNNER_TEMP/release/source.fragment.spec.json"
+          node release/tools/kshift-release.mjs fragment \
+            --spec "$RUNNER_TEMP/release/source.fragment.spec.json" \
+            --assets-dir "$RUNNER_TEMP/release" \
+            --output "$RUNNER_TEMP/release/source.fragment.json"
+      - name: Attest source archive
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45
+        with:
+          subject-path: ${{ runner.temp }}/release/kshift-*-source.tar.gz
+      - name: Upload source fragment
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-fragment-source
+          path: |
+            ${{ runner.temp }}/release/kshift-*-source.tar.gz
+            ${{ runner.temp }}/release/source.fragment.json
+          if-no-files-found: error

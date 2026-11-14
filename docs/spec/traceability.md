@@ -1,21 +1,21 @@
 ---
 slug: /spec/traceability
-title: Kshift Spec v0.1 追踪表
+title: Kshift Spec 追踪表
 type: reference
 status: active
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - 追踪
   - Discussion
   - Spec
-  - ADR
-description: 把 Discussion #1 的章节映射到 Spec 章节、决策和 ADR。
+  - 历史来源
+description: 把 Discussion #1 的章节映射到 Active Spec、决策过程和历史来源。
 source: https://github.com/wyz541/Kshift/discussions/1
 ---
 
-# Kshift Spec v0.1 追踪表
+# Kshift Spec 追踪表
 
-> 结论：Spec v0.1 的每个核心章节都能追踪到 Discussion #1、decision ID 和 ADR。
+> 结论：每个核心章节能追踪到 Discussion #1、Decision Issue 和 Active Spec。历史 ADR 只补充来源。
 
 ## 1. 来源基线
 
@@ -29,7 +29,7 @@ source: https://github.com/wyz541/Kshift/discussions/1
 
 ## 2. 章节映射
 
-| Discussion #1 章节 | Spec 章节 | Decision | ADR |
+| Discussion #1 章节 | Active Spec | Decision | 历史来源 |
 | --- | --- | --- | --- |
 | 产品目标与基线 | [1. 问题与愿景](kshift-spec-v0.1.md#1-问题与愿景) | `DEC-001`、`DEC-002` | [0001](../adr/0001-rust-authority-and-swiftui-host.md) |
 | 已确认的首版范围 | [3. 范围与非目标](kshift-spec-v0.1.md#3-范围与非目标) | `DEC-003` 至 `DEC-013` | [0002](../adr/0002-macos-ios-first.md) |
@@ -56,13 +56,13 @@ source: https://github.com/wyz541/Kshift/discussions/1
 | 仍需确认的 Spec 问题 | [15. 开放决策](kshift-spec-v0.1.md#15-开放决策) | `DEC-017` 至 `DEC-026` | [0007](../adr/0007-github-release-orchestrator.md) |
 | 协议大小上限 | [12. 合同与兼容](kshift-spec-v0.1.md#12-合同与兼容) | `DEC-027` | [0006](../adr/0006-grpc-protobuf-ffi.md) |
 | GitHub 多平台 Release Spec | [13.3 Release 门禁](kshift-spec-v0.1.md#133-release-门禁) | `DEC-013` | [0007](../adr/0007-github-release-orchestrator.md) |
-| GitHub 事项分流与治理 | [14. 项目治理](kshift-spec-v0.1.md#14-项目治理) | `DEC-016` | [README](../adr/README.md) |
+| GitHub 事项分流与治理 | [KS-GOV](../specs/governance.md) | Issue #23、Issue #34 | [Active Spec 索引](../specs/index.md) |
 
 ## 3. 下游 Issue 入口
 
-后续 Issue 必须链接 Spec 和受影响 decision。当前映射如下。
+后续 Issue 必须链接 Active Spec 和 Decision Issue。当前映射如下。
 
-| Issue | 主要 Spec 章节 | 主要 ADR | 合同 |
+| Issue | 主要 Spec 章节 | 历史 ADR | 合同 |
 | --- | --- | --- | --- |
 | [#4](https://github.com/wyz541/Kshift/issues/4) | 7、8、10、11、13.1 | 0004、0005、0006 | protobuf |
 | [#5](https://github.com/wyz541/Kshift/issues/5) | 7、8、12 | 0001、0005、0006 | protobuf |
@@ -75,4 +75,4 @@ source: https://github.com/wyz541/Kshift/discussions/1
 
 Spec 修改后必须同步检查本表。
 
-Decision ID 不重用。ADR 被替代时保留原文件并增加 `superseded_by`。
+Decision 记录不重用。ADR 保留原路径，并标记为 `superseded`。

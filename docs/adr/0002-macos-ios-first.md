@@ -2,7 +2,7 @@
 slug: /adr/0002-macos-ios-first
 title: ADR-0002 macOS/iOS 首版和共享 SwiftUI
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -17,6 +17,8 @@ description: 固定首版平台、共享 SwiftUI 和平台 adapter 边界。
 # ADR-0002 macOS/iOS 首版和共享 SwiftUI
 
 > 结论：首版只交付 macOS 26.0+ 和 iOS 26.0+。两端共享一套 SwiftUI。平台能力只进入 AppKit 或 UIKit adapter。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-UI`。
 
 ## 1. 状态
 

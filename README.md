@@ -8,6 +8,7 @@
 - Spec 版本：`0.1`，状态 `active`。
 - 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
 - 实现状态：Rust server、Rust client、C ABI、R2 日计划 UI 和 R3 计划深度切片可构建；macOS/iOS live P0 E2E 已验证。
+- R4/R5 基座：备份、恢复、RBAC、部署和 Release 合同已加入。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
@@ -61,8 +62,6 @@ flowchart LR
 | `crates/kshift-server` | gRPC、auth、SQLx 事务、outbox 和健康检查 |
 | `crates/kshift-client` | TLS channel、typed RPC、retry、revision tracking 和 cache |
 | `crates/kshift-ffi` | macOS/iOS C ABI、opaque handles 和 bounded buffers |
-| `crates/kshift-core` | R3 计划深度业务权威和报告生成 |
-| `crates/kshift-plan-store` | R3 PostgreSQL snapshot、历史状态和附件持久化 |
 | `include` | C header 和 Swift C module map |
 | `migrations` | PostgreSQL schema migration |
 | `proto` | `buf` 管理的 protobuf source |
@@ -250,31 +249,54 @@ R3 验收：
 
 ```sh
 cargo test --workspace
-./Scripts/test-plan-store.sh
+./scripts/test-plan-store.sh
 swift test
 xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
 ```
 
-验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [ADR 0010](docs/adr/0010-plan-depth-snapshot-history.md)。
+验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-PLAN](docs/specs/plan-depth.md)。
+
+## R4/R5 运维与发布
+
+| 内容 | 入口 |
+| --- | --- |
+| 运维工具 | [`ops/README.md`](ops/README.md) |
+| 服务部署 | [`deploy/README.md`](deploy/README.md) |
+| Release 合同 | [`release/README.md`](release/README.md) |
+| 验收状态 | [`docs/r4-r5/acceptance.md`](docs/r4-r5/acceptance.md) |
+| 常用问题 | [`docs/r4-r5/faq.md`](docs/r4-r5/faq.md) |
+
+R4/R5 基座不能替代 R1 至 R3 的产品运行证据。Stable Release 保持关闭。
+
+检查命令：
+
+```bash
+./scripts/check-r4-r5.sh
+```
+
+PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 
 ## 文档入口
 
 | 内容 | 入口 |
 | --- | --- |
-| 产品、技术、UI 和验收规范 | [Spec v0.1](docs/spec/kshift-spec-v0.1.md) |
+| Active Spec 索引 | [Specs](docs/specs/index.md) |
+| 工程治理规范 | [KS-GOV](docs/specs/governance.md) |
+| 尚未迁移的领域规范 | [Spec v0.1](docs/spec/kshift-spec-v0.1.md) |
 | Discussion 到 Spec 的映射 | [Traceability](docs/spec/traceability.md) |
-| 关键决策状态 | [Decision Register](docs/decisions/decision-register.md) |
-| 未决项、owner 和截止日期 | [Open Questions](docs/decisions/open-questions.md) |
-| 架构决策记录 | [ADR Index](docs/adr/README.md) |
+| 决策过程 | [Research Issues](https://github.com/wyz541/Kshift/issues?q=is%3Aissue+label%3Atype%3Aresearch) |
+| 历史决策记录 | [Decision Register](docs/decisions/decision-register.md) |
+| 待迁移未决问题 | [Open Questions](docs/decisions/open-questions.md) |
+| ADR 历史 | [ADR Index](docs/adr/README.md) |
 | 协议和 Release 合同 | [Contracts](docs/contracts/README.md) |
 | R1 事务和同步 | [Architecture](docs/architecture.md) |
 | R1 运维和恢复 | [Operations](docs/operations.md) |
 | R1 验收证据 | [Acceptance](docs/r1-acceptance.md) |
-| R3 计划深度和报告 | [R3 Plan Depth](docs/r3-plan-depth.md) |
 | Rust client、cache 和 C ABI | [Client/FFI](docs/client-ffi.md) |
 | R2 功能和证据 | [MVP](docs/MVP.md) |
 | R2 截图和性能 | [Evidence](docs/evidence/README.md) |
+| R3 计划深度和报告 | [R3 Plan Depth](docs/r3-plan-depth.md) |
 | 贡献与评审流程 | [CONTRIBUTING](CONTRIBUTING.md) |
 
 ## 当前限制
@@ -284,9 +306,10 @@ xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
 - UI 已通过 `kshift-ffi` 读取真实 gRPC/PostgreSQL server 数据。
 - macOS 和 iOS 分发方式尚未确认。
 - Release 仓库、通道和审批人尚未确认。
-- R3 当前通过 typed in-memory boundary 提供可运行切片。R3 正式 FFI/RPC 接线仍需后续集成。
 - 业务成功指标尚未确认。
 - PostgreSQL 高可用集群不在首版范围。
+- R4/R5 的 2 倍负载、服务重启和平台安装证据尚未运行。
+- Stable 签名和分发策略仍为 `pending`。
 
 ## 安全边界
 

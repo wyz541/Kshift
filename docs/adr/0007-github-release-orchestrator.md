@@ -2,7 +2,7 @@
 slug: /adr/0007-github-release-orchestrator
 title: ADR-0007 GitHub Release orchestrator
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 GitHub 多平台 Release 的单一写入者、Draft 提升�
 # ADR-0007 GitHub Release orchestrator
 
 > 结论：一个版本只对应一个标签、一个 manifest 和一个 GitHub Release。平台 workflow 只构建和验证。单一 orchestrator 负责 Draft 和 Promote。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-RELEASE`。
 
 ## 1. 状态
 

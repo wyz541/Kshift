@@ -1,52 +1,36 @@
 ---
-slug: /adr/NNNN-short-title
-title: ADR-NNNN 标题
-type: decision
-status: draft
-version: "0.1"
-updated: "YYYY-MM-DD"
+slug: /adr/template
+title: ADR 历史模板
+type: reference
+status: superseded
+updated: "2026-11-14"
 keywords:
   - ADR
+  - 历史
+  - 模板
   - Kshift
-  - 决策
-description: 用一句话说明本 ADR 固定的决策。
+description: 说明已停用的 ADR 模板和历史用途。
 ---
 
-# ADR-NNNN 标题
+# ADR 历史模板
 
-> 结论：写一句话决策。
+> 结论：新决策禁止使用本模板。新决策进入 Research 或 Task Issue，当前规则进入 Active Spec。
 
-## 1. 状态
+## 1. 替代流程
 
-`proposed`
+1. 在 Discussion 或 Issue 中形成问题。
+2. 在 Research 或 Task Issue 中记录选项、证据和结论。
+3. 更新受影响的 Active Spec。
+4. 更新合同、模板和检查。
+5. 在 PR 中提供实际验收证据。
 
-## 2. 背景
+## 2. 历史用途
 
-写出问题、约束和触发条件。
+- 读取历史 ADR 的结构。
+- 核对 ADR 到 Spec 的迁移目标。
+- 追溯旧决策的原因。
 
-## 3. 决策
+## 3. 入口
 
-写出唯一选择。
-
-## 4. 备选方案
-
-| 方案 | 优点 | 缺点 | 结论 |
-| --- | --- | --- | --- |
-| 方案 A |  |  |  |
-
-## 5. 后果
-
-- 正面后果：
-- 负面后果：
-- 迁移影响：
-- 回滚方式：
-
-## 6. 验证
-
-写出可运行的验证方法。
-
-## 7. 关联
-
-- Spec:
-- Decision:
-- Contract:
+- [Active Spec 索引](../specs/index.md)
+- [ADR 历史索引](README.md)

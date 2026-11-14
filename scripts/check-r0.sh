@@ -5,6 +5,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 python3 scripts/check_docs.py
+python3 scripts/test_audit_issue_relations.py
+python3 scripts/check_spec_governance.py
 
 if command -v buf >/dev/null 2>&1; then
   buf lint
