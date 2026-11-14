@@ -11,12 +11,21 @@ python3 scripts/check_docs.py
 PYTHONPATH=ops python3 -m unittest discover -s ops/tests -p 'test_*.py' -v
 node --test release/test/release.test.mjs
 
-for script in deploy/*.sh release/platform/*.sh; do
+for script in deploy/*.sh release/platform/*.sh scripts/test-server-launchd-restart.sh; do
   zsh -n "$script"
 done
 
+grep -Fq 'exec "$home/bin/kshift-server" serve' release/platform/build-server.sh || {
+  echo 'kshift-server-run must start the serve command' >&2
+  exit 1
+}
+
 if [[ "${KSHIFT_RUN_LAUNCHD_TEST:-0}" == "1" ]]; then
   ./scripts/test-launchd-restart.sh
+fi
+
+if [[ "${KSHIFT_RUN_SERVER_LAUNCHD_TEST:-0}" == "1" ]]; then
+  ./scripts/test-server-launchd-restart.sh
 fi
 
 if [[ "${KSHIFT_RUN_PREVIEW_LIFECYCLE:-0}" == "1" ]]; then

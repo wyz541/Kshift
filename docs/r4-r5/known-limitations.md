@@ -16,7 +16,8 @@ description: "列出 R4/R5 基座尚未完成的产品和发布能力。"
 结论：当前代码是 R4/R5 基座，不是完整产品发布。
 
 - R1 和 R2 已有测试；R3 和完整发布验收尚未完成。
-- 30 分钟 2 倍负载和 Kshift server 的真实 launchd 重启尚未运行。
+- 30 分钟服务层 2 倍负载已运行；100 个持久网络客户端和 64 个并发事件流尚未测量。
+- Kshift server release bundle 已有用户 LaunchAgent 崩溃重启证据；系统 LaunchDaemon 和 root 安装尚未运行。
 - iOS Simulator 和 macOS preview bundle 已有安装升级回滚证据；签名分发和干净机器证据尚未生成。
 - Liquid Glass、无障碍和性能已有开发证据；最终发布门禁尚未审核。
 - macOS 签名身份、公证方式和 iOS 分发方式尚未批准。

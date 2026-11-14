@@ -23,6 +23,6 @@ description: "提供 R4/R5 基座的验收、运维、发布和回滚入口。"
 | [faq.md](faq.md) | 常见问题 |
 | [known-limitations.md](known-limitations.md) | 当前限制和不实声明边界 |
 | [evidence/2026-11-13-local.md](evidence/2026-11-13-local.md) | PostgreSQL 18.7 本地证据 |
-| [evidence/2026-11-14-load-restart.md](evidence/2026-11-14-load-restart.md) | 并发冒烟和 API 重启证据 |
-| [evidence/2026-11-14-launchd-restart.md](evidence/2026-11-14-launchd-restart.md) | launchd 自动重启探针证据 |
+| [evidence/2026-11-14-load-restart.md](evidence/2026-11-14-load-restart.md) | 2 倍负载、多人写入和 API 重启证据 |
+| [evidence/2026-11-14-launchd-restart.md](evidence/2026-11-14-launchd-restart.md) | Kshift server LaunchAgent 重启证据 |
 | [evidence/2026-11-14-preview-lifecycle.md](evidence/2026-11-14-preview-lifecycle.md) | iOS Simulator 和 macOS preview lifecycle 证据 |
