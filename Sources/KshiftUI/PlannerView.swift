@@ -19,7 +19,12 @@ struct PlannerView: View {
     }
 
     private var projectTitleFont: Font {
-        usesAccessibilityLayout ? .title3.weight(.bold) : .largeTitle.weight(.bold)
+        if usesAccessibilityLayout {
+            return .title3.weight(.bold)
+        }
+        return horizontalSizeClass == .compact
+            ? .title2.weight(.bold)
+            : .title.weight(.bold)
     }
 
     private var selectedDateTitle: String {
@@ -35,13 +40,15 @@ struct PlannerView: View {
         GeometryReader { proxy in
             VStack(alignment: .leading, spacing: 0) {
                 header
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
-                    .padding(.bottom, 14)
+                    .padding(.horizontal, horizontalSizeClass == .compact ? 16 : 20)
+                    .padding(.top, horizontalSizeClass == .compact ? 8 : 12)
+                    .padding(.bottom, horizontalSizeClass == .compact ? 8 : 10)
 
-                SummaryStrip(model: model)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 14)
+                if model.viewMode != .peopleSchedule {
+                    SummaryStrip(model: model)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 10)
+                }
 
                 Divider()
                     .opacity(0.5)
@@ -91,7 +98,7 @@ struct PlannerView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: usesAccessibilityLayout ? 12 : 8) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     if horizontalSizeClass == .regular {
@@ -136,8 +143,8 @@ struct PlannerView: View {
                         }
                     }
                     Text(selectedDateTitle)
-                        .font(.title3.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(horizontalSizeClass == .compact ? .body.weight(.medium) : .title3.weight(.medium))
+                        .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("selected-date")
                 }
