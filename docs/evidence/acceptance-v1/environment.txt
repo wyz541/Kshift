@@ -1,6 +1,5 @@
-commit=5ea4d0981fe318edbad1d9808e5c98d3f574a92d
-source_commit=d964c115662f4d7604960cff96c587a1db1e38b9
-date=2026-11-14T14:31:07+0800
+commit=c1d6bc6686be6f8fffd7d9458e75b553f4a8686a
+date=2026-11-14T16:52:56+0800
 host=wyz的MacBook Pro
 arm64
 ProductName:		macOS
@@ -16,6 +15,7 @@ cargo 1.99.1 (5f94df478 2026-08-27)
 -- iOS 27.0 --
     iPhone 18 Pro (062A2669-EC77-4241-9DE9-B2A7667AC126) (Booted) 
     Kocus Learn Evidence (EDB3FE31-9CD5-4472-95DE-6083CEB632A0) (Booted) 
+    iPhone 18 Pro Max (5E54F758-731F-406B-A42F-83109E7C55E5) (Booted) 
     iPhone 17e (13919272-EC1A-4639-85AE-1FA37A40F573) (Booted) 
     iPad Pro 13-inch (M5) (F1A60BA1-385F-40CA-A43F-0EA770BD3478) (Booted) 
 -- watchOS 27.0 --

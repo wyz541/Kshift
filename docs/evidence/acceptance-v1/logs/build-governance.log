@@ -1,2 +1,5 @@
-ERROR: README.md:265: xcodebuild command has no -derivedDataPath
-make: *** [check-build-governance] Error 1
+Verified build governance in 79 files.
+DerivedData: build/DerivedData
+Stable targets: Kshift-macOS, Kshift-iOS
+Stable bundle IDs: com.wyz541.kshift.mac, com.wyz541.kshift.ios
+Debug display name: Kshift Dev
