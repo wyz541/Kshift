@@ -3,7 +3,7 @@ slug: /governance/issue-relations
 title: Kshift Issue 与 PR 关系规则
 type: standard
 status: active
-version: "1.0"
+version: "1.1"
 updated: "2026-11-14"
 keywords:
   - Issue 关系
@@ -36,7 +36,7 @@ description: 规定 Discussion、Research、Feature、Acceptance 和 PR 的原�
 | 硬依赖 | `blocked_by` | 前置事项未完成时，当前事项不能开始 |
 | 软关联 | 正文链接或“关系”说明 | 关联不阻止当前事项开始 |
 | 重复事项 | Duplicate 关系 | 规范事项必须可追踪 |
-| PR 与 Issue | PR 正文 `Closes #N` 或 `Part of #N` | 按交付和验收状态选择 |
+| PR 与 Issue | PR 正文 `Closes #N` 或 `Part of #N` | 按交付、Worktree 和清理状态选择 |
 | 跨仓库依赖 | `OWNER/REPO#N` | 原生 `blocked_by` 不可用，必须人工复核 |
 
 `blocked_by` 不表达建议、顺序偏好或参考关系。错误使用 `blocked_by` 会隐藏可并行工作。
@@ -90,12 +90,20 @@ PR 正文必须使用以下一种追踪语句。
 
 | 语句 | 使用条件 | 结果 |
 | --- | --- | --- |
-| `Closes #N` | 主 Issue 的交付和验收已经完成 | 合并后关闭主 Issue |
+| `Closes #N` | 非 Worktree 交付，并且主 Issue 的交付和验收已经完成 | 合并后关闭主 Issue |
 | `Part of #N` | 只交付父 Feature 或主 Issue 的一部分 | 合并后保留主 Issue |
 
 一个 PR 默认只关闭 1 个主 Issue。只有全部 Issue 已完成验收且变更无法安全拆分时，PR 才关闭多个 Issue。
 
 PR 评论只补充证据。PR 评论不替代 `## 验收证据`、Issue 验收记录或 Acceptance 结论。
+
+### 5.1 Worktree 交付
+
+Worktree 交付的 PR 使用 `Part of #N`。PR 合并后仍需要迁移证据、清理本地产物、移除 Worktree、删除 branch 并再次审计。
+
+Issue owner 在以上步骤完成后手工关闭 Issue。Worktree 交付禁止只依赖 `Closes` 自动关闭。
+
+Worktree 保留、清理和批准记录遵循 [KS-GOV](../specs/governance.md) 的 Worktree 生命周期。
 
 跨仓库 Issue 使用完整引用，例如 `OWNER/REPO#123`。当前仓库的 `blocked_by` 不表示跨仓库关系。
 
@@ -164,4 +172,5 @@ python3 scripts/audit_issue_relations.py --repo wyz541/Kshift --pr 42
 
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
+| 1.1 | 2026-11-14 | 增加 Worktree 交付使用 `Part of` 和清理后手工关闭的规则。 |
 | 1.0 | 2026-11-14 | 建立关系规则和审计命令。 |

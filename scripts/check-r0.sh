@@ -6,6 +6,7 @@ cd "$ROOT"
 
 python3 scripts/check_docs.py
 python3 scripts/test_audit_issue_relations.py
+python3 scripts/test_audit_worktrees.py
 python3 scripts/check_spec_governance.py
 
 if command -v buf >/dev/null 2>&1; then

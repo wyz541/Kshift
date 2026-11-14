@@ -48,6 +48,52 @@ Research 必须写决策问题、来源 Discussion、Owner、Decision owner 和�
 9. 使用 `Closes` 前，确认主 Issue 已完成交付和验收。
 10. 合并后写 Issue 验收记录。
 
+### 4.1 Worktree 交付
+
+会修改仓库的 Task 或 Bug 使用一个独立 Worktree。Feature、Research 和 Acceptance 不要求实现 Worktree。
+
+1. 运行 `git status --short --branch`，确认主检出位于 `main` 且没有输出。
+2. 创建 Worktree。替代命令中的 `<N>` 和 `<slug>`。
+
+```bash
+git worktree add -b issue/<N>-<slug> \
+  ~/repo/_worktrees/Kshift/issue-<N>-<slug> origin/main
+```
+
+3. 在 Issue 或 PR 记录 Worktree 路径和 branch。
+4. 在 Worktree 完成实现、测试和证据。
+5. PR 正文使用 `Part of #N`。不要依赖 `Closes` 自动关闭 Worktree 交付。
+6. 迁移唯一证据。证据只进入 `docs/evidence` 或已登记的项目证据目录。
+7. 清理已登记的生成物。无法确认归属时停止，并进入人工复核。
+
+### 4.2 Worktree 清理和关闭
+
+清理前运行只读审计。
+
+```bash
+python3 scripts/audit_worktrees.py --repo . --expected-task-worktrees <N>
+```
+
+审计必须显示以下全部结果。
+
+- Worktree 路径已登记。
+- Git 状态没有未提交修改。
+- 本地提交没有未推送项，或未推送项已人工确认。
+- Branch 已合并到 `origin/main`。
+- 唯一证据已迁移。
+
+在 Issue 记录批准人、固定路径、branch、Issue、证据目标、检查结果和批准日期。批准人必须是 `@wyz541`。
+
+取得明确批准后执行以下步骤。
+
+1. 运行 `git worktree remove <path>`。命令失败时停止，禁止使用 `--force`。
+2. 运行 `git branch -d <branch>`。Branch 为 `detached` 时跳过本步。
+3. 再次运行 Worktree 审计。
+4. 核对结果与批准记录一致。
+5. 由 Issue owner 手工关闭 Issue。
+
+保留 Worktree 时，在 Issue 记录 owner、原因、批准人、批准日期和复核日期。复核日期不得超过批准日期后 14 天。
+
 ## 5. 决策变更
 
 已确认决策只能通过以下方式改变。
@@ -94,6 +140,10 @@ Research 必须写决策问题、来源 Discussion、Owner、Decision owner 和�
 
 - [ ] PR 链接了实现 Issue。
 - [ ] PR 正文使用 `Closes #N` 或 `Part of #N`。
+- [ ] Worktree 交付使用 `Part of #N`。
+- [ ] PR 已记录 Worktree 路径和 branch。
+- [ ] 证据迁移和清理结果已记录，或已写明不适用原因。
+- [ ] 清理项已有 `@wyz541` 的明确批准。
 - [ ] Active Spec 链接有效。
 - [ ] Decision Issue 已链接。
 - [ ] 合同变更兼容或已有新版本。
@@ -122,6 +172,7 @@ Research 必须写决策问题、来源 Discussion、Owner、Decision owner 和�
 ```bash
 ./scripts/check-r0.sh
 python3 scripts/audit_issue_relations.py --repo wyz541/Kshift --issue <N>
+python3 scripts/audit_worktrees.py --repo . --expected-task-worktrees <N>
 ```
 
 命令必须成功。检查结果写入 PR 的 `## 验收证据`。
