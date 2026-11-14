@@ -48,6 +48,22 @@ description: "定义备份、恢复、迁移、角色和启动恢复步骤。"
 
 **警告：** 恢复演练需要使用唯一数据库名。禁止把备份恢复到生产数据库。
 
+## Preview lifecycle
+
+```bash
+make preview-lifecycle
+```
+
+此测试覆盖 iOS Simulator 安装、升级、回滚和 macOS unsigned bundle 切换。此测试不覆盖签名分发。
+
+## launchd 恢复探针
+
+```bash
+./scripts/test-launchd-restart.sh
+```
+
+此测试验证 launchd 自动重启行为；真实 Kshift LaunchDaemon 仍需 root 安装测试。
+
 ## 服务启动恢复
 
 `launchd` 保持服务运行。服务异常退出时，任务在 10 秒后重启。

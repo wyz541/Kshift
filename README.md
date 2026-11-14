@@ -319,7 +319,7 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
 - PostgreSQL 高可用集群不在首版范围。
-- R4/R5 的 30 分钟负载、launchd 进程级重启和平台安装证据尚未运行。
+- R4/R5 的 30 分钟负载、真实 server launchd 重启和签名平台安装证据尚未运行。
 - Stable 签名和分发策略仍为 `pending`。
 
 ## 安全边界
