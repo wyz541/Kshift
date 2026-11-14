@@ -244,10 +244,16 @@ final class KshiftIOSUITests: XCTestCase {
         app.buttons["看板"].firstMatch.tap()
 
         let initialTask = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Shared roadmap task"))
+            .matching(
+                NSPredicate(
+                    format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                    "task-",
+                    "Shared roadmap task"
+                )
+            )
             .firstMatch
         XCTAssertTrue(initialTask.waitForExistence(timeout: 15), app.debugDescription)
-        initialTask.tap()
+        initialTask.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
 
         XCTAssertTrue(
             app.descendants(matching: .any)["task-detail"]
