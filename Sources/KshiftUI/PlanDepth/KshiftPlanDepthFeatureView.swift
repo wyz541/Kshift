@@ -308,7 +308,7 @@ public struct KshiftPlanDepthFeatureView: View {
                 Text(column.title)
                     .font(.headline)
                 Spacer()
-                Text("\(column.tasks.count)")
+                Text("\(column.totalCount)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.primary.opacity(0.8))
             }

@@ -51,6 +51,7 @@ public struct KshiftPlanBoardColumn: Identifiable, Hashable, Sendable {
     public let status: KshiftPlanTaskStatus
     public let title: String
     public let tasks: [KshiftPlanTaskPresentation]
+    public let totalCount: Int
 
     public var id: KshiftPlanTaskStatus { status }
 }
@@ -202,7 +203,8 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
                 title: status.title,
                 tasks: visible.compactMap { task in
                     task.status == status ? taskPresentations[task.id] : nil
-                }
+                },
+                totalCount: matching.filter { $0.status == status }.count
             )
         }
 
