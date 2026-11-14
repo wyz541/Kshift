@@ -3,8 +3,8 @@ slug: /decisions/decision-register
 title: Kshift 决策登记表
 type: reference
 status: active
-version: "0.1"
-updated: "2026-11-13"
+version: "0.2"
+updated: "2026-11-14"
 keywords:
   - 决策
   - 状态
@@ -50,6 +50,14 @@ description: 记录 Kshift v1 的确认、待定和拒绝决策。
 | `DEC-029` | 项目 IANA 时区决定自然日期和共享计划视图 | Issue #16 | `@wyz541` | `2026-11-13` |
 | `DEC-030` | 用户时区只影响绝对时间戳显示，并回退到项目时区 | Issue #16 | `@wyz541` | `2026-11-13` |
 | `DEC-031` | `KshiftRootView` 是唯一日计划 UI | ADR-0009 | `@wyz541` | `2026-11-13` |
+| `DEC-032` | 类型标签使用 `type:`，领域标签使用 `area:` | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-033` | Project `Status` 是唯一状态来源 | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-034` | 一个 PR 只有一个主 Issue | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-035` | 用户可见变更必须判断文档、FAQ 和 Release note 影响 | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-036` | Research 完成后回写来源 Discussion，但不强制关闭 Discussion | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-037` | PR 保存交付证据，Issue 或 Acceptance 保存最终验收证据 | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-038` | 本地 DerivedData 固定为 `build/DerivedData` | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
+| `DEC-039` | Debug App 显示名为 `Kshift Dev` | Issue #23、ADR-0010 | `@wyz541` | `2026-11-14` |
 
 ## 3. 待定决策
 
