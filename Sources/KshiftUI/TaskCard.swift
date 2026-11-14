@@ -7,6 +7,7 @@ struct TaskCard: View {
     let isSelected: Bool
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -16,7 +17,7 @@ struct TaskCard: View {
                 } label: {
                     Image(systemName: task.status == .done ? "checkmark.circle.fill" : "circle")
                         .font(.title3)
-                        .foregroundStyle(task.status == .done ? .green : .secondary)
+                        .foregroundStyle(task.status == .done ? completionTint : .secondary)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -109,6 +110,10 @@ struct TaskCard: View {
         .accessibilityValue("负责人 \(assigneeNames)，版本 \(task.version)")
         .accessibilityHint("打开任务详情")
         .accessibilityIdentifier("task-\(task.id)")
+    }
+
+    private var completionTint: Color {
+        colorScheme == .dark ? Color(hex: "#5FDD8B") : Color(hex: "#116B2C")
     }
 
     private var assignees: [Person] {

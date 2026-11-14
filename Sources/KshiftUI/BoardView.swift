@@ -95,6 +95,8 @@ private struct BoardColumnView: View {
                 )
             } label: {
                 Label("添加任务", systemImage: "plus")
+                    .font(.headline)
+                    .fixedSize(horizontal: false, vertical: true)
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .background(Color(hex: "#003F80"), in: Capsule())
@@ -146,7 +148,6 @@ private struct BoardColumnView: View {
             }
             Spacer()
         }
-        .accessibilityElement(children: .combine)
     }
 
     private var emptyState: some View {
