@@ -62,6 +62,15 @@ description: "定义备份、恢复、迁移、角色和启动恢复步骤。"
 
 `newsyslog` 配置保留 14 个日志文件。单个日志达到 10 MiB 时轮转。日志只保存结构化事件，不保存 token、密码或完整敏感请求体。
 
+## 并发冒烟和重启测试
+
+```bash
+TEST_DATABASE_URL=postgres://postgres:REDACTED@127.0.0.1:55432/postgres \
+  ./scripts/run-load-evidence.sh
+```
+
+完整 30 分钟负载设置 `KSHIFT_LOAD_DURATION_SECS=1800`。API 重启测试使用 `cargo test --locked -p kshift-server --test restart_integration`。
+
 ## 事件流恢复
 
 1. 客户端保存当前 revision。

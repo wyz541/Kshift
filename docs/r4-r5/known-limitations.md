@@ -3,7 +3,7 @@ slug: "/docs/r4-r5/known-limitations"
 title: "R4/R5 已知限制"
 type: "reference"
 status: "review"
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - 已知限制
   - 发布门禁
@@ -15,10 +15,10 @@ description: "列出 R4/R5 基座尚未完成的产品和发布能力。"
 
 结论：当前代码是 R4/R5 基座，不是完整产品发布。
 
-- R1、R2 和 R3 的产品代码尚未在本分支验证。
-- 2 倍负载、多人并发写入和事件流重启恢复尚未运行。
+- R1 和 R2 已有测试；R3 和完整发布验收尚未完成。
+- 30 分钟 2 倍负载和 launchd 进程级重启尚未运行。
 - macOS 和 iOS 的安装、升级、卸载、回滚和分发证据尚未生成。
-- Liquid Glass、VoiceOver、键盘导航、系统文字大小和性能证据尚未生成。
+- Liquid Glass、无障碍和性能已有开发证据；最终发布门禁尚未审核。
 - macOS 签名身份、公证方式和 iOS 分发方式尚未批准。
 - `release/policy.json` 的决策状态是 `pending`。
 - 当前没有开发机之外的加密备份存储。
