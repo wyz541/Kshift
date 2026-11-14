@@ -70,7 +70,6 @@ final class KshiftIOSUITests: XCTestCase {
             app.descendants(matching: .any)["people-schedule-view"].firstMatch
                 .waitForExistence(timeout: 8)
         )
-
         var unexpectedIssues: [String] = []
         try app.performAccessibilityAudit { issue in
             let label = issue.element?.label ?? ""
@@ -99,8 +98,10 @@ final class KshiftIOSUITests: XCTestCase {
             let waivedContrast = issue.auditType == .contrast
                 && contrastFalsePositives.contains(label)
             if !waivedDenseChartLayout && !waivedContrast {
+                let identifier = issue.element?.identifier ?? ""
+                let elementType = issue.element.map { String(describing: $0.elementType) } ?? ""
                 unexpectedIssues.append(
-                    "\(issue.compactDescription): \(issue.detailedDescription) [\(label)]"
+                    "\(issue.compactDescription): \(issue.detailedDescription) [\(label)] id=\(identifier) type=\(elementType)"
                 )
             }
             return true

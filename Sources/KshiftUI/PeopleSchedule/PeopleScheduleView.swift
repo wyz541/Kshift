@@ -556,8 +556,6 @@ private struct PeopleScheduleTimelineRow: View {
     let scrollProxy: ScrollViewProxy
     let scrollToDay: (Date, ScrollViewProxy, Bool) -> Void
 
-    @Namespace private var glassNamespace
-
     private var collapsed: Bool {
         model.collapsedSchedulePersonIDs.contains(row.id)
     }
@@ -585,57 +583,54 @@ private struct PeopleScheduleTimelineRow: View {
     }
 
     var body: some View {
-        GlassEffectContainer(spacing: 6) {
-            ZStack(alignment: .topLeading) {
-                PeopleScheduleDayGrid(
-                    model: model,
-                    personID: row.person?.id,
-                    days: days,
-                    dateWidth: dateWidth,
-                    height: height
-                )
+        ZStack(alignment: .topLeading) {
+            PeopleScheduleDayGrid(
+                model: model,
+                personID: row.person?.id,
+                days: days,
+                dateWidth: dateWidth,
+                height: height
+            )
 
-                if !collapsed {
-                    ForEach(row.slices) { slice in
-                        PeopleScheduleTaskCapsule(
+            if !collapsed {
+                ForEach(row.slices) { slice in
+                    PeopleScheduleTaskCapsule(
+                        model: model,
+                        task: slice.task,
+                        slice: slice,
+                        dateWidth: dateWidth,
+                        laneHeight: laneHeight,
+                        horizontalOffset: horizontalOffset,
+                        viewportWidth: viewportWidth,
+                        scrollProxy: scrollProxy,
+                        scrollToDay: scrollToDay
+                    )
+                    .frame(
+                        width: max(CGFloat(slice.dayCount) * dateWidth - 6, 32),
+                        height: 44
+                    )
+                    .offset(
+                        x: CGFloat(slice.startIndex) * dateWidth + 3,
+                        y: CGFloat(slice.lane) * laneHeight + 2
+                    )
+                }
+
+                ForEach(markers.keys.sorted(), id: \.self) { lane in
+                    if let marker = markers[lane] {
+                        PeopleScheduleOverflowMarker(
                             model: model,
-                            task: slice.task,
-                            slice: slice,
-                            dateWidth: dateWidth,
-                            laneHeight: laneHeight,
-                            horizontalOffset: horizontalOffset,
-                            viewportWidth: viewportWidth,
+                            task: marker.task,
                             scrollProxy: scrollProxy,
                             scrollToDay: scrollToDay
                         )
                         .frame(
-                            width: max(CGFloat(slice.dayCount) * dateWidth - 6, 32),
-                            height: max(laneHeight - 2, 46)
+                            width: min(max(viewportWidth * 0.34, 260), 380),
+                            height: max(laneHeight - 8, 28)
                         )
                         .offset(
-                            x: CGFloat(slice.startIndex) * dateWidth + 3,
-                            y: CGFloat(slice.lane) * laneHeight + 3
+                            x: max(horizontalOffset + viewportWidth - min(max(viewportWidth * 0.34, 260), 380) - 10, 6),
+                            y: CGFloat(lane) * laneHeight + 4
                         )
-                        .glassEffectID(slice.id, in: glassNamespace)
-                    }
-
-                    ForEach(markers.keys.sorted(), id: \.self) { lane in
-                        if let marker = markers[lane] {
-                            PeopleScheduleOverflowMarker(
-                                model: model,
-                                task: marker.task,
-                                scrollProxy: scrollProxy,
-                                scrollToDay: scrollToDay
-                            )
-                            .frame(
-                                width: min(max(viewportWidth * 0.34, 260), 380),
-                                height: max(laneHeight - 8, 28)
-                            )
-                            .offset(
-                                x: max(horizontalOffset + viewportWidth - min(max(viewportWidth * 0.34, 260), 380) - 10, 6),
-                                y: CGFloat(lane) * laneHeight + 4
-                            )
-                        }
                     }
                 }
             }
@@ -702,8 +697,6 @@ private struct PeopleScheduleTaskCapsule: View {
     let scrollToDay: (Date, ScrollViewProxy, Bool) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.colorScheme) private var colorScheme
     @FocusState private var isFocused: Bool
@@ -729,33 +722,15 @@ private struct PeopleScheduleTaskCapsule: View {
     }
 
     private var taskShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
     }
 
-    private var contentShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 10, style: .continuous)
+    private var taskFill: Color {
+        palette.fill
     }
 
-    private var glassTint: Color {
-        let opacity = task.status == .done ? 0.05 : (isHovering ? 0.22 : 0.16)
-        return palette.glassTint.opacity(opacity)
-    }
-
-    private var contentPlateColor: Color {
-        if colorScheme == .dark {
-            return .black.opacity(contrast == .increased ? 0.92 : 0.72)
-        }
-        return .white.opacity(contrast == .increased ? 1 : 0.92)
-    }
-
-    private var borderColor: Color {
-        if contrast == .increased || isFocused {
-            return colorScheme == .dark ? .white : .black
-        }
-        if isHovering {
-            return palette.accent.opacity(0.82)
-        }
-        return colorScheme == .dark ? .white.opacity(0.34) : .black.opacity(0.30)
+    private var taskForeground: Color {
+        palette.foreground
     }
 
     private var dateLabel: String {
@@ -767,47 +742,50 @@ private struct PeopleScheduleTaskCapsule: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let isNarrow = geometry.size.width < 140
-            taskSurface {
-                ZStack(alignment: .leading) {
-                    contentShape
-                        .fill(contentPlateColor)
-                        .padding(3)
-                        .contentShape(taskShape)
-                        .onTapGesture {
-                            model.presentDetails(task)
-                        }
-                        .accessibilityElement()
-                        .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
-                        .accessibilityHint("点击可查看任务详情。")
-                        .accessibilityAction(named: "查看任务详情") {
-                            model.presentDetails(task)
-                        }
-                        .accessibilityIdentifier("schedule-task-\(task.id)")
+            ZStack(alignment: .leading) {
+                taskShape
+                    .fill(taskFill)
+                    .contentShape(taskShape)
+                    .onTapGesture {
+                        model.presentDetails(task)
+                    }
+                    .accessibilityHidden(true)
 
-                    Capsule(style: .continuous)
-                        .fill(palette.accent.opacity(task.status == .done ? 0.48 : 1))
-                        .frame(width: 3, height: max(geometry.size.height - 18, 18))
-                        .offset(x: 6)
-                        .allowsHitTesting(false)
+                statusBadge
 
-                    statusBadge(isNarrow: isNarrow)
-
-                    Text(task.title)
-                        .font(isNarrow ? .caption2.weight(.semibold) : .caption.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(isNarrow ? 2 : 1)
-                        .multilineTextAlignment(.leading)
-                        .minimumScaleFactor(0.90)
-                        .allowsTightening(true)
-                        .frame(
-                            maxWidth: max(geometry.size.width - (isNarrow ? 38 : 60), 20),
-                            maxHeight: .infinity,
-                            alignment: .leading
-                        )
-                        .offset(x: max(titleLeading, isNarrow ? 30 : 52))
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
+                Text(task.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(taskForeground)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.88)
+                    .allowsTightening(true)
+                    .frame(
+                        maxWidth: max(geometry.size.width - 44, 20),
+                        maxHeight: .infinity,
+                        alignment: .leading
+                    )
+                    .offset(x: max(titleLeading, 36))
+                    .allowsHitTesting(false)
+                    .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
+                    .accessibilityHint("点击可查看任务详情。")
+                    .accessibilityAction(named: "查看任务详情") {
+                        model.presentDetails(task)
+                    }
+                    .accessibilityIdentifier("schedule-task-\(task.id)")
+            }
+            .clipShape(taskShape)
+            .overlay {
+                if contrast == .increased || isFocused {
+                    taskShape.strokeBorder(
+                        colorScheme == .dark ? Color.white : Color.black,
+                        lineWidth: 2
+                    )
+                } else {
+                    taskShape.strokeBorder(
+                        colorScheme == .dark ? Color.white : Color.black,
+                        lineWidth: isHovering ? 2 : 1
+                    )
                 }
             }
             .overlay(alignment: .leading) {
@@ -829,8 +807,8 @@ private struct PeopleScheduleTaskCapsule: View {
         .focused($isFocused)
         .focusEffectDisabled()
         .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
-        .animation(reduceMotion ? nil : .snappy(duration: 0.18), value: isHovering)
-        .opacity(task.status == .done ? 0.78 : 1)
+        .animation(reduceMotion ? nil : .snappy(duration: 0.16), value: isHovering)
+        .accessibilityElement(children: .contain)
     }
 
     private var statusMenu: some View {
@@ -844,65 +822,26 @@ private struct PeopleScheduleTaskCapsule: View {
             }
         } label: {
             Color.clear
-            .frame(width: 44, height: max(laneHeight - 4, 44))
-            .contentShape(Rectangle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .frame(width: 44, height: max(laneHeight - 4, 44))
+        .frame(width: 44, height: 44)
         .fixedSize(horizontal: true, vertical: true)
         .contentShape(Rectangle())
         .accessibilityLabel("\(task.title)，\(task.priority.code)，状态 \(task.status.title)。更改状态")
         .accessibilityIdentifier("schedule-status-\(task.id)")
     }
 
-    private func statusBadge(isNarrow: Bool) -> some View {
-        VStack(spacing: 1) {
-            if !isNarrow {
-                Canvas { context, size in
-                    context.draw(
-                        Text(task.priority.code)
-                            .font(.system(size: 9, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.black),
-                        at: CGPoint(x: size.width / 2, y: size.height / 2),
-                        anchor: .center
-                    )
-                }
-                .frame(width: 18, height: 12)
-                .background(palette.glassTint, in: Capsule())
-                .accessibilityHidden(true)
-            }
-
-            Image(systemName: task.status.symbol)
-                .font(.system(size: 13, weight: .bold))
-                .symbolRenderingMode(.hierarchical)
-                .foregroundStyle(task.status.tint)
-        }
-        .frame(width: 44, height: max(laneHeight - 4, 44))
-        .allowsHitTesting(false)
-        .accessibilityElement(children: .ignore)
-        .accessibilityHidden(true)
-    }
-
-    @ViewBuilder
-    private func taskSurface<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        let content = content()
-        if reduceTransparency || forceReduceTransparency {
-            content
-                .background(.background, in: taskShape)
-                .overlay {
-                    taskShape.strokeBorder(borderColor, lineWidth: contrast == .increased ? 2 : 1)
-                }
-        } else {
-            content
-                .glassEffect(.regular.tint(glassTint).interactive(), in: taskShape)
-                .overlay {
-                    taskShape.strokeBorder(
-                        borderColor,
-                        lineWidth: contrast == .increased || isFocused ? 2 : 1
-                    )
-                }
-        }
+    private var statusBadge: some View {
+        Image(systemName: task.status.symbol)
+            .font(.system(size: 14, weight: .bold))
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(taskForeground)
+            .frame(width: 44, height: 44)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private func resizeHandle(edge: ScheduleResizeEdge) -> some View {
@@ -1060,16 +999,19 @@ private struct PeopleScheduleSettingsPopover: View {
 private struct SchedulePriorityPalette {
     let priority: TaskPriority
 
-    var accent: Color {
-        priority.tint
+    var fill: Color {
+        switch priority {
+        case .urgent: Color(hex: "#B3261E")
+        case .high: Color(hex: "#B07F00")
+        case .medium: Color(hex: "#0B57D0")
+        case .low: Color(hex: "#5F6368")
+        }
     }
 
-    var glassTint: Color {
+    var foreground: Color {
         switch priority {
-        case .urgent: .red
-        case .high: .yellow
-        case .medium: .blue
-        case .low: .gray
+        case .high: .black
+        default: .white
         }
     }
 }
