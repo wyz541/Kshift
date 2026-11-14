@@ -16,7 +16,7 @@ description: 记录 Kshift 的标签集合、Project 字段、Issue 迁移映射
 
 # Kshift 标签与 Project 配置
 
-> 结论：每个开放 Issue 只有 1 个 `type:` 标签，并且至少有 1 个 `area:` 标签。Project `Status` 是唯一状态来源。规则来源为 [ADR-0010](../adr/0010-issue-pr-and-local-build-governance.md)。
+> 结论：每个开放 Issue 只有 1 个 `type:` 标签，并且至少有 1 个 `area:` 标签。Project `Status` 是唯一状态来源。规则来源为 [KS-GOV](../specs/governance.md)。
 
 ## 1. 权威边界
 

@@ -22,7 +22,7 @@ description: 规定 Discussion、Research、Feature、Acceptance 和 PR 的原�
 
 本规则适用于 Kshift 的新 Issue 和新 PR。历史事项只在发生实质修改时逐步补齐关系。
 
-本规则落实 Discussion #1 的 Issue/PR 风格 Spec。规则冲突时，Spec 和已接受的 ADR 优先。
+本规则落实 [KS-GOV](../specs/governance.md)。规则冲突时，Active Spec 优先。
 
 ## 2. 关系选择
 
@@ -43,7 +43,7 @@ description: 规定 Discussion、Research、Feature、Acceptance 和 PR 的原�
 
 ## 3. Discussion 升级规则
 
-Discussion 用于探索问题。Decision、ADR、Research Issue 或交付 Issue 用于记录可执行结论。
+Discussion 用于探索问题。Research、Task 或交付 Issue 用于记录可执行结论。
 
 满足以下全部条件时，创建 Issue。
 
@@ -56,7 +56,7 @@ Research Issue 是活跃研究事项的唯一入口。创建 Research Issue 后�
 
 Research Issue 的 `## 来源 Discussion` 章节只写 1 个 Discussion 链接。直接创建的 Research Issue 写“无”。
 
-Discussion 直接形成结论时，不创建 Research Issue。结论改变 Spec 或 Decision 时，同步更新权威文档。
+Discussion 直接形成结论时，不创建 Research Issue。结论改变 Active Spec 时，同步更新权威入口。
 
 ## 4. Feature、交付和 Acceptance
 

@@ -2,7 +2,7 @@
 slug: /adr/0001-rust-authority-and-swiftui-host
 title: ADR-0001 Rust 业务权威和 SwiftUI host
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-13"
 keywords:
@@ -16,6 +16,8 @@ description: 固定 Rust 业务权威、SwiftUI host 和 C ABI 的责任边界�
 # ADR-0001 Rust 业务权威和 SwiftUI host
 
 > 结论：Rust 拥有全部非 UI 业务规则。SwiftUI host 只负责呈现和临时界面状态，并通过 `kshift-ffi` 调用 Rust client。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-ARCH`。
 
 ## 1. 状态
 

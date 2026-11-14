@@ -76,10 +76,10 @@ body:
     id: relationships
     attributes:
       label: 关系
-      description: 写出 Spec、Decision、Contract、父 Issue、关联 Issue 和阻塞关系。
+      description: 写出 Active Spec、Decision Issue、Contract、父 Issue、关联 Issue 和阻塞关系。
       placeholder: |-
         - Spec：
-        - Decision：
+        - Decision Issue：
         - Contract：
         - 关联 Issue：
         - 阻塞关系：

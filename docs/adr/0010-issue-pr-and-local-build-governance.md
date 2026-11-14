@@ -2,7 +2,7 @@
 slug: /adr/0010-issue-pr-and-local-build-governance
 title: ADR-0010 Issue/PR 与本地构建治理
 type: decision
-status: active
+status: superseded
 version: "1.0"
 updated: "2026-11-14"
 keywords:
@@ -17,6 +17,8 @@ description: 固定 Issue/PR 标签、状态、关系、证据和本地调试构
 # ADR-0010 Issue/PR 与本地构建治理
 
 > 结论：Project `Status` 是唯一状态源。一个 PR 只关闭一个主 Issue。研究结论回写来源 Discussion，但不强制关闭 Discussion。
+
+> 历史说明：本 ADR 仅用于追溯。当前规则入口见 [Active Spec 索引](../specs/index.md)，目标 ID 为 `KS-GOV`。
 
 ## 1. 状态
 

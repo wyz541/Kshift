@@ -5,8 +5,8 @@
 ## 追踪
 
 - Issue: `Closes #N` or `Part of #N`
-- Spec:
-- Decision:
+- Active Spec:
+- Decision Issue:
 - Contract:
 
 ## 变更
@@ -39,7 +39,9 @@
 
 - [ ] 已链接主 Issue。
 - [ ] PR 使用 `Closes #N` 或 `Part of #N`。
-- [ ] 已更新决策状态。
+- [ ] 已链接 Active Spec。
+- [ ] 已链接 Decision Issue。
+- [ ] Active Spec 已更新或已写明无需更新原因。
 - [ ] 合同变更兼容或已新增版本。
 - [ ] 没有秘密或敏感数据。
 - [ ] 验收证据来自实际运行。

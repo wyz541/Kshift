@@ -128,7 +128,7 @@ Kshift 对齐 `wooduan-taskboard` 的可观察用户能力。Kshift 不复制参
 - 静默覆盖并发写入。
 - 无界队列和无限重试。
 
-新增平台或新增同步模型时，必须先修改 Spec 并增加 ADR。
+新增平台或新增同步模型时，必须先建立 Research 或 Task Issue，并修改 Active Spec。
 
 ## 4. 产品路线
 
@@ -136,7 +136,7 @@ Kshift 对齐 `wooduan-taskboard` 的可观察用户能力。Kshift 不复制参
 
 ```mermaid
 flowchart LR
-  R0["R0 Spec / ADR / Contract"] --> R1["R1 Rust Core / PostgreSQL"]
+  R0["R0 Active Spec / Decision Issue / Contract"] --> R1["R1 Rust Core / PostgreSQL"]
   R1 --> R2["R2 macOS + iOS MVP"]
   R2 --> R3["R3 Plan Depth / Reports"]
   R3 --> R4["R4 Operations / Backup"]
@@ -145,7 +145,7 @@ flowchart LR
 
 | 阶段 | 产品结果 | 退出条件 | Issue |
 | --- | --- | --- | --- |
-| R0 | 可评审的 Spec、ADR 和合同 | 本文评审通过 | [#3](https://github.com/wyz541/Kshift/issues/3) |
+| R0 | 可评审的 Active Spec、Decision Issue 和合同 | 本文评审通过 | [#3](https://github.com/wyz541/Kshift/issues/3) |
 | R1 | 可运行的共享服务核心 | 并发、迁移和合同测试通过 | [#4](https://github.com/wyz541/Kshift/issues/4)、[#5](https://github.com/wyz541/Kshift/issues/5) |
 | R2 | macOS/iOS 日计划 MVP | P0 E2E、复用和 Liquid Glass 门禁通过 | [#6](https://github.com/wyz541/Kshift/issues/6)、[#7](https://github.com/wyz541/Kshift/issues/7) |
 | R3 | 计划深度与复盘 | 验收数据集通过 | [#8](https://github.com/wyz541/Kshift/issues/8) |
@@ -344,7 +344,7 @@ flowchart LR
 - `ARC-203`：`kshift_app` 只持有运行时 DML 权限。
 - `ARC-204`：`kshift_backup` 只持有备份所需读取权限。
 - `ARC-205`：运行角色不得是数据库超级用户。
-- `ARC-206`：PostgreSQL 19 必须完成兼容性 ADR 后才能启用。
+- `ARC-206`：PostgreSQL 19 必须完成兼容性评审并更新 Active Spec 后才能启用。
 
 ## 8. 同步与缓存
 
@@ -530,24 +530,7 @@ flowchart TD
 
 ## 14. 项目治理
 
-- `GOV-001`：实现 Issue 必须引用 Spec 章节、decision ID 和合同文件。
-- `GOV-002`：Issue 不复制 Spec 的完整规则。
-- `GOV-003`：改变已确认决策前必须先提交 ADR。
-- `GOV-004`：未决项必须有 owner、截止日期和影响范围。
-- `GOV-005`：未运行证据不得写成已验证。
-- `GOV-006`：安全或私密事项使用 Security Advisory。
-- `GOV-007`：大功能使用 Feature Issue 和原生 sub-issues。
-- `GOV-008`：PR 必须包含验收证据和回滚说明。
-- `GOV-009`：类型标签使用 `type:`，领域标签使用 `area:`；每个开放实现 Issue 必须有一个类型标签和至少一个领域标签。
-- `GOV-010`：GitHub Project `Status` 是唯一状态来源。标签和 Issue 正文不得维护第二套状态。
-- `GOV-011`：一个 PR 只有一个主 Issue。最终关闭使用 `Closes #N`，前置 PR 使用 `Part of #N`。
-- `GOV-012`：每个 PR 必须判断文档、FAQ 和 Release note 影响。无需更新时必须写明“不适用”及原因。
-- `GOV-013`：Research 完成后回写来源 Discussion。RFC 类 Discussion 保持 Open；只有 Q&A 才可标记已答复。
-- `GOV-014`：PR 正文保存交付证据。Issue 或 Acceptance 保存最终验收证据。评论不能成为唯一证据。
-- `GOV-015`：本地 `xcodebuild` 使用 `build/DerivedData`。`build/` 不进入 Git。
-- `GOV-016`：Debug App 显示名为 `Kshift Dev`。Debug App 不复制到 Applications。每个平台只保留一个活跃 Debug 构建。
-
-决策状态见 [Decision Register](../decisions/decision-register.md)。未决项见 [Open Questions](../decisions/open-questions.md)。治理细节和回滚方式见 [ADR-0010](../adr/0010-issue-pr-and-local-build-governance.md)。
+项目治理已迁移到 [KS-GOV](../specs/governance.md)。本节只保留迁移入口，不再定义当前治理规则。旧规则由 Git 历史保存。
 
 ## 15. 开放决策
 
@@ -568,7 +551,7 @@ flowchart TD
 
 `OQ-011` 已关闭。最终大小上限见第 9 节和第 12 节。决策记录见 `DEC-027`。
 
-Issue/PR 工作流和本地构建治理的八项问题已由 Issue #23 关闭。最终选择见 `DEC-032` 至 `DEC-039`。
+自 Issue #34 起，新未决问题进入 Research 或 Task Issue。本表只保留迁移来源。工程治理当前规则见 [KS-GOV](../specs/governance.md)。
 
 ## 16. 正式评审结果
 

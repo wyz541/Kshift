@@ -258,11 +258,14 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 
 | 内容 | 入口 |
 | --- | --- |
-| 产品、技术、UI 和验收规范 | [Spec v0.1](docs/spec/kshift-spec-v0.1.md) |
+| Active Spec 索引 | [Specs](docs/specs/index.md) |
+| 工程治理规范 | [KS-GOV](docs/specs/governance.md) |
+| 尚未迁移的领域规范 | [Spec v0.1](docs/spec/kshift-spec-v0.1.md) |
 | Discussion 到 Spec 的映射 | [Traceability](docs/spec/traceability.md) |
-| 关键决策状态 | [Decision Register](docs/decisions/decision-register.md) |
-| 未决项、owner 和截止日期 | [Open Questions](docs/decisions/open-questions.md) |
-| 架构决策记录 | [ADR Index](docs/adr/README.md) |
+| 决策过程 | [Research Issues](https://github.com/wyz541/Kshift/issues?q=is%3Aissue+label%3Atype%3Aresearch) |
+| 历史决策记录 | [Decision Register](docs/decisions/decision-register.md) |
+| 待迁移未决问题 | [Open Questions](docs/decisions/open-questions.md) |
+| ADR 历史 | [ADR Index](docs/adr/README.md) |
 | 协议和 Release 合同 | [Contracts](docs/contracts/README.md) |
 | R1 事务和同步 | [Architecture](docs/architecture.md) |
 | R1 运维和恢复 | [Operations](docs/operations.md) |
