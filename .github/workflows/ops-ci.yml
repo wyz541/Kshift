@@ -27,7 +27,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y zsh
-          for script in deploy/*.sh release/platform/*.sh; do zsh -n "$script"; done
+          for script in deploy/*.sh release/platform/*.sh scripts/test-server-launchd-restart.sh; do zsh -n "$script"; done
           for template in ops/launchd/*.plist.template; do
             rendered="$RUNNER_TEMP/$(basename "$template" .template)"
             sed \

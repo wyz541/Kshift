@@ -56,13 +56,22 @@ make preview-lifecycle
 
 此测试覆盖 iOS Simulator 安装、升级、回滚和 macOS unsigned bundle 切换。此测试不覆盖签名分发。
 
-## launchd 恢复探针
+## launchd 恢复测试
+
+基础探针验证 launchd 的自动重启行为。
 
 ```bash
 ./scripts/test-launchd-restart.sh
 ```
 
-此测试验证 launchd 自动重启行为；真实 Kshift LaunchDaemon 仍需 root 安装测试。
+server 测试创建临时 PostgreSQL 数据库、TLS 证书和 auth 文件。测试通过 release bundle 启动 Kshift server。测试强制终止 server，然后验证健康、outbox 回放和新写入。
+
+```bash
+TEST_DATABASE_URL=postgres://postgres:REDACTED@127.0.0.1:55432/postgres \
+  ./scripts/test-server-launchd-restart.sh
+```
+
+server 测试使用用户 LaunchAgent。生产系统 LaunchDaemon 仍需 root 安装测试。
 
 ## 服务启动恢复
 
@@ -85,7 +94,7 @@ TEST_DATABASE_URL=postgres://postgres:REDACTED@127.0.0.1:55432/postgres \
   ./scripts/run-load-evidence.sh
 ```
 
-完整 30 分钟负载设置 `KSHIFT_LOAD_DURATION_SECS=1800`。API 重启测试使用 `cargo test --locked -p kshift-server --test restart_integration`。
+完整 30 分钟负载设置 `KSHIFT_LOAD_DURATION_SECS=1800`。测试每秒发送 40 个写尝试，并每 60 秒发送 200 个并发 snapshot 请求。报告记录延迟、event delay、CPU、内存、数据库连接和锁等待。API 重启测试使用 `cargo test --locked -p kshift-server --test restart_integration`。
 
 ## 事件流恢复
 
