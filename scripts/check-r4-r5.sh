@@ -15,6 +15,16 @@ for script in deploy/*.sh release/platform/*.sh; do
   zsh -n "$script"
 done
 
+if [[ -n "${TEST_DATABASE_URL:-}" ]]; then
+  cargo_bin="$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo"
+  if [[ -x "$cargo_bin" ]]; then
+    PATH="$(dirname "$cargo_bin"):$PATH" "$cargo_bin" test --locked -p kshift-server \
+      --test load_integration --test restart_integration
+  else
+    echo 'Rust toolchain not found; skipped load and restart tests' >&2
+  fi
+fi
+
 for template in ops/launchd/*.plist.template; do
   rendered="$scratch/$(basename "$template" .template)"
   sed \
