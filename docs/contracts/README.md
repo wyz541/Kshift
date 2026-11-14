@@ -27,18 +27,27 @@ description: 列出 Kshift v0.1 的协议、FFI 和 Release 合同入口。
 | Manifest 示例 | [release-manifest.example.json](../../schemas/examples/release-manifest.example.json) | Preview 结构示例 |
 | Fragment 示例 | [release-fragment.example.json](../../schemas/examples/release-fragment.example.json) | Server 结构示例 |
 
-## 2. 合同文档
+## 2. Active Spec
+
+| 领域 | 当前规则 |
+| --- | --- |
+| 领域语义 | [KS-DOMAIN](../specs/domain.md) |
+| 协议、同步和 FFI | [KS-ARCH](../specs/architecture.md) |
+| 安全、容量和恢复 | [KS-OPS](../specs/operations.md) |
+| Release 和质量门禁 | [KS-RELEASE](../specs/release.md) |
+
+## 3. 合同文档
 
 | 文档 | 内容 |
 | --- | --- |
 | [Protocol Contract](protocol-v0.1.md) | 传输、错误、幂等、快照、事件和 FFI 边界 |
 | [Release Contract](release-v0.1.md) | 发布通道、manifest、Promotion 和回滚 |
 
-## 3. 状态
+## 4. 状态
 
 合同状态为 `active`。合同结构已冻结。`OQ-011` 已在 R0 正式评审中关闭。
 
-## 4. 变更规则
+## 5. 变更规则
 
 - `kshift.v1` 内只允许兼容变更。
 - 删除字段时保留 field number 和 field name。

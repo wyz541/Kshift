@@ -5,7 +5,7 @@
 ## 追踪
 
 - Issue: `Closes #N` or `Part of #N`
-- Active Spec:
+- Active Spec: [Active Spec 索引](https://github.com/wyz541/Kshift/blob/main/docs/specs/index.md)
 - Decision Issue:
 - Contract:
 

@@ -76,9 +76,9 @@ body:
     id: relationships
     attributes:
       label: 关系
-      description: 写出 Active Spec、Decision Issue、Contract、父 Issue、关联 Issue 和阻塞关系。
+      description: 链接 Active Spec 索引和具体规则，写出 Decision Issue、Contract、父 Issue、关联 Issue 和阻塞关系。
       placeholder: |-
-        - Spec：
+        - Spec：https://github.com/wyz541/Kshift/blob/main/docs/specs/index.md
         - Decision Issue：
         - Contract：
         - 关联 Issue：

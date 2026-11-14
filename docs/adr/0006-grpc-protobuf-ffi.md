@@ -71,6 +71,6 @@ SwiftUI host 不能依赖 protobuf、tonic、tokio 或 sqlx 类型。
 
 ## 7. 关联
 
-- Spec: [12. 合同与兼容](../spec/kshift-spec-v0.1.md#12-合同与兼容)
+- Active Spec: [KS-ARCH](../specs/architecture.md#7-合同与兼容)
 - Decision: `DEC-007`、`DEC-008`
 - Contract: [kshift.proto](../../proto/kshift/v1/kshift.proto)

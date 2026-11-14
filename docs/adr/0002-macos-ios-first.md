@@ -64,6 +64,6 @@ Liquid Glass API 要求 macOS 26.0 和 iOS 26.0。最低系统版本由 API 可�
 
 ## 7. 关联
 
-- Spec: [6. 体验与 UI](../spec/kshift-spec-v0.1.md#6-体验与-ui)
+- Active Spec: [KS-UI](../specs/ui.md#2-平台矩阵)
 - Decision: `DEC-002`、`DEC-003`、`DEC-004`
 - Contract: [kshift.proto](../../proto/kshift/v1/kshift.proto)

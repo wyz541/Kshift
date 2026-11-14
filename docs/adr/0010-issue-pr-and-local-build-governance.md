@@ -178,7 +178,7 @@ Discussion #1 已形成 Issue/PR 治理草案。以下八项仍待确认。
 
 ## 8. 关联
 
-- Spec: [14. 项目治理](../spec/kshift-spec-v0.1.md#14-项目治理)
+- Active Spec: [KS-GOV](../specs/governance.md)
 - Decision: `DEC-032` 至 `DEC-039`
 - Issue: [#23](https://github.com/wyz541/Kshift/issues/23)
 - Source Discussion: [#1](https://github.com/wyz541/Kshift/discussions/1)

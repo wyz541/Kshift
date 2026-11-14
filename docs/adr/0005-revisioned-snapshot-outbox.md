@@ -76,6 +76,6 @@ description: 固定 Kshift 的 revisioned snapshot、事务 outbox 和冲突处�
 
 ## 7. 关联
 
-- Spec: [8. 同步与缓存](../spec/kshift-spec-v0.1.md#8-同步与缓存)
+- Active Spec: [KS-ARCH](../specs/architecture.md#5-写入和事件流)
 - Decision: `DEC-009`、`DEC-010`、`DEC-012`
 - Contract: [kshift.proto](../../proto/kshift/v1/kshift.proto)
