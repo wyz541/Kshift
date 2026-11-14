@@ -15,6 +15,14 @@ for script in deploy/*.sh release/platform/*.sh; do
   zsh -n "$script"
 done
 
+if [[ "${KSHIFT_RUN_LAUNCHD_TEST:-0}" == "1" ]]; then
+  ./scripts/test-launchd-restart.sh
+fi
+
+if [[ "${KSHIFT_RUN_PREVIEW_LIFECYCLE:-0}" == "1" ]]; then
+  ./scripts/test-preview-lifecycle.sh
+fi
+
 if [[ -n "${TEST_DATABASE_URL:-}" ]]; then
   cargo_bin="$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin/cargo"
   if [[ -x "$cargo_bin" ]]; then
