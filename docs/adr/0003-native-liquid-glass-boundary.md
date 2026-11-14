@@ -71,6 +71,6 @@ Liquid Glass 是 Apple 的功能层材质。可交互卡片需要明确层级和
 
 ## 7. 关联
 
-- Spec: [6.3 Liquid Glass 边界](../spec/kshift-spec-v0.1.md#63-liquid-glass-边界)
+- Active Spec: [KS-UI](../specs/ui.md#5-liquid-glass-边界)
 - Decision: `DEC-005`
 - Source: [Apple HIG: Materials](https://developer.apple.com/design/human-interface-guidelines/materials)

@@ -59,9 +59,9 @@ body:
     id: relationships
     attributes:
       label: 关系
-      description: 写出 Active Spec、Decision Issue、Contract、父 Issue 和阻塞关系。不要重复维护子 Issue 清单。
+      description: 链接 Active Spec 索引和具体规则，写出 Decision Issue、Contract、父 Issue 和阻塞关系。不要重复维护子 Issue 清单。
       placeholder: |-
-        - Spec：
+        - Spec：https://github.com/wyz541/Kshift/blob/main/docs/specs/index.md
         - Decision Issue：
         - Contract：
         - 父 Issue：
@@ -86,7 +86,7 @@ body:
       description: 链接唯一规则来源。不要在本 Issue 复制完整规则。
       placeholder: |-
         - Discussion：
-        - Spec：
+        - Spec：https://github.com/wyz541/Kshift/blob/main/docs/specs/index.md
         - Decision Issue：
     validations:
       required: true

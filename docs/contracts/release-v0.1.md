@@ -16,7 +16,7 @@ description: 定义 Kshift Release manifest、fragment、通道、门禁和回�
 
 # Kshift Release Contract v0.1
 
-> 结论：一次 Release 只有一个 manifest 和一个 GitHub Release。所有平台 fragment 必须来自同一 source commit。Draft 验证通过后只提升同一个 Draft。
+> 结论：一次 Release 只有一个 manifest 和一个 GitHub Release。所有平台 fragment 必须来自同一 source commit。Draft 验证通过后只提升同一个 Draft。当前规则见 [KS-RELEASE](../specs/release.md)。
 
 ## 1. 合同文件
 
@@ -185,6 +185,6 @@ Stable manifest 必须满足以下条件。
 
 ## 11. 关联
 
-- [Spec v0.1](../spec/kshift-spec-v0.1.md)
+- [KS-RELEASE](../specs/release.md)
 - [ADR-0007](../adr/0007-github-release-orchestrator.md)
 - [Open Questions](../decisions/open-questions.md)

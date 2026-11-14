@@ -4,6 +4,7 @@ title: KS-GOV Kshift 工程治理规范
 type: standard
 status: active
 updated: "2026-11-14"
+owner: "@wyz541"
 keywords:
   - 工程治理
   - Issue

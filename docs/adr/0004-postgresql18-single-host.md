@@ -69,6 +69,6 @@ description: 固定 PostgreSQL 18 与 Rust server 同机部署、最小权限和
 
 ## 7. 关联
 
-- Spec: [7.3 服务与数据库](../spec/kshift-spec-v0.1.md#73-服务与数据库)
-- Spec: [11. 备份与恢复](../spec/kshift-spec-v0.1.md#11-备份与恢复)
+- Active Spec: [KS-OPS](../specs/operations.md#2-运行和数据库边界)
+- Active Spec: [KS-OPS](../specs/operations.md#2-运行和数据库边界)
 - Decision: `DEC-006`、`DEC-011`

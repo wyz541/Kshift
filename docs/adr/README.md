@@ -9,7 +9,7 @@ keywords:
   - 历史
   - 迁移
   - Kshift
-description: 列出已迁移和待迁移的 ADR 历史来源。
+description: 列出已迁移的 ADR 历史来源和目标 Active Spec。
 ---
 
 # Kshift ADR 历史索引
@@ -26,16 +26,16 @@ description: 列出已迁移和待迁移的 ADR 历史来源。
 
 | ADR | 历史决策 | 状态 | 目标 Spec |
 | --- | --- | --- | --- |
-| [0001](0001-rust-authority-and-swiftui-host.md) | Rust 业务权威和 SwiftUI host | `superseded` | `KS-ARCH` |
-| [0002](0002-macos-ios-first.md) | macOS/iOS 首版和共享 SwiftUI | `superseded` | `KS-UI` |
-| [0003](0003-native-liquid-glass-boundary.md) | 原生 Liquid Glass 边界 | `superseded` | `KS-UI` |
-| [0004](0004-postgresql18-single-host.md) | PostgreSQL 18 单机部署 | `superseded` | `KS-OPS` |
-| [0005](0005-revisioned-snapshot-outbox.md) | revision snapshot 和 outbox | `superseded` | `KS-ARCH` |
-| [0006](0006-grpc-protobuf-ffi.md) | gRPC、protobuf 和 C ABI | `superseded` | `KS-ARCH` |
-| [0007](0007-github-release-orchestrator.md) | GitHub Release orchestrator | `superseded` | `KS-RELEASE` |
-| [0008](0008-task-ownership-and-time-zones.md) | 任务负责人和时区语义 | `superseded` | `KS-DOMAIN` |
-| [0009](0009-single-day-plan-ui.md) | 唯一日计划 UI | `superseded` | `KS-UI` |
-| [0010](0010-issue-pr-and-local-build-governance.md) | Issue/PR 与本地构建治理 | `superseded` | `KS-GOV` |
+| [0001](0001-rust-authority-and-swiftui-host.md) | Rust 业务权威和 SwiftUI host | `superseded` | [KS-ARCH](../specs/architecture.md) |
+| [0002](0002-macos-ios-first.md) | macOS/iOS 首版和共享 SwiftUI | `superseded` | [KS-UI](../specs/ui.md) |
+| [0003](0003-native-liquid-glass-boundary.md) | 原生 Liquid Glass 边界 | `superseded` | [KS-UI](../specs/ui.md) |
+| [0004](0004-postgresql18-single-host.md) | PostgreSQL 18 单机部署 | `superseded` | [KS-OPS](../specs/operations.md) |
+| [0005](0005-revisioned-snapshot-outbox.md) | revision snapshot 和 outbox | `superseded` | [KS-ARCH](../specs/architecture.md) |
+| [0006](0006-grpc-protobuf-ffi.md) | gRPC、protobuf 和 C ABI | `superseded` | [KS-ARCH](../specs/architecture.md) |
+| [0007](0007-github-release-orchestrator.md) | GitHub Release orchestrator | `superseded` | [KS-RELEASE](../specs/release.md) |
+| [0008](0008-task-ownership-and-time-zones.md) | 任务负责人和时区语义 | `superseded` | [KS-DOMAIN](../specs/domain.md) |
+| [0009](0009-single-day-plan-ui.md) | 唯一日计划 UI | `superseded` | [KS-UI](../specs/ui.md) |
+| [0010](0010-issue-pr-and-local-build-governance.md) | Issue/PR 与本地构建治理 | `superseded` | [KS-GOV](../specs/governance.md) |
 
 ## 3. 历史规则
 

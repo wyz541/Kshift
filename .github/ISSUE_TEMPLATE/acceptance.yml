@@ -84,8 +84,9 @@ body:
     id: relationships
     attributes:
       label: 关系
-      description: 写出父 Feature、交付子 Issue、Release Issue 和阻塞关系。
+      description: 链接 Active Spec 索引和具体规则，写出父 Feature、交付子 Issue、Release Issue 和阻塞关系。
       placeholder: |-
+        - Spec：https://github.com/wyz541/Kshift/blob/main/docs/specs/index.md
         - 父 Feature：
         - 交付子 Issue：
         - Release Issue：

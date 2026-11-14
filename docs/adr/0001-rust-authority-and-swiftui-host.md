@@ -65,6 +65,6 @@ UI 只发送 typed command。UI 只消费 immutable snapshot 或 event。
 
 ## 7. 关联
 
-- Spec: [7. 架构](../spec/kshift-spec-v0.1.md#7-架构)
+- Active Spec: [KS-ARCH](../specs/architecture.md#2-调用链)
 - Decision: `DEC-001`、`DEC-007`
 - Contract: [kshift.proto](../../proto/kshift/v1/kshift.proto)

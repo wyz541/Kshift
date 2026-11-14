@@ -91,7 +91,7 @@ R1 合同已允许 `assignee_ids` 数组和项目 `time_zone`。此前 SwiftUI �
 
 ## 7. 关联
 
-- Spec: [5.1 项目与成员](../spec/kshift-spec-v0.1.md#51-项目与成员)、[5.2 任务](../spec/kshift-spec-v0.1.md#52-任务)
+- Active Spec: [KS-DOMAIN](../specs/domain.md#3-任务与负责人)
 - Decision: `DEC-028`、`DEC-029`、`DEC-030`
 - Contract: [Protocol Contract](../contracts/protocol-v0.1.md#3-标识与时间)
 - Issue: [#16](https://github.com/wyz541/Kshift/issues/16)
