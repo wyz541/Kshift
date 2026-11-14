@@ -111,12 +111,43 @@ final class KshiftIOSUITests: XCTestCase {
         )
     }
 
-    func testLiveServerHistoryAndWriteE2E() throws {
+    func testBothProjectTimeZonesAndLiveUIWriteE2E() throws {
         let app = try launchLivePlanner()
         attachScreenshot(app, named: "ios-live-server")
-        XCTAssertTrue(app.staticTexts["当日任务 2"].waitForExistence(timeout: 8))
+        let selectedDate = app.descendants(matching: .any)["selected-date"].firstMatch
+        XCTAssertTrue(selectedDate.waitForExistence(timeout: 8))
+        XCTAssertTrue(selectedDate.label.contains("November 15"), selectedDate.label)
+        XCTAssertTrue(app.staticTexts["当日任务 3"].waitForExistence(timeout: 8))
+
+        app.buttons["前一天"].firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "selected-date", "November 14"))
+                .firstMatch
+                .waitForExistence(timeout: 8)
+        )
+        app.buttons["今天"].firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "selected-date", "November 15"))
+                .firstMatch
+                .waitForExistence(timeout: 8)
+        )
+
+        app.buttons["日历"].firstMatch.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["calendar-view"]
+                .waitForExistence(timeout: 8),
+            app.debugDescription
+        )
+        let projectToday = app.descendants(matching: .any)["calendar-day-2026-11-15"].firstMatch
+        XCTAssertTrue(projectToday.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(projectToday.label.contains("3 项任务"), projectToday.label)
+        XCTAssertTrue(projectToday.label.contains("今天"), projectToday.label)
+        app.buttons["看板"].firstMatch.tap()
+
         let initialTask = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Live history task"))
+            .matching(NSPredicate(format: "label CONTAINS %@", "Shared roadmap task"))
             .firstMatch
         XCTAssertTrue(initialTask.waitForExistence(timeout: 15), app.debugDescription)
         initialTask.tap()
@@ -128,14 +159,7 @@ final class KshiftIOSUITests: XCTestCase {
         )
         XCTAssertTrue(
             app.descendants(matching: .any)
-                .matching(NSPredicate(format: "label CONTAINS %@", "创建任务 Live history task"))
-                .firstMatch
-                .waitForExistence(timeout: 8),
-            app.debugDescription
-        )
-        XCTAssertTrue(
-            app.descendants(matching: .any)
-                .matching(NSPredicate(format: "label CONTAINS %@", "更新任务 Live history task"))
+                .matching(NSPredicate(format: "label CONTAINS %@", "创建任务 Shared roadmap task"))
                 .firstMatch
                 .waitForExistence(timeout: 8),
             app.debugDescription
@@ -149,9 +173,29 @@ final class KshiftIOSUITests: XCTestCase {
         app.buttons["保存"].firstMatch.tap()
 
         XCTAssertTrue(
-            app.staticTexts["当日任务 3"].waitForExistence(timeout: 15),
+            app.staticTexts["当日任务 4"].waitForExistence(timeout: 15),
             app.debugDescription
         )
+
+        let projectSwitcher = element(
+            in: app,
+            identifier: "project-switcher",
+            labelContains: "切换项目"
+        )
+        XCTAssertTrue(projectSwitcher.waitForExistence(timeout: 8))
+        projectSwitcher.tap()
+        let beta = app.buttons["Beta Project"].firstMatch
+        XCTAssertTrue(beta.waitForExistence(timeout: 8), app.debugDescription)
+        beta.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "selected-date", "November 14"))
+                .firstMatch
+                .waitForExistence(timeout: 15),
+            app.debugDescription
+        )
+        XCTAssertTrue(app.staticTexts["当日任务 1"].waitForExistence(timeout: 8))
     }
 
     func testSheetOpenAndClosePerformance() throws {
@@ -213,13 +257,22 @@ final class KshiftIOSUITests: XCTestCase {
     private func launchLivePlanner() throws -> XCUIApplication {
         let environment = ProcessInfo.processInfo.environment
         guard let endpoint = environment["KSHIFT_ENDPOINT"],
-              let caPath = environment["KSHIFT_CA_PATH"],
               let token = environment["KSHIFT_TOKEN"],
-              let actorID = environment["KSHIFT_ACTOR_ID"]
+              let actorID = environment["KSHIFT_ACTOR_ID"],
+              let primaryProject = environment["KSHIFT_E2E_PRIMARY_PROJECT"],
+              let userTimeZone = environment["KSHIFT_USER_TIME_ZONE"],
+              let now = environment["KSHIFT_NOW"]
         else {
             throw XCTSkip("Set live UI server environment to run the live E2E test.")
         }
-        let caPEM = try String(contentsOfFile: caPath, encoding: .utf8)
+        let caPEM: String
+        if let value = environment["KSHIFT_CA_PEM"] {
+            caPEM = value
+        } else if let caPath = environment["KSHIFT_CA_PATH"] {
+            caPEM = try String(contentsOfFile: caPath, encoding: .utf8)
+        } else {
+            throw XCTSkip("Set KSHIFT_CA_PEM or KSHIFT_CA_PATH.")
+        }
         let app = XCUIApplication()
         app.launchEnvironment["KSHIFT_USE_FFI"] = "1"
         app.launchEnvironment["KSHIFT_ENDPOINT"] = endpoint
@@ -227,9 +280,11 @@ final class KshiftIOSUITests: XCTestCase {
         app.launchEnvironment["KSHIFT_TOKEN"] = token
         app.launchEnvironment["KSHIFT_ACTOR_ID"] = actorID
         app.launchEnvironment["KSHIFT_TLS_DOMAIN"] = "localhost"
+        app.launchEnvironment["KSHIFT_USER_TIME_ZONE"] = userTimeZone
+        app.launchEnvironment["KSHIFT_NOW"] = now
         app.launch()
         XCTAssertTrue(
-            element(in: app, identifier: "project-switcher", labelContains: "Live Kshift")
+            element(in: app, identifier: "project-switcher", labelContains: primaryProject)
                 .waitForExistence(timeout: 15),
             app.debugDescription
         )

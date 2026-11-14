@@ -169,8 +169,13 @@ public actor DemoKshiftClient: KshiftClientProtocol {
     private static let timestamp = "2026-11-13T02:00:00Z"
 
     private static func makeState() -> (projects: [ProjectSummary], snapshots: [String: ProjectSnapshot]) {
-        let today = KshiftDate.isoString(from: .now)
-        let tomorrow = KshiftDate.isoString(from: KshiftDate.addingDays(1, to: .now))
+        var projectCalendar = Calendar(identifier: .gregorian)
+        projectCalendar.timeZone = TimeZone(identifier: "Asia/Shanghai") ?? .gmt
+        let today = KshiftDate.isoString(from: .now, calendar: projectCalendar)
+        let tomorrow = KshiftDate.isoString(
+            from: KshiftDate.addingDays(1, to: .now, calendar: projectCalendar),
+            calendar: projectCalendar
+        )
         let people = [
             Person(id: "person-mia", name: "Mia Chen", initials: "MC", colorHex: "#0A84FF"),
             Person(id: "person-noah", name: "Noah Li", initials: "NL", colorHex: "#30D158"),

@@ -79,7 +79,11 @@ struct CalendarView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(model.selectedDate.formatted(.dateTime.month(.wide).day()))
+                    Text(
+                        model.selectedDate.formatted(
+                            Date.FormatStyle(timeZone: calendar.timeZone).month(.wide).day()
+                        )
+                    )
                         .font(.headline)
                     Text("\(model.selectedDateTasks.count) 项任务")
                         .font(.caption)
@@ -123,13 +127,13 @@ struct CalendarView: View {
             to: monthStart
         ) ?? monthStart
         let isSelected = calendar.isDate(date, inSameDayAs: model.selectedDate)
-        let isToday = calendar.isDateInToday(date)
+        let isToday = model.isProjectToday(date)
         let taskCount = model.taskCount(on: date)
 
         return Group {
             if isSelected {
                 Button {
-                    model.selectedDate = KshiftDate.startOfDay(date)
+                    model.selectDate(date)
                 } label: {
                     dayLabel(
                         day: day,
@@ -141,7 +145,7 @@ struct CalendarView: View {
                 .buttonStyle(.glassProminent)
             } else {
                 Button {
-                    model.selectedDate = KshiftDate.startOfDay(date)
+                    model.selectDate(date)
                 } label: {
                     dayLabel(
                         day: day,
@@ -158,9 +162,10 @@ struct CalendarView: View {
             }
         }
         .accessibilityLabel(
-            "\(date.formatted(.dateTime.year().month().day()))，\(taskCount) 项任务"
+            "\(date.formatted(Date.FormatStyle(timeZone: calendar.timeZone).year().month().day()))，\(taskCount) 项任务\(isToday ? "，今天" : "")"
         )
         .accessibilityValue(isSelected ? "已选择" : "未选择")
+        .accessibilityIdentifier("calendar-day-\(KshiftDate.isoString(from: date, calendar: calendar))")
     }
 
     private func dayLabel(
@@ -200,7 +205,7 @@ struct CalendarView: View {
     }
 
     private var monthTitle: String {
-        monthStart.formatted(.dateTime.year().month(.wide))
+        monthStart.formatted(Date.FormatStyle(timeZone: calendar.timeZone).year().month(.wide))
     }
 
     private var leadingBlankCount: Int {
@@ -219,11 +224,12 @@ struct CalendarView: View {
     }
 
     private func shiftMonth(_ amount: Int) {
-        model.selectedDate = calendar.date(
+        let shifted = calendar.date(
             byAdding: .month,
             value: amount,
             to: model.selectedDate
         ) ?? model.selectedDate
+        model.selectDate(shifted)
     }
 
     private func calendarTaskSort(_ lhs: TaskItem, _ rhs: TaskItem) -> Bool {

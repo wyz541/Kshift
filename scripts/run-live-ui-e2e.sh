@@ -12,7 +12,18 @@ admin_url="${KSHIFT_LIVE_UI_ADMIN_URL:-postgres://postgres:postgres@127.0.0.1:54
 database_name="kshift_live_ui_$(date +%s)_$$"
 database_url="${admin_url%/*}/$database_name"
 user_id="11111111-1111-4111-8111-111111111111"
+second_user_id="22222222-2222-4222-8222-222222222222"
 token="live-ui-e2e-token"
+now="2026-11-14T10:30:00Z"
+user_time_zone="America/Los_Angeles"
+primary_date="2026-11-15"
+secondary_date="2026-11-14"
+primary_project="Alpha Project"
+secondary_project="Beta Project"
+primary_time_zone="Pacific/Kiritimati"
+secondary_time_zone="America/Los_Angeles"
+search_term="roadmap"
+shared_task="Shared roadmap task"
 ca_path="$root/fixtures/tls/ca.pem"
 cert_path="$root/fixtures/tls/server.pem"
 key_path="$root/fixtures/tls/server-key.pem"
@@ -72,6 +83,8 @@ export KSHIFT_DB_MAX_CONNECTIONS=8
 "$root/target/debug/kshift-server" migrate >"$scratch/migrate.json"
 printf '{"id":"%s","display_name":"Mia Chen","is_admin":true}\n' "$user_id" |
   "$root/target/debug/kshift-server" bootstrap-user
+printf '{"id":"%s","display_name":"Noah Li","is_admin":false}\n' "$second_user_id" |
+  "$root/target/debug/kshift-server" bootstrap-user
 
 token_hash="$(printf '%s' "$token" | shasum -a 256 | awk '{print $1}')"
 cat >"$auth_path" <<EOF
@@ -105,35 +118,63 @@ KSHIFT_ENDPOINT="$endpoint" \
 KSHIFT_CA_PATH="$ca_path" \
 KSHIFT_TOKEN="$token" \
 KSHIFT_ACTOR_ID="$user_id" \
+KSHIFT_E2E_SECOND_USER_ID="$second_user_id" \
+KSHIFT_E2E_PRIMARY_DATE="$primary_date" \
+KSHIFT_E2E_SECONDARY_DATE="$secondary_date" \
   "$root/target/debug/examples/live_ui_fixture" --summary-file "$scratch/fixture.json"
 
+p0_env=(
+  "KSHIFT_ENDPOINT=$endpoint"
+  "KSHIFT_CA_PATH=$ca_path"
+  "KSHIFT_TOKEN=$token"
+  "KSHIFT_ACTOR_ID=$user_id"
+  "KSHIFT_E2E_SECOND_USER_ID=$second_user_id"
+  "KSHIFT_E2E_PRIMARY_PROJECT=$primary_project"
+  "KSHIFT_E2E_SECONDARY_PROJECT=$secondary_project"
+  "KSHIFT_E2E_PRIMARY_TIME_ZONE=$primary_time_zone"
+  "KSHIFT_E2E_SECONDARY_TIME_ZONE=$secondary_time_zone"
+  "KSHIFT_E2E_PRIMARY_DATE=$primary_date"
+  "KSHIFT_E2E_SECONDARY_DATE=$secondary_date"
+  "KSHIFT_E2E_SEARCH_TERM=$search_term"
+  "KSHIFT_E2E_SHARED_TASK=$shared_task"
+  "KSHIFT_USER_TIME_ZONE=$user_time_zone"
+  "KSHIFT_NOW=$now"
+)
+test_runner_env=()
+for assignment in "${p0_env[@]}"; do
+  test_runner_env+=("TEST_RUNNER_$assignment")
+done
+
+KSHIFT_CARGO_OFFLINE=1 ./scripts/build-ffi.sh macos >/dev/null
+env "${p0_env[@]}" \
+  KSHIFT_FFI_PATH="$root/.build/ffi/macos/libkshift_ffi.a" \
+  KSHIFT_P0_E2E_REPORT="$scratch/macos-p0-report.json" \
+  swift test --filter 'LiveP0E2ETests/testMacOSLiveP0Scenario' \
+  >"$scratch/macos-p0-test.log" 2>&1
 xcodegen generate >/dev/null
 ios_result="$scratch/ios-live.xcresult"
+ios_derived="$scratch/ios-derived"
 
-KSHIFT_ENDPOINT="$endpoint" \
-KSHIFT_CA_PATH="$ca_path" \
-KSHIFT_TOKEN="$token" \
-KSHIFT_ACTOR_ID="$user_id" \
-TEST_RUNNER_KSHIFT_ENDPOINT="$endpoint" \
-TEST_RUNNER_KSHIFT_CA_PATH="$ca_path" \
-TEST_RUNNER_KSHIFT_TOKEN="$token" \
-TEST_RUNNER_KSHIFT_ACTOR_ID="$user_id" \
+env "${test_runner_env[@]}" \
   xcodebuild \
     -project Kshift.xcodeproj \
     -scheme Kshift-iOS \
     -configuration Debug \
     -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
-    -only-testing:Kshift-iOS-PlannerUITests/KshiftIOSUITests/testLiveServerHistoryAndWriteE2E \
+    -derivedDataPath "$ios_derived" \
+    -only-testing:Kshift-iOS-PlannerTests/KshiftIOSTests/testIOSLiveP0Scenario \
+    -only-testing:Kshift-iOS-PlannerUITests/KshiftIOSUITests/testBothProjectTimeZonesAndLiveUIWriteE2E \
     -resultBundlePath "$ios_result" \
     test >"$scratch/ios-test.log" 2>&1
 
-create_task_lines="$(rg -c '"command":"create_task"' "$server_log")"
-if (( create_task_lines < 6 )); then
-  echo "Expected fixture and UI create_task commands in server log." >&2
-  exit 1
-fi
-if ! rg -q '"revision":6' "$server_log"; then
-  echo "Expected the UI write to produce snapshot revision 6." >&2
+for command in create_project add_project_member create_task update_task batch_update_tasks delete_task; do
+  if ! rg -q "\"command\":\"$command\"" "$server_log"; then
+    echo "Expected live E2E command $command in server log." >&2
+    exit 1
+  fi
+done
+if [[ ! -s "$scratch/macos-p0-report.json" ]]; then
+  echo "macOS P0 report is missing." >&2
   exit 1
 fi
 
@@ -186,7 +227,9 @@ run_macos_capture \
   KSHIFT_CA_PATH="$ca_path" \
   KSHIFT_TOKEN="$token" \
   KSHIFT_ACTOR_ID="$user_id" \
-  KSHIFT_TLS_DOMAIN=localhost
+  KSHIFT_TLS_DOMAIN=localhost \
+  KSHIFT_USER_TIME_ZONE="$user_time_zone" \
+  KSHIFT_NOW="$now"
 
 mkdir -p "$scratch/ios-attachments"
 xcrun xcresulttool export attachments \

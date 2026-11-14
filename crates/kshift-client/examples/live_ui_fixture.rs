@@ -1,15 +1,14 @@
 use std::{env, fs, path::PathBuf, time::Duration};
 
-use chrono::Local;
-use domain::{
-    Change, Command, CommandEnvelope, Maybe, TaskMutation, TaskPatch, TaskPriority, TaskStatus,
-};
-use kshift_client::{AuthToken, ClientConfig, CommandOutcome, KshiftClient, MAX_RESPONSE_BYTES};
+use chrono::NaiveDate;
+use domain::{Command, CommandEnvelope, ProjectRole, TaskPriority, TaskStatus};
+use kshift_client::{AuthToken, ClientConfig, KshiftClient, MAX_RESPONSE_BYTES};
 use serde_json::json;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-const PROJECT_ID: u128 = 0x11111111_2222_4333_8444_555555555555;
+const ALPHA_PROJECT_ID: u128 = 0x11111111_2222_4333_8444_555555555555;
+const BETA_PROJECT_ID: u128 = 0x44444444_5555_4666_8777_888888888888;
 
 fn required_env(name: &str) -> Result<String, Box<dyn std::error::Error>> {
     env::var(name).map_err(|_| format!("{name} is required").into())
@@ -32,22 +31,48 @@ fn envelope(project_id: Uuid, revision: Option<u64>, command: Command) -> Comman
     }
 }
 
-fn update_status(task_id: Uuid, version: u64, status: TaskStatus) -> TaskMutation {
-    TaskMutation::UpdateTask {
-        task_id,
-        expected_entity_version: version,
-        patch: TaskPatch {
-            status: Maybe::Value(status),
-            ..TaskPatch::default()
-        },
-    }
+fn parse_date(name: &str) -> Result<NaiveDate, Box<dyn std::error::Error>> {
+    Ok(NaiveDate::parse_from_str(&required_env(name)?, "%Y-%m-%d")?)
 }
 
-fn created_task_id(outcome: &CommandOutcome) -> Result<Uuid, Box<dyn std::error::Error>> {
-    match outcome.event.changes.first() {
-        Some(Change::TaskCreated { task } | Change::TaskUpdated { task }) => Ok(task.id),
-        _ => Err("create_task did not return a task event".into()),
-    }
+#[allow(clippy::too_many_arguments)]
+async fn create_task(
+    client: &KshiftClient,
+    cancel: &CancellationToken,
+    project_id: Uuid,
+    revision: u64,
+    title: &str,
+    description: &str,
+    status: TaskStatus,
+    priority: TaskPriority,
+    assignee_ids: Vec<Uuid>,
+    date: NaiveDate,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let outcome = client
+        .execute_command(
+            &envelope(
+                project_id,
+                Some(revision),
+                Command::CreateTask {
+                    task_id: Uuid::new_v4(),
+                    title: title.to_owned(),
+                    description_markdown: description.to_owned(),
+                    status,
+                    priority,
+                    assignee_ids,
+                    planned_on: date,
+                    starts_on: None,
+                    due_on: Some(date),
+                    tags: vec!["p0-e2e".to_owned()],
+                    parent_task_id: None,
+                    dependency_task_ids: Vec::new(),
+                },
+            ),
+            None,
+            cancel,
+        )
+        .await?;
+    Ok(outcome.revision)
 }
 
 #[tokio::main]
@@ -57,6 +82,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ca_path = required_env("KSHIFT_CA_PATH")?;
     let token = required_env("KSHIFT_TOKEN")?;
     let actor_id = Uuid::parse_str(&required_env("KSHIFT_ACTOR_ID")?)?;
+    let second_user_id = Uuid::parse_str(&required_env("KSHIFT_E2E_SECOND_USER_ID")?)?;
+    let alpha_date = parse_date("KSHIFT_E2E_PRIMARY_DATE")?;
+    let beta_date = parse_date("KSHIFT_E2E_SECONDARY_DATE")?;
 
     let config = ClientConfig::new(
         endpoint,
@@ -69,127 +97,136 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.set_token(AuthToken::new(token)?).await;
     let cancel = CancellationToken::new();
 
-    let project_id = Uuid::from_u128(PROJECT_ID);
-    let today = Local::now().date_naive();
+    let alpha_project_id = Uuid::from_u128(ALPHA_PROJECT_ID);
+    let beta_project_id = Uuid::from_u128(BETA_PROJECT_ID);
 
-    let project = client
+    let alpha_project = client
         .execute_command(
             &envelope(
-                project_id,
+                alpha_project_id,
                 None,
                 Command::CreateProject {
-                    name: "Live Kshift".to_owned(),
-                    time_zone: "Asia/Shanghai".to_owned(),
+                    name: "Alpha Project".to_owned(),
+                    time_zone: "Pacific/Kiritimati".to_owned(),
                 },
             ),
             None,
             &cancel,
         )
         .await?;
-
-    let first_task = client
+    let alpha_member = client
         .execute_command(
             &envelope(
-                project_id,
-                Some(project.revision),
-                Command::CreateTask {
-                    task_id: Uuid::new_v4(),
-                    title: "Live history task".to_owned(),
-                    description_markdown: "Created by the live UI fixture.".to_owned(),
-                    status: TaskStatus::Todo,
-                    priority: TaskPriority::High,
-                    assignee_ids: vec![actor_id],
-                    planned_on: today,
-                    starts_on: None,
-                    due_on: Some(today),
-                    tags: vec!["live-e2e".to_owned()],
-                    parent_task_id: None,
-                    dependency_task_ids: Vec::new(),
+                alpha_project_id,
+                Some(alpha_project.revision),
+                Command::AddProjectMember {
+                    user_id: second_user_id,
+                    role: ProjectRole::Editor,
                 },
             ),
             None,
             &cancel,
         )
         .await?;
-    let task_one = created_task_id(&first_task)?;
+    let mut alpha_revision = create_task(
+        &client,
+        &cancel,
+        alpha_project_id,
+        alpha_member.revision,
+        "Shared roadmap task",
+        "Shared by both project members.",
+        TaskStatus::Todo,
+        TaskPriority::High,
+        vec![actor_id, second_user_id],
+        alpha_date,
+    )
+    .await?;
+    alpha_revision = create_task(
+        &client,
+        &cancel,
+        alpha_project_id,
+        alpha_revision,
+        "Alpha review task",
+        "Blocked work owned by the second member.",
+        TaskStatus::Blocked,
+        TaskPriority::Medium,
+        vec![second_user_id],
+        alpha_date,
+    )
+    .await?;
+    alpha_revision = create_task(
+        &client,
+        &cancel,
+        alpha_project_id,
+        alpha_revision,
+        "Alpha done task",
+        "Completed work owned by the actor.",
+        TaskStatus::Done,
+        TaskPriority::Low,
+        vec![actor_id],
+        alpha_date,
+    )
+    .await?;
 
-    let updated = client
+    let beta_project = client
         .execute_command(
             &envelope(
-                project_id,
-                Some(first_task.revision),
-                Command::UpdateTask {
-                    task_id: task_one,
-                    expected_entity_version: 1,
-                    patch: TaskPatch {
-                        status: Maybe::Value(TaskStatus::Done),
-                        priority: Maybe::Value(TaskPriority::Urgent),
-                        ..TaskPatch::default()
-                    },
+                beta_project_id,
+                None,
+                Command::CreateProject {
+                    name: "Beta Project".to_owned(),
+                    time_zone: "America/Los_Angeles".to_owned(),
                 },
             ),
             None,
             &cancel,
         )
         .await?;
-
-    let second_task = client
+    let beta_member = client
         .execute_command(
             &envelope(
-                project_id,
-                Some(updated.revision),
-                Command::CreateTask {
-                    task_id: Uuid::new_v4(),
-                    title: "Review live audit".to_owned(),
-                    description_markdown: "Checks project audit mapping.".to_owned(),
-                    status: TaskStatus::Todo,
-                    priority: TaskPriority::Medium,
-                    assignee_ids: vec![actor_id],
-                    planned_on: today,
-                    starts_on: None,
-                    due_on: Some(today),
-                    tags: vec!["audit".to_owned()],
-                    parent_task_id: None,
-                    dependency_task_ids: Vec::new(),
+                beta_project_id,
+                Some(beta_project.revision),
+                Command::AddProjectMember {
+                    user_id: second_user_id,
+                    role: ProjectRole::Editor,
                 },
             ),
             None,
             &cancel,
         )
         .await?;
-    let task_two = created_task_id(&second_task)?;
+    let beta_revision = create_task(
+        &client,
+        &cancel,
+        beta_project_id,
+        beta_member.revision,
+        "Beta roadmap task",
+        "Task isolated in the secondary project.",
+        TaskStatus::Todo,
+        TaskPriority::Medium,
+        vec![actor_id],
+        beta_date,
+    )
+    .await?;
 
-    let batched = client
-        .execute_command(
-            &envelope(
-                project_id,
-                Some(second_task.revision),
-                Command::BatchUpdateTasks {
-                    mutations: vec![
-                        update_status(task_one, 2, TaskStatus::Done),
-                        update_status(task_two, 1, TaskStatus::InProgress),
-                    ],
-                },
-            ),
-            None,
-            &cancel,
-        )
-        .await?;
-
-    let snapshot = client.get_snapshot(project_id, None, &cancel).await?;
-    if snapshot.project.current_revision != batched.revision || snapshot.audit.len() < 6 {
-        return Err("live UI fixture did not produce the expected audit snapshot".into());
-    }
-
+    let alpha_snapshot = client.get_snapshot(alpha_project_id, None, &cancel).await?;
+    let beta_snapshot = client.get_snapshot(beta_project_id, None, &cancel).await?;
     let summary = json!({
-        "project_id": project_id,
-        "project_name": "Live Kshift",
-        "task_id": task_one,
-        "task_title": "Live history task",
-        "second_task_id": task_two,
-        "revision": snapshot.project.current_revision,
-        "audit_entries": snapshot.audit.len(),
-        "task_history_entries": snapshot.audit.iter().filter(|entry| entry.task_id == Some(task_one)).count()
+        "actor_id": actor_id,
+        "second_user_id": second_user_id,
+        "alpha_project_id": alpha_project_id,
+        "alpha_project_name": "Alpha Project",
+        "alpha_time_zone": "Pacific/Kiritimati",
+        "alpha_date": alpha_date,
+        "alpha_revision": alpha_revision,
+        "alpha_audit_entries": alpha_snapshot.audit.len(),
+        "beta_project_id": beta_project_id,
+        "beta_project_name": "Beta Project",
+        "beta_time_zone": "America/Los_Angeles",
+        "beta_date": beta_date,
+        "beta_revision": beta_revision,
+        "beta_audit_entries": beta_snapshot.audit.len()
     });
     if let Some(path) = argument(&args, "--summary-file") {
         fs::write(path, serde_json::to_vec_pretty(&summary)?)?;

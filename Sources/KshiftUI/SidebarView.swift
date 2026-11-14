@@ -6,7 +6,13 @@ struct SidebarView: View {
     var usesNavigationLinks = false
 
     var body: some View {
-        List(selection: $model.selectedProjectID) {
+        List(selection: Binding(
+            get: { model.selectedProjectID },
+            set: { projectID in
+                guard let projectID, projectID != model.selectedProjectID else { return }
+                Swift.Task { await model.selectProject(projectID) }
+            }
+        )) {
             Section("项目") {
                 ForEach(model.projects) { project in
                     projectCell(project)

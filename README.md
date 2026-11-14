@@ -7,7 +7,7 @@
 - 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
 - Spec 版本：`0.1`，状态 `active`。
 - 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
-- 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；本地真实 server E2E 已验证。
+- 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；macOS/iOS live P0 E2E 已验证。
 - 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
@@ -167,6 +167,8 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 - `#if os(...)` 只出现在 app entry。
 - `RustClient` 读取 `kshift-ffi` 的 bounded JSON，并映射为共享 UI 模型。
 - `KshiftRustClient` 保留底层 C ABI wrapper。`KshiftRootView` 通过 `RustClient` 读取数据。
+- 项目 IANA 时区决定今天按钮、日期选择、日历分桶和每日任务数。
+- 用户时区只格式化绝对时间戳。测试可设置 `KSHIFT_USER_TIME_ZONE` 和 `KSHIFT_NOW`。
 - Debug 截图使用 `DemoKshiftClient`。Release 入口使用 `RustClient`。
 - 当前构建使用 Xcode 27.2 SDK。部署目标为 macOS 26.0 和 iOS 26.0。
 
@@ -200,6 +202,12 @@ KSHIFT_DATABASE_URL='postgres://postgres:postgres@127.0.0.1:5432/postgres' \
 
    ```sh
    xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+   ```
+
+6. 运行 macOS/iOS live P0 E2E。
+
+   ```sh
+   make live-ui-e2e
    ```
 
 ## Rust client 与 C ABI

@@ -14,7 +14,7 @@ final class AppModelTests: XCTestCase {
     func testBootstrapLoadsFirstProjectAndDailyBoard() async {
         let (model, _) = makeModel()
         await model.bootstrap()
-        model.selectedDate = KshiftDate.date(from: Fixture.date) ?? .now
+        model.selectDate(KshiftDate.date(from: Fixture.date, calendar: model.projectCalendar) ?? .now)
 
         XCTAssertEqual(model.projects.count, 2)
         XCTAssertEqual(model.selectedProject?.id, Fixture.focus.id)
@@ -29,17 +29,29 @@ final class AppModelTests: XCTestCase {
         let (model, _) = makeModel()
         await model.bootstrap()
         await model.selectProject(Fixture.customer.id)
-        model.selectedDate = KshiftDate.date(from: Fixture.date) ?? .now
+        model.selectDate(KshiftDate.date(from: Fixture.date, calendar: model.projectCalendar) ?? .now)
 
         XCTAssertEqual(model.snapshot?.project.id, Fixture.customer.id)
         XCTAssertEqual(model.tasks.map(\.id), ["customer-1"])
         XCTAssertFalse(model.tasks.contains(where: { $0.projectID == Fixture.focus.id }))
     }
 
+    func testSelectProjectLoadsSnapshotWhenSelectionWasAlreadyUpdated() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        model.selectedProjectID = Fixture.customer.id
+
+        await model.selectProject(Fixture.customer.id)
+
+        XCTAssertEqual(model.snapshot?.project.id, Fixture.customer.id)
+        XCTAssertEqual(model.tasks.map(\.id), ["customer-1"])
+        XCTAssertEqual(model.selectedProjectID, Fixture.customer.id)
+    }
+
     func testSearchAndFiltersReduceDailyTasks() async {
         let (model, _) = makeModel()
         await model.bootstrap()
-        model.selectedDate = KshiftDate.date(from: Fixture.date) ?? .now
+        model.selectDate(KshiftDate.date(from: Fixture.date, calendar: model.projectCalendar) ?? .now)
 
         model.searchText = "voice"
         XCTAssertEqual(model.selectedDateTasks.map(\.id), ["task-2"])
@@ -57,7 +69,7 @@ final class AppModelTests: XCTestCase {
             projectID: Fixture.focus.id,
             title: "New task",
             assigneeIDs: ["person-mia"],
-            dueDate: KshiftDate.date(from: Fixture.date) ?? .now
+            dueDate: KshiftDate.date(from: Fixture.date, calendar: model.projectCalendar) ?? .now
         )
 
         let saved = await model.saveTask(draft)
@@ -99,7 +111,7 @@ final class AppModelTests: XCTestCase {
                 expectedVersion: 1,
                 title: "Locally edited",
                 assigneeIDs: ["person-mia"],
-                dueDate: KshiftDate.date(from: Fixture.date) ?? .now
+                dueDate: KshiftDate.date(from: Fixture.date, calendar: model.projectCalendar) ?? .now
             )
         )
 
@@ -128,11 +140,146 @@ final class AppModelTests: XCTestCase {
         )
         let model = AppModel(client: client, platform: KshiftNoopPlatformCapabilities(platform: .macOS))
         await model.bootstrap()
-        model.selectedDate = KshiftDate.date(from: Fixture.date) ?? .now
+        model.selectDate(KshiftDate.date(from: Fixture.date, calendar: model.projectCalendar) ?? .now)
 
         model.filter.assigneeIDs = ["person-noah"]
         XCTAssertTrue(model.filteredTasks.contains(where: { $0.id == sharedTask.id }))
         XCTAssertTrue(model.columns.first(where: { $0.id == "person-mia" })?.tasks.contains(where: { $0.id == sharedTask.id }) == true)
         XCTAssertTrue(model.columns.first(where: { $0.id == "person-noah" })?.tasks.contains(where: { $0.id == sharedTask.id }) == true)
+    }
+
+    func testProjectTimeZoneControlsTodayDateSelectionAndDailyCounts() async throws {
+        let now = try XCTUnwrap(
+            ISO8601DateFormatter().date(from: "2026-11-14T10:30:00Z")
+        )
+        let project = ProjectSummary(
+            id: "project-kiritimati",
+            name: "Kiritimati",
+            code: "KIRI",
+            colorHex: "#0A84FF",
+            timeZone: "Pacific/Kiritimati",
+            memberIDs: ["person-mia"],
+            revision: 1
+        )
+        let person = Person(
+            id: "person-mia",
+            name: "Mia Chen",
+            initials: "MC",
+            colorHex: "#0A84FF"
+        )
+        let snapshot = ProjectSnapshot(
+            project: project,
+            people: [person],
+            tasks: [
+                Fixture.task(
+                    id: "kiritimati-task",
+                    projectID: project.id,
+                    title: "Project date task",
+                    dateValue: "2026-11-15"
+                ),
+            ],
+            audit: []
+        )
+        let client = FakeKshiftClient(
+            projects: [project],
+            snapshots: [project.id: snapshot]
+        )
+        let model = AppModel(
+            client: client,
+            platform: KshiftNoopPlatformCapabilities(platform: .macOS),
+            userTimeZone: TimeZone(identifier: "America/Los_Angeles"),
+            now: { now }
+        )
+
+        await model.bootstrap()
+
+        XCTAssertEqual(model.selectedDateString, "2026-11-15")
+        XCTAssertEqual(model.selectedDateTasks.map(\.id), ["kiritimati-task"])
+        XCTAssertEqual(model.taskCount(on: model.selectedDate), 1)
+        XCTAssertTrue(model.isProjectToday(model.selectedDate))
+
+        model.addDaysToSelection(1)
+        XCTAssertEqual(model.selectedDateString, "2026-11-16")
+        model.selectToday()
+        XCTAssertEqual(model.selectedDateString, "2026-11-15")
+    }
+
+    func testProjectSwitchUsesEachProjectTimeZoneForToday() async throws {
+        let now = try XCTUnwrap(
+            ISO8601DateFormatter().date(from: "2026-11-14T10:30:00Z")
+        )
+        let alpha = ProjectSummary(
+            id: "project-alpha",
+            name: "Alpha",
+            code: "ALPHA",
+            colorHex: "#0A84FF",
+            timeZone: "Pacific/Kiritimati",
+            memberIDs: ["person-mia"],
+            revision: 1
+        )
+        let beta = ProjectSummary(
+            id: "project-beta",
+            name: "Beta",
+            code: "BETA",
+            colorHex: "#FF9F0A",
+            timeZone: "America/Los_Angeles",
+            memberIDs: ["person-mia"],
+            revision: 1
+        )
+        let person = Person(
+            id: "person-mia",
+            name: "Mia Chen",
+            initials: "MC",
+            colorHex: "#0A84FF"
+        )
+        let snapshots = [
+            alpha.id: ProjectSnapshot(project: alpha, people: [person], tasks: [], audit: []),
+            beta.id: ProjectSnapshot(project: beta, people: [person], tasks: [], audit: []),
+        ]
+        let model = AppModel(
+            client: FakeKshiftClient(projects: [alpha, beta], snapshots: snapshots),
+            platform: KshiftNoopPlatformCapabilities(platform: .macOS),
+            userTimeZone: TimeZone(identifier: "Asia/Shanghai"),
+            now: { now }
+        )
+
+        await model.bootstrap()
+        XCTAssertEqual(model.selectedDateString, "2026-11-15")
+
+        await model.selectProject(beta.id)
+        XCTAssertEqual(model.selectedDateString, "2026-11-14")
+
+        await model.selectProject(alpha.id)
+        XCTAssertEqual(model.selectedDateString, "2026-11-15")
+    }
+
+    func testInvalidUserTimeZoneFallsBackToProjectTimeZone() async throws {
+        let project = ProjectSummary(
+            id: "project-fallback",
+            name: "Fallback",
+            code: "FALLBACK",
+            colorHex: "#0A84FF",
+            timeZone: "Pacific/Kiritimati",
+            memberIDs: ["person-mia"],
+            revision: 1
+        )
+        let person = Person(
+            id: "person-mia",
+            name: "Mia Chen",
+            initials: "MC",
+            colorHex: "#0A84FF"
+        )
+        let snapshot = ProjectSnapshot(project: project, people: [person], tasks: [], audit: [])
+        let model = AppModel(
+            client: FakeKshiftClient(projects: [project], snapshots: [project.id: snapshot]),
+            platform: KshiftNoopPlatformCapabilities(platform: .macOS),
+            userTimeZone: nil,
+            fallbackUserTimeZoneToProject: true
+        )
+
+        await model.bootstrap()
+
+        XCTAssertEqual(model.userTimeZone, model.projectTimeZone)
+        XCTAssertEqual(model.userTimeZone.identifier, "Pacific/Kiritimati")
     }
 }
