@@ -22,6 +22,27 @@ final class KshiftPlanDepthPresentationTests: XCTestCase {
         XCTAssertGreaterThan(presentation.hiddenTaskCount, 0)
     }
 
+    func testBoardColumnTotalsIncludeHiddenTasks() {
+        let snapshot = KshiftPlanSampleData.makeSnapshot()
+        let presentation = mapper.makePresentation(
+            snapshot: snapshot,
+            filter: KshiftPlanDepthFilter(),
+            viewerRole: .admin
+        )
+        XCTAssertEqual(
+            presentation.columns.reduce(0) { $0 + $1.totalCount },
+            snapshot.tasks.count
+        )
+        XCTAssertEqual(
+            presentation.columns.first { $0.status == .done }?.totalCount,
+            snapshot.tasks.filter { $0.status == .done }.count
+        )
+        XCTAssertEqual(
+            presentation.columns.reduce(0) { $0 + $1.tasks.count },
+            KshiftPlanDepthPresentationMapper.maximumVisibleInteractiveCards
+        )
+    }
+
     func testGanttFractionsStayInsideWindowAndMarkCrossDayTasks() {
         let snapshot = KshiftPlanSampleData.makeSnapshot()
         let presentation = mapper.makePresentation(
