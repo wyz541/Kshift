@@ -129,6 +129,9 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
     }
 
+    func testAddTaskActionsDoNotOverlap() throws {
+        let app = launchPlanner()    }
+
     func testAccessibilityAudit() throws {
         let app = launchPlanner()
         let waivedDynamicTypeLabels = Set(["Launch Room", "Ship brief"])
@@ -181,6 +184,16 @@ final class KshiftIOSUITests: XCTestCase {
             element(in: app, identifier: "filter-button", labelContains: "筛选任务")
                 .waitForExistence(timeout: 8)
         )
+
+        let globalAddTask = element(
+            in: app,
+            identifier: "add-task",
+            labelContains: "添加任务"
+        )
+        let miaAddTask = app.buttons["为Mia Chen添加任务"].firstMatch
+        XCTAssertTrue(globalAddTask.waitForExistence(timeout: 8))
+        XCTAssertTrue(miaAddTask.waitForExistence(timeout: 8))
+        XCTAssertFalse(globalAddTask.frame.intersects(miaAddTask.frame))
     }
 
     func testBothProjectTimeZonesAndLiveUIWriteE2E() throws {
