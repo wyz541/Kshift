@@ -13,13 +13,24 @@ public enum KshiftRuntimeEnvironment {
         let userTimeZone = configuredTimeZone.flatMap(TimeZone.init(identifier:))
         let fallbackToProject = configuredTimeZone != nil && userTimeZone == nil
         let fixedNow = environment["KSHIFT_NOW"].flatMap(parseTimestamp)
+        let initialViewMode = environment["KSHIFT_INITIAL_VIEW_MODE"].flatMap(PlannerViewMode.init(rawValue:))
+        let preferencesStore: PlannerViewPreferencesStore
+        if environment["KSHIFT_RESET_PLANNER_VIEW_STATE"] == "1",
+           let defaults = UserDefaults(suiteName: "kshift.ui-test.\(UUID().uuidString)")
+        {
+            preferencesStore = PlannerViewPreferencesStore(defaults: defaults)
+        } else {
+            preferencesStore = PlannerViewPreferencesStore()
+        }
 
         return AppModel(
             client: client,
             platform: platform,
             userTimeZone: userTimeZone,
             fallbackUserTimeZoneToProject: fallbackToProject,
-            now: fixedNow.map { value in { value } } ?? Date.init
+            now: fixedNow.map { value in { value } } ?? Date.init,
+            initialViewMode: initialViewMode,
+            preferencesStore: preferencesStore
         )
     }
 

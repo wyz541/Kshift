@@ -82,21 +82,26 @@ enum Fixture {
         id: String,
         projectID: String,
         title: String,
+        notes: String = "",
         status: TaskStatus = .todo,
         priority: TaskPriority = .medium,
         assigneeIDs: [String] = ["person-mia"],
         dateValue: String = date,
-        position: Int64 = 1024
+        startValue: String? = nil,
+        position: Int64 = 1024,
+        tags: [String] = []
     ) -> TaskItem {
         TaskItem(
             id: id,
             projectID: projectID,
             title: title,
-            notes: "",
+            notes: notes,
             status: status,
             priority: priority,
             assigneeIDs: assigneeIDs,
             dueDate: dateValue,
+            startsOn: startValue,
+            tags: tags,
             position: position,
             version: 1,
             updatedAt: "2026-11-13T02:00:00Z",

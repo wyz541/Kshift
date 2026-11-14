@@ -51,6 +51,15 @@ struct FilterPopover: View {
                         }
                     }
 
+                    if !model.availableTags.isEmpty {
+                        filterSection("标签") {
+                            ForEach(model.availableTags, id: \.self) { tag in
+                                Toggle(tag, isOn: tagBinding(tag))
+                                    .toggleStyle(.switch)
+                            }
+                        }
+                    }
+
                     filterSection("排序") {
                         Picker("排序方式", selection: $model.sortOption) {
                             ForEach(TaskSortOption.allCases) { option in
@@ -123,6 +132,19 @@ struct FilterPopover: View {
                     model.filter.priorities.insert(priority)
                 } else {
                     model.filter.priorities.remove(priority)
+                }
+            }
+        )
+    }
+
+    private func tagBinding(_ tag: String) -> Binding<Bool> {
+        Binding(
+            get: { model.filter.tags.contains(tag) },
+            set: { enabled in
+                if enabled {
+                    model.filter.tags.insert(tag)
+                } else {
+                    model.filter.tags.remove(tag)
                 }
             }
         )

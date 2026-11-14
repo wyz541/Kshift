@@ -3,7 +3,8 @@ import KshiftPresentation
 import Combine
 import Foundation
 
-public enum PlannerViewMode: String, CaseIterable, Identifiable {
+public enum PlannerViewMode: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case peopleSchedule = "people_schedule"
     case board
     case calendar
     case table
@@ -12,6 +13,7 @@ public enum PlannerViewMode: String, CaseIterable, Identifiable {
 
     public var title: String {
         switch self {
+        case .peopleSchedule: "人员排期"
         case .board: "看板"
         case .calendar: "日历"
         case .table: "表格"
@@ -20,11 +22,47 @@ public enum PlannerViewMode: String, CaseIterable, Identifiable {
 
     public var symbol: String {
         switch self {
+        case .peopleSchedule: "person.3.sequence.fill"
         case .board: "rectangle.3.group"
         case .calendar: "calendar"
         case .table: "tablecells"
         }
     }
+}
+
+public enum SchedulePeriod: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case week
+    case month
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .week: "周"
+        case .month: "月"
+        }
+    }
+}
+
+public enum ScheduleDensity: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case compact
+    case standard
+    case comfortable
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .compact: "紧凑"
+        case .standard: "标准"
+        case .comfortable: "宽松"
+        }
+    }
+}
+
+public enum ScheduleResizeEdge: Sendable {
+    case start
+    case end
 }
 
 public enum TaskSortOption: String, CaseIterable, Identifiable {
@@ -49,17 +87,19 @@ public struct TaskFilter: Equatable {
     public var assigneeIDs: Set<String> = []
     public var statuses: Set<TaskStatus> = []
     public var priorities: Set<TaskPriority> = []
+    public var tags: Set<String> = []
 
     public init() {}
 
     public var isActive: Bool {
-        !assigneeIDs.isEmpty || !statuses.isEmpty || !priorities.isEmpty
+        !assigneeIDs.isEmpty || !statuses.isEmpty || !priorities.isEmpty || !tags.isEmpty
     }
 
     public mutating func reset() {
         assigneeIDs.removeAll()
         statuses.removeAll()
         priorities.removeAll()
+        tags.removeAll()
     }
 }
 
@@ -73,7 +113,9 @@ public struct TaskDraft: Identifiable {
     public var status: TaskStatus
     public var priority: TaskPriority
     public var assigneeIDs: [String]
+    public var startDate: Date?
     public var dueDate: Date
+    public var tags: [String]
     public var position: Int64
 
     public init(
@@ -85,7 +127,9 @@ public struct TaskDraft: Identifiable {
         status: TaskStatus = .todo,
         priority: TaskPriority = .medium,
         assigneeIDs: [String],
+        startDate: Date? = nil,
         dueDate: Date,
+        tags: [String] = [],
         position: Int64 = 1024
     ) {
         self.projectID = projectID
@@ -96,7 +140,9 @@ public struct TaskDraft: Identifiable {
         self.status = status
         self.priority = priority
         self.assigneeIDs = assigneeIDs
+        self.startDate = startDate
         self.dueDate = dueDate
+        self.tags = tags
         self.position = position
     }
 
@@ -123,11 +169,33 @@ public final class AppModel: ObservableObject {
     @Published public private(set) var projects: [ProjectSummary] = []
     @Published public private(set) var snapshot: ProjectSnapshot?
     @Published public var selectedProjectID: String?
-    @Published public var selectedDate = KshiftDate.startOfDay(.now)
-    @Published public var viewMode: PlannerViewMode = .board
+    @Published public var selectedDate = KshiftDate.startOfDay(.now) {
+        didSet { persistCurrentPreferences() }
+    }
+    @Published public var viewMode: PlannerViewMode = .peopleSchedule {
+        didSet { persistCurrentPreferences() }
+    }
     @Published public var searchText = ""
     @Published public var filter = TaskFilter()
     @Published public var sortOption: TaskSortOption = .manual
+    @Published public var schedulePeriod: SchedulePeriod = .week {
+        didSet { persistCurrentPreferences() }
+    }
+    @Published public var scheduleDensity: ScheduleDensity = .compact {
+        didSet { persistCurrentPreferences() }
+    }
+    @Published public var schedulePeopleColumnWidth: CGFloat = 196 {
+        didSet { persistCurrentPreferences() }
+    }
+    @Published public var scheduleDateColumnWidth: CGFloat = 96 {
+        didSet { persistCurrentPreferences() }
+    }
+    @Published public var scheduleScrollAnchorDayID: String? {
+        didSet { persistCurrentPreferences() }
+    }
+    @Published public var collapsedSchedulePersonIDs: Set<String> = [] {
+        didSet { persistCurrentPreferences() }
+    }
     @Published public var selectedTaskIDs: Set<String> = []
     @Published public var editorDraft: TaskDraft?
     @Published public var detailTaskID: String?
@@ -142,20 +210,28 @@ public final class AppModel: ObservableObject {
     private let userTimeZoneOverride: TimeZone?
     private let fallbackUserTimeZoneToProject: Bool
     private let nowProvider: () -> Date
+    private let preferencesStore: PlannerViewPreferencesStore
+    private let initialViewMode: PlannerViewMode?
     private var hasBootstrapped = false
+    private var isApplyingPreferences = false
 
     public init(
         client: any KshiftClientProtocol,
         platform: any KshiftPlatformCapabilities,
         userTimeZone: TimeZone? = nil,
         fallbackUserTimeZoneToProject: Bool = false,
-        now: @escaping () -> Date = Date.init
+        now: @escaping () -> Date = Date.init,
+        initialViewMode: PlannerViewMode? = nil,
+        preferencesStore: PlannerViewPreferencesStore = PlannerViewPreferencesStore()
     ) {
         self.client = client
         self.platform = platform
         self.userTimeZoneOverride = userTimeZone
         self.fallbackUserTimeZoneToProject = fallbackUserTimeZoneToProject
         self.nowProvider = now
+        self.initialViewMode = initialViewMode
+        self.preferencesStore = preferencesStore
+        self.viewMode = initialViewMode ?? .peopleSchedule
     }
 
     public var platformCapabilities: any KshiftPlatformCapabilities {
@@ -202,7 +278,7 @@ public final class AppModel: ObservableObject {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         let filtered = tasks.filter { task in
             if !query.isEmpty {
-                let haystack = "\(task.title) \(task.notes)"
+                let haystack = "\(task.title) \(task.notes) \(task.tags.joined(separator: " "))"
                 guard haystack.localizedCaseInsensitiveContains(query) else { return false }
             }
             if !filter.assigneeIDs.isEmpty {
@@ -217,6 +293,9 @@ public final class AppModel: ObservableObject {
             if !filter.priorities.isEmpty, !filter.priorities.contains(task.priority) {
                 return false
             }
+            if !filter.tags.isEmpty, filter.tags.isDisjoint(with: Set(task.tags)) {
+                return false
+            }
             return true
         }
         return sorted(filtered)
@@ -224,6 +303,63 @@ public final class AppModel: ObservableObject {
 
     public var selectedDateTasks: [TaskItem] {
         filteredTasks.filter { $0.dueDate == selectedDateString }
+    }
+
+    public var availableTags: [String] {
+        Set(tasks.flatMap(\.tags)).sorted {
+            $0.localizedStandardCompare($1) == .orderedAscending
+        }
+    }
+
+    public var scheduleRangeStart: Date {
+        switch schedulePeriod {
+        case .week:
+            let components = projectCalendar.dateComponents(
+                [.yearForWeekOfYear, .weekOfYear],
+                from: selectedDate
+            )
+            return projectCalendar.date(from: components) ?? selectedDate
+        case .month:
+            let components = projectCalendar.dateComponents([.year, .month], from: selectedDate)
+            return projectCalendar.date(from: components) ?? selectedDate
+        }
+    }
+
+    public var scheduleRangeEnd: Date {
+        switch schedulePeriod {
+        case .week:
+            return KshiftDate.addingDays(6, to: scheduleRangeStart, calendar: projectCalendar)
+        case .month:
+            let dayCount = projectCalendar.range(
+                of: .day,
+                in: .month,
+                for: scheduleRangeStart
+            )?.count ?? 30
+            return KshiftDate.addingDays(dayCount - 1, to: scheduleRangeStart, calendar: projectCalendar)
+        }
+    }
+
+    public var scheduleDays: [Date] {
+        let count = KshiftDate.daysBetween(
+            from: scheduleRangeStart,
+            through: scheduleRangeEnd,
+            calendar: projectCalendar
+        )
+        return (0..<max(count, 1)).compactMap {
+            projectCalendar.date(byAdding: .day, value: $0, to: scheduleRangeStart)
+        }
+    }
+
+    public var scheduleRangeTitle: String {
+        switch schedulePeriod {
+        case .week:
+            let end = scheduleDays.last ?? scheduleRangeEnd
+            return "\(formattedScheduleDate(scheduleRangeStart, includeYear: true)) – \(formattedScheduleDate(end))"
+        case .month:
+            return scheduleRangeStart.formatted(
+                Date.FormatStyle(timeZone: projectTimeZone).year().month(.wide)
+            )
+        }
     }
 
     public var columns: [PersonColumn] {
@@ -276,9 +412,7 @@ public final class AppModel: ObservableObject {
             }
             if let selectedProjectID {
                 snapshot = try await client.snapshot(projectID: selectedProjectID)
-                if !hasLoaded {
-                    alignSelectedDateToProject()
-                }
+                applyPreferences(for: selectedProjectID)
                 hasLoaded = true
             }
         } catch {
@@ -288,6 +422,7 @@ public final class AppModel: ObservableObject {
 
     public func selectProject(_ projectID: String) async {
         guard projectID != snapshot?.project.id || snapshot == nil else { return }
+        persistCurrentPreferences()
         isLoading = true
         defer { isLoading = false }
         do {
@@ -295,7 +430,7 @@ public final class AppModel: ObservableObject {
             selectedProjectID = projectID
             snapshot = loadedSnapshot
             replaceProjectSummary(loadedSnapshot.project)
-            alignSelectedDateToProject()
+            applyPreferences(for: projectID)
             selectedTaskIDs.removeAll()
             selectedTasksChanged()
             conflict = nil
@@ -337,6 +472,7 @@ public final class AppModel: ObservableObject {
         editorDraft = TaskDraft(
             projectID: projectID,
             assigneeIDs: assigneeIDs,
+            startDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
             dueDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
             position: position
         )
@@ -344,14 +480,81 @@ public final class AppModel: ObservableObject {
 
     public func selectDate(_ date: Date) {
         selectedDate = KshiftDate.startOfDay(date, calendar: projectCalendar)
+        scheduleScrollAnchorDayID = selectedDateString
     }
 
     public func selectToday() {
         selectedDate = projectToday
+        scheduleScrollAnchorDayID = selectedDateString
     }
 
     public func addDaysToSelection(_ days: Int) {
-        selectedDate = KshiftDate.addingDays(days, to: selectedDate, calendar: projectCalendar)
+        selectDate(KshiftDate.addingDays(days, to: selectedDate, calendar: projectCalendar))
+    }
+
+    public func setSchedulePeriod(_ period: SchedulePeriod) {
+        guard schedulePeriod != period else { return }
+        schedulePeriod = period
+        scheduleScrollAnchorDayID = KshiftDate.isoString(
+            from: scheduleRangeStart,
+            calendar: projectCalendar
+        )
+    }
+
+    public func moveSchedulePeriod(_ amount: Int) {
+        let component: Calendar.Component = schedulePeriod == .week ? .weekOfYear : .month
+        let nextDate = projectCalendar.date(
+            byAdding: component,
+            value: amount,
+            to: selectedDate
+        ) ?? selectedDate
+        selectedDate = KshiftDate.startOfDay(nextDate, calendar: projectCalendar)
+        scheduleScrollAnchorDayID = KshiftDate.isoString(
+            from: scheduleRangeStart,
+            calendar: projectCalendar
+        )
+    }
+
+    public func selectScheduleToday() {
+        selectToday()
+    }
+
+    public func setScheduleScrollAnchor(_ date: Date) {
+        let value = KshiftDate.isoString(from: date, calendar: projectCalendar)
+        guard scheduleScrollAnchorDayID != value else { return }
+        scheduleScrollAnchorDayID = value
+    }
+
+    public func setScheduleDateColumnWidth(_ width: CGFloat) {
+        scheduleDateColumnWidth = min(max(width, 96), 360)
+    }
+
+    public func setSchedulePeopleColumnWidth(_ width: CGFloat) {
+        schedulePeopleColumnWidth = min(max(width, 168), 320)
+    }
+
+    public func toggleSchedulePersonCollapsed(_ personID: String) {
+        if collapsedSchedulePersonIDs.contains(personID) {
+            collapsedSchedulePersonIDs.remove(personID)
+        } else {
+            collapsedSchedulePersonIDs.insert(personID)
+        }
+    }
+
+    public func focusSchedule(on task: TaskItem) {
+        let start = KshiftDate.date(
+            from: task.scheduleStartDate,
+            calendar: projectCalendar
+        ) ?? selectedDate
+        let end = KshiftDate.date(
+            from: task.scheduleEndDate,
+            calendar: projectCalendar
+        ) ?? start
+        if end < scheduleRangeStart || start > scheduleRangeEnd {
+            selectDate(start)
+        } else {
+            setScheduleScrollAnchor(start)
+        }
     }
 
     public func isProjectToday(_ date: Date) -> Bool {
@@ -374,6 +577,9 @@ public final class AppModel: ObservableObject {
     @discardableResult
     public func saveTask(_ draft: TaskDraft) async -> Bool {
         let dueDate = KshiftDate.isoString(from: draft.dueDate, calendar: projectCalendar)
+        let startDate = draft.startDate.map {
+            KshiftDate.isoString(from: $0, calendar: projectCalendar)
+        }
         let command: TaskCommand
         if let taskID = draft.taskID {
             command = .update(
@@ -386,7 +592,9 @@ public final class AppModel: ObservableObject {
                     priority: draft.priority,
                     assigneeIDs: draft.assigneeIDs,
                     dueDate: dueDate,
-                    position: draft.position
+                    position: draft.position,
+                    startDate: startDate,
+                    tags: draft.tags
                 )
             )
         } else {
@@ -398,7 +606,9 @@ public final class AppModel: ObservableObject {
                     priority: draft.priority,
                     assigneeIDs: draft.assigneeIDs,
                     dueDate: dueDate,
-                    position: draft.position
+                    position: draft.position,
+                    startDate: startDate,
+                    tags: draft.tags
                 )
             )
         }
@@ -433,14 +643,69 @@ public final class AppModel: ObservableObject {
         position: Int64
     ) async {
         guard let task = task(withID: taskID) else { return }
+        let (start, end) = taskDateRange(task)
+        let duration = KshiftDate.daysBetween(
+            from: start,
+            through: end,
+            calendar: projectCalendar
+        )
+        let nextStart = KshiftDate.startOfDay(date, calendar: projectCalendar)
+        let nextEnd = KshiftDate.addingDays(max(duration - 1, 0), to: nextStart, calendar: projectCalendar)
         _ = await send(
             .move(
                 MoveTaskCommand(
                     taskID: taskID,
                     expectedTaskVersion: task.version,
                     assigneeIDs: assigneeIDs,
-                    dueDate: KshiftDate.isoString(from: date, calendar: projectCalendar),
-                    position: position
+                    dueDate: KshiftDate.isoString(from: nextEnd, calendar: projectCalendar),
+                    position: position,
+                    startDate: KshiftDate.isoString(from: nextStart, calendar: projectCalendar)
+                )
+            )
+        )
+    }
+
+    public func moveScheduleTask(
+        taskID: String,
+        toAssigneeID assigneeID: String?,
+        date: Date
+    ) async {
+        guard let task = task(withID: taskID) else { return }
+        await moveTask(
+            taskID: taskID,
+            assigneeIDs: assigneeID.map { [$0] } ?? [],
+            date: date,
+            position: task.position
+        )
+    }
+
+    public func resizeScheduleTask(
+        taskID: String,
+        edge: ScheduleResizeEdge,
+        date: Date
+    ) async {
+        guard let task = task(withID: taskID) else { return }
+        let (currentStart, currentEnd) = taskDateRange(task)
+        let requestedDate = KshiftDate.startOfDay(date, calendar: projectCalendar)
+        let nextStart: Date
+        let nextEnd: Date
+        switch edge {
+        case .start:
+            nextStart = min(requestedDate, currentEnd)
+            nextEnd = currentEnd
+        case .end:
+            nextStart = currentStart
+            nextEnd = max(requestedDate, currentStart)
+        }
+        _ = await send(
+            .move(
+                MoveTaskCommand(
+                    taskID: taskID,
+                    expectedTaskVersion: task.version,
+                    assigneeIDs: task.assigneeIDs,
+                    dueDate: KshiftDate.isoString(from: nextEnd, calendar: projectCalendar),
+                    position: task.position,
+                    startDate: KshiftDate.isoString(from: nextStart, calendar: projectCalendar)
                 )
             )
         )
@@ -568,7 +833,9 @@ public final class AppModel: ObservableObject {
             status: task.status,
             priority: task.priority,
             assigneeIDs: task.assigneeIDs,
+            startDate: KshiftDate.date(from: task.scheduleStartDate, calendar: projectCalendar),
             dueDate: KshiftDate.date(from: task.dueDate, calendar: projectCalendar) ?? selectedDate,
+            tags: task.tags,
             position: task.position
         )
     }
@@ -588,8 +855,73 @@ public final class AppModel: ObservableObject {
         KshiftTime.formatTimestamp(value, timeZone: userTimeZone)
     }
 
-    private func alignSelectedDateToProject() {
-        selectedDate = projectToday
+    private func taskDateRange(_ task: TaskItem) -> (Date, Date) {
+        let start = KshiftDate.date(
+            from: task.scheduleStartDate,
+            calendar: projectCalendar
+        ) ?? selectedDate
+        let end = KshiftDate.date(
+            from: task.scheduleEndDate,
+            calendar: projectCalendar
+        ) ?? start
+        return (min(start, end), max(start, end))
+    }
+
+    private func formattedScheduleDate(_ date: Date, includeYear: Bool = false) -> String {
+        var style = Date.FormatStyle(timeZone: projectTimeZone).month(.abbreviated).day()
+        if includeYear {
+            style = style.year()
+        }
+        return date.formatted(style)
+    }
+
+    private func applyPreferences(for projectID: String) {
+        isApplyingPreferences = true
+        defer { isApplyingPreferences = false }
+
+        let saved = preferencesStore.load(projectID: projectID)
+        let preferences = saved ?? PlannerViewPreferences(
+            viewMode: initialViewMode ?? .peopleSchedule,
+            selectedDate: KshiftDate.isoString(from: projectToday, calendar: projectCalendar),
+            schedulePeriod: .week,
+            scheduleDensity: .compact,
+            schedulePeopleColumnWidth: 196,
+            scheduleDateColumnWidth: 96,
+            scheduleScrollAnchorDayID: KshiftDate.isoString(
+                from: projectToday,
+                calendar: projectCalendar
+            )
+        )
+
+        viewMode = initialViewMode ?? preferences.viewMode
+        selectedDate = KshiftDate.date(
+            from: preferences.selectedDate ?? "",
+            calendar: projectCalendar
+        ) ?? projectToday
+        schedulePeriod = preferences.schedulePeriod
+        scheduleDensity = preferences.scheduleDensity
+        schedulePeopleColumnWidth = min(max(preferences.schedulePeopleColumnWidth, 168), 320)
+        scheduleDateColumnWidth = min(max(preferences.scheduleDateColumnWidth, 96), 360)
+        scheduleScrollAnchorDayID = preferences.scheduleScrollAnchorDayID
+            ?? KshiftDate.isoString(from: selectedDate, calendar: projectCalendar)
+        collapsedSchedulePersonIDs = preferences.collapsedSchedulePersonIDs
+    }
+
+    private func persistCurrentPreferences() {
+        guard !isApplyingPreferences, let projectID = snapshot?.project.id else { return }
+        preferencesStore.save(
+            PlannerViewPreferences(
+                viewMode: viewMode,
+                selectedDate: KshiftDate.isoString(from: selectedDate, calendar: projectCalendar),
+                schedulePeriod: schedulePeriod,
+                scheduleDensity: scheduleDensity,
+                schedulePeopleColumnWidth: schedulePeopleColumnWidth,
+                scheduleDateColumnWidth: scheduleDateColumnWidth,
+                scheduleScrollAnchorDayID: scheduleScrollAnchorDayID,
+                collapsedSchedulePersonIDs: collapsedSchedulePersonIDs
+            ),
+            projectID: projectID
+        )
     }
 
     private func sorted(_ tasks: [TaskItem]) -> [TaskItem] {

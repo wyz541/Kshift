@@ -38,17 +38,41 @@ public struct ProjectSummary: Codable, Identifiable, Hashable, Sendable {
     }
 }
 
+public enum ProjectRole: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+    case viewer
+    case editor
+    case admin
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .viewer: "只读"
+        case .editor: "编辑者"
+        case .admin: "管理员"
+        }
+    }
+}
+
 public struct Person: Codable, Identifiable, Hashable, Sendable {
     public let id: String
     public let name: String
     public let initials: String
     public let colorHex: String
+    public let role: ProjectRole
 
-    public init(id: String, name: String, initials: String, colorHex: String) {
+    public init(
+        id: String,
+        name: String,
+        initials: String,
+        colorHex: String,
+        role: ProjectRole = .editor
+    ) {
         self.id = id
         self.name = name
         self.initials = initials
         self.colorHex = colorHex
+        self.role = role
     }
 
     enum CodingKeys: String, CodingKey {
@@ -56,6 +80,16 @@ public struct Person: Codable, Identifiable, Hashable, Sendable {
         case name
         case initials
         case colorHex = "color_hex"
+        case role
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        initials = try container.decode(String.self, forKey: .initials)
+        colorHex = try container.decode(String.self, forKey: .colorHex)
+        role = try container.decodeIfPresent(ProjectRole.self, forKey: .role) ?? .editor
     }
 }
 
@@ -109,6 +143,15 @@ public enum TaskPriority: String, Codable, CaseIterable, Identifiable, Hashable,
         case .high: 1
         case .medium: 2
         case .low: 3
+        }
+    }
+
+    public var code: String {
+        switch self {
+        case .urgent: "P0"
+        case .high: "P1"
+        case .medium: "P2"
+        case .low: "P3"
         }
     }
 }
@@ -194,6 +237,8 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
     public let priority: TaskPriority
     public let assigneeIDs: [String]
     public let dueDate: String
+    public let startsOn: String?
+    public let tags: [String]
     public let position: Int64
     public let version: UInt64
     public let updatedAt: String
@@ -209,6 +254,8 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
         priority: TaskPriority,
         assigneeIDs: [String],
         dueDate: String,
+        startsOn: String? = nil,
+        tags: [String] = [],
         position: Int64,
         version: UInt64,
         updatedAt: String,
@@ -223,6 +270,8 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
         self.priority = priority
         self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
+        self.startsOn = startsOn
+        self.tags = tags
         self.position = position
         self.version = version
         self.updatedAt = updatedAt
@@ -239,11 +288,38 @@ public struct TaskItem: Codable, Identifiable, Hashable, Sendable {
         case priority
         case assigneeIDs = "assignee_ids"
         case dueDate = "due_date"
+        case startsOn = "starts_on"
+        case tags
         case position
         case version
         case updatedAt = "updated_at"
         case updatedBy = "updated_by"
         case history
+    }
+
+    public var descriptionMarkdown: String { notes }
+
+    public var scheduleStartDate: String { startsOn ?? dueDate }
+
+    public var scheduleEndDate: String { dueDate }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        projectID = try container.decode(String.self, forKey: .projectID)
+        title = try container.decode(String.self, forKey: .title)
+        notes = try container.decode(String.self, forKey: .notes)
+        status = try container.decode(TaskStatus.self, forKey: .status)
+        priority = try container.decode(TaskPriority.self, forKey: .priority)
+        assigneeIDs = try container.decode([String].self, forKey: .assigneeIDs)
+        dueDate = try container.decode(String.self, forKey: .dueDate)
+        startsOn = try container.decodeIfPresent(String.self, forKey: .startsOn)
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        position = try container.decode(Int64.self, forKey: .position)
+        version = try container.decode(UInt64.self, forKey: .version)
+        updatedAt = try container.decode(String.self, forKey: .updatedAt)
+        updatedBy = try container.decode(String.self, forKey: .updatedBy)
+        history = try container.decode([TaskHistoryEntry].self, forKey: .history)
     }
 }
 
@@ -289,6 +365,8 @@ public struct CreateTaskCommand: Sendable {
     public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64?
+    public let startDate: String?
+    public let tags: [String]
 
     public init(
         title: String,
@@ -297,7 +375,9 @@ public struct CreateTaskCommand: Sendable {
         priority: TaskPriority,
         assigneeIDs: [String],
         dueDate: String,
-        position: Int64? = nil
+        position: Int64? = nil,
+        startDate: String? = nil,
+        tags: [String] = []
     ) {
         self.title = title
         self.notes = notes
@@ -306,6 +386,8 @@ public struct CreateTaskCommand: Sendable {
         self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
+        self.startDate = startDate
+        self.tags = tags
     }
 }
 
@@ -319,6 +401,8 @@ public struct UpdateTaskCommand: Sendable {
     public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64
+    public let startDate: String?
+    public let tags: [String]?
 
     public init(
         taskID: String,
@@ -329,7 +413,9 @@ public struct UpdateTaskCommand: Sendable {
         priority: TaskPriority,
         assigneeIDs: [String],
         dueDate: String,
-        position: Int64
+        position: Int64,
+        startDate: String? = nil,
+        tags: [String]? = nil
     ) {
         self.taskID = taskID
         self.expectedTaskVersion = expectedTaskVersion
@@ -340,6 +426,8 @@ public struct UpdateTaskCommand: Sendable {
         self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
+        self.startDate = startDate
+        self.tags = tags
     }
 }
 
@@ -349,19 +437,22 @@ public struct MoveTaskCommand: Sendable {
     public let assigneeIDs: [String]
     public let dueDate: String
     public let position: Int64
+    public let startDate: String?
 
     public init(
         taskID: String,
         expectedTaskVersion: UInt64,
         assigneeIDs: [String],
         dueDate: String,
-        position: Int64
+        position: Int64,
+        startDate: String? = nil
     ) {
         self.taskID = taskID
         self.expectedTaskVersion = expectedTaskVersion
         self.assigneeIDs = assigneeIDs
         self.dueDate = dueDate
         self.position = position
+        self.startDate = startDate
     }
 }
 
@@ -428,6 +519,8 @@ extension TaskCommand: Encodable {
         case priority
         case assigneeIDs = "assignee_ids"
         case dueDate = "due_date"
+        case startDate = "start_date"
+        case tags
         case position
         case items
     }
@@ -443,6 +536,8 @@ extension TaskCommand: Encodable {
             try container.encode(command.priority, forKey: .priority)
             try container.encode(command.assigneeIDs, forKey: .assigneeIDs)
             try container.encode(command.dueDate, forKey: .dueDate)
+            try container.encodeIfPresent(command.startDate, forKey: .startDate)
+            try container.encode(command.tags, forKey: .tags)
             try container.encodeIfPresent(command.position, forKey: .position)
         case let .update(command):
             try container.encode("update_task", forKey: .kind)
@@ -454,6 +549,8 @@ extension TaskCommand: Encodable {
             try container.encode(command.priority, forKey: .priority)
             try container.encode(command.assigneeIDs, forKey: .assigneeIDs)
             try container.encode(command.dueDate, forKey: .dueDate)
+            try container.encodeIfPresent(command.startDate, forKey: .startDate)
+            try container.encodeIfPresent(command.tags, forKey: .tags)
             try container.encode(command.position, forKey: .position)
         case let .delete(taskID, expectedTaskVersion):
             try container.encode("delete_task", forKey: .kind)
@@ -465,6 +562,7 @@ extension TaskCommand: Encodable {
             try container.encode(command.expectedTaskVersion, forKey: .expectedTaskVersion)
             try container.encode(command.assigneeIDs, forKey: .assigneeIDs)
             try container.encode(command.dueDate, forKey: .dueDate)
+            try container.encodeIfPresent(command.startDate, forKey: .startDate)
             try container.encode(command.position, forKey: .position)
         case let .setStatus(command):
             try container.encode("set_tasks_status", forKey: .kind)
@@ -576,6 +674,18 @@ public enum KshiftDate {
 
     public static func addingDays(_ days: Int, to date: Date, calendar: Calendar = .current) -> Date {
         calendar.date(byAdding: .day, value: days, to: date) ?? date
+    }
+
+    public static func daysBetween(
+        from start: Date,
+        through end: Date,
+        calendar: Calendar = .current
+    ) -> Int {
+        let normalizedStart = startOfDay(start, calendar: calendar)
+        let normalizedEnd = startOfDay(end, calendar: calendar)
+        guard normalizedEnd >= normalizedStart else { return 0 }
+        let days = calendar.dateComponents([.day], from: normalizedStart, to: normalizedEnd).day ?? 0
+        return days + 1
     }
 
     public static func startOfDay(_ date: Date, calendar: Calendar = .current) -> Date {

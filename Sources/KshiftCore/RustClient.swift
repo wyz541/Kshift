@@ -257,9 +257,10 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
                     status: value.status.rawValue,
                     priority: value.priority.rawValue,
                     assigneeIDs: value.assigneeIDs,
-                    plannedOn: value.dueDate,
+                    plannedOn: value.startDate ?? value.dueDate,
+                    startsOn: value.startDate,
                     dueOn: value.dueDate,
-                    tags: [],
+                    tags: value.tags,
                     dependencyTaskIDs: []
                 )
             )
@@ -273,9 +274,10 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
                     status: value.status.rawValue,
                     priority: value.priority.rawValue,
                     assigneeIDs: value.assigneeIDs,
-                    plannedOn: value.dueDate,
+                    plannedOn: value.startDate ?? value.dueDate,
+                    startsOn: value.startDate,
                     dueOn: value.dueDate,
-                    tags: nil,
+                    tags: value.tags,
                     dependencyTaskIDs: nil
                 )
             )
@@ -292,7 +294,8 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
                     taskID: value.taskID,
                     expectedEntityVersion: value.expectedTaskVersion,
                     assigneeIDs: value.assigneeIDs,
-                    plannedOn: value.dueDate,
+                    plannedOn: value.startDate ?? value.dueDate,
+                    startsOn: value.startDate,
                     dueOn: value.dueDate
                 )
             )
@@ -371,7 +374,8 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
                 id: member.userID,
                 name: member.displayName,
                 initials: initials(from: member.displayName),
-                colorHex: projectColor(from: member.userID)
+                colorHex: projectColor(from: member.userID),
+                role: mapRole(member.role ?? "editor")
             )
         }
         let project = ProjectSummary(
@@ -407,6 +411,8 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
                 priority: mapPriority(task.priority),
                 assigneeIDs: task.assigneeIDs,
                 dueDate: task.dueOn ?? task.plannedOn,
+                startsOn: task.startsOn,
+                tags: task.tags ?? [],
                 position: Int64(index) * 1_024,
                 version: task.version,
                 updatedAt: task.updatedAt,
@@ -452,6 +458,10 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
         default:
             .medium
         }
+    }
+
+    private static func mapRole(_ value: String) -> ProjectRole {
+        ProjectRole(rawValue: value.lowercased()) ?? .editor
     }
 
     private static func projectCode(from name: String) -> String {
@@ -533,10 +543,12 @@ private struct OfficialProject: Decodable {
 private struct OfficialProjectMember: Decodable {
     let userID: String
     let displayName: String
+    let role: String?
 
     enum CodingKeys: String, CodingKey {
         case userID = "user_id"
         case displayName = "display_name"
+        case role
     }
 }
 
@@ -549,7 +561,9 @@ private struct OfficialTask: Decodable {
     let priority: String
     let assigneeIDs: [String]
     let plannedOn: String
+    let startsOn: String?
     let dueOn: String?
+    let tags: [String]?
     let version: UInt64
     let updatedBy: String
     let updatedAt: String
@@ -563,7 +577,9 @@ private struct OfficialTask: Decodable {
         case priority
         case assigneeIDs = "assignee_ids"
         case plannedOn = "planned_on"
+        case startsOn = "starts_on"
         case dueOn = "due_on"
+        case tags
         case version
         case updatedBy = "updated_by"
         case updatedAt = "updated_at"
@@ -645,6 +661,7 @@ private struct FFICreateTask: Encodable {
     let priority: String
     let assigneeIDs: [String]
     let plannedOn: String
+    let startsOn: String?
     let dueOn: String?
     let tags: [String]
     let dependencyTaskIDs: [String]
@@ -656,6 +673,7 @@ private struct FFICreateTask: Encodable {
         case priority
         case assigneeIDs = "assignee_ids"
         case plannedOn = "planned_on"
+        case startsOn = "starts_on"
         case dueOn = "due_on"
         case tags
         case dependencyTaskIDs = "dependency_task_ids"
@@ -671,6 +689,7 @@ private struct FFIUpdateTask: Encodable {
     let priority: String?
     let assigneeIDs: [String]?
     let plannedOn: String?
+    let startsOn: String?
     let dueOn: String?
     let tags: [String]?
     let dependencyTaskIDs: [String]?
@@ -684,6 +703,7 @@ private struct FFIUpdateTask: Encodable {
         priority: String? = nil,
         assigneeIDs: [String]? = nil,
         plannedOn: String? = nil,
+        startsOn: String? = nil,
         dueOn: String? = nil,
         tags: [String]? = nil,
         dependencyTaskIDs: [String]? = nil
@@ -696,6 +716,7 @@ private struct FFIUpdateTask: Encodable {
         self.priority = priority
         self.assigneeIDs = assigneeIDs
         self.plannedOn = plannedOn
+        self.startsOn = startsOn
         self.dueOn = dueOn
         self.tags = tags
         self.dependencyTaskIDs = dependencyTaskIDs
@@ -710,6 +731,7 @@ private struct FFIUpdateTask: Encodable {
         case priority
         case assigneeIDs = "assignee_ids"
         case plannedOn = "planned_on"
+        case startsOn = "starts_on"
         case dueOn = "due_on"
         case tags
         case dependencyTaskIDs = "dependency_task_ids"
@@ -725,6 +747,7 @@ private struct FFIUpdateTask: Encodable {
         try container.encodeIfPresent(priority, forKey: .priority)
         try container.encodeIfPresent(assigneeIDs, forKey: .assigneeIDs)
         try container.encodeIfPresent(plannedOn, forKey: .plannedOn)
+        try container.encodeIfPresent(startsOn, forKey: .startsOn)
         try container.encodeIfPresent(dueOn, forKey: .dueOn)
         try container.encodeIfPresent(tags, forKey: .tags)
         try container.encodeIfPresent(dependencyTaskIDs, forKey: .dependencyTaskIDs)

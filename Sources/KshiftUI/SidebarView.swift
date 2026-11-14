@@ -46,9 +46,9 @@ struct SidebarView: View {
                         PersonAvatar(person: person, size: 28)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(person.name)
-                            Text(person.id == model.client.actorID ? "当前编辑者" : "项目成员")
+                            Text(person.id == model.client.actorID ? "当前用户 · \(person.role.title)" : person.role.title)
                                 .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(.primary)
                         }
                     }
                     .accessibilityElement(children: .combine)
