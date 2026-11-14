@@ -1,0 +1,92 @@
+name: Feature
+description: 定义一组用户可观察能力或同一交付的父 Issue。
+title: "[Feature] "
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目标
+      description: 用一句话写出本 Feature 的交付结果。
+      placeholder: 交付一个用户可观察的能力。
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: 背景
+      description: 写出当前问题、触发原因和用户影响。
+      placeholder: 当前问题：...
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 范围
+      description: 列出本 Feature 包含的工作。不要复制完整 Spec。
+      placeholder: |-
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: 非目标
+      description: 列出本 Feature 明确不包含的工作。没有时写“无”。
+      placeholder: |-
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: 验收标准
+      description: 写出可观察、可测试、可证伪的完成条件。
+      placeholder: |-
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence-plan
+    attributes:
+      label: 证据计划
+      description: 写出预期命令、测试、截图、数据或人工检查。未运行项必须标明未运行。
+      placeholder: |-
+        - 命令：
+        - 证据位置：
+    validations:
+      required: true
+  - type: textarea
+    id: relationships
+    attributes:
+      label: 关系
+      description: 写出 Spec、Decision、Contract、父 Issue 和阻塞关系。不要重复维护子 Issue 清单。
+      placeholder: |-
+        - Spec：
+        - Decision：
+        - Contract：
+        - 父 Issue：
+        - 阻塞关系：
+    validations:
+      required: true
+  - type: textarea
+    id: risk-rollback
+    attributes:
+      label: 风险与回滚
+      description: 写出数据、权限、兼容和发布风险，并写出回滚步骤。
+      placeholder: |-
+        - 风险：
+        - 影响范围：
+        - 回滚：
+    validations:
+      required: true
+  - type: textarea
+    id: authoritative-entry
+    attributes:
+      label: 权威入口
+      description: 链接唯一规则来源。不要在本 Issue 复制完整规则。
+      placeholder: |-
+        - Discussion：
+        - Spec：
+        - ADR：
+    validations:
+      required: true
