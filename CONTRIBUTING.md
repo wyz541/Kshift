@@ -102,7 +102,20 @@ Research 必须写决策问题、来源 Discussion、Owner、Decision owner 和�
 - [ ] 已判断文档、FAQ 或 Release note 影响。
 - [ ] 没有提交秘密、令牌、私钥或数据库凭据。
 
-## 10. 检查
+## 10. 本地构建
+
+本地 Xcode 构建只写入 `build/DerivedData`。执行构建命令时，必须增加 `-derivedDataPath build/DerivedData`。
+
+- 运行 `make app-paths` 查看当前 Debug App 路径。
+- 运行 `make check-build-governance` 检查固定路径和稳定标识。
+- Debug App 显示名为 `Kshift Dev`。Release App 显示名为 `Kshift`。
+- 禁止把 Debug App 复制到 `/Applications` 或 `~/Applications`。
+- 只允许测试命令启动 Test Runner。
+
+完整规则和旧 DerivedData 清理清单格式见
+[本地构建路径治理](docs/local-build.md)。
+
+## 11. 检查
 
 运行以下命令。
 

@@ -6,13 +6,7 @@ cd "$root"
 
 simulator_name="${KSHIFT_SIMULATOR_NAME:-iPhone 18 Pro}"
 bundle_id="com.wyz541.kshift.ios"
-app_path="${KSHIFT_APP_PATH:-}"
-
-if [[ -z "$app_path" ]]; then
-  app_path="$(find "$HOME/Library/Developer/Xcode/DerivedData" \
-    -path "*/Build/Products/Debug-iphonesimulator/Kshift-iOS.app" \
-    -type d 2>/dev/null | head -1)"
-fi
+app_path="${KSHIFT_APP_PATH:-$root/build/DerivedData/Build/Products/Debug-iphonesimulator/Kshift-iOS.app}"
 if [[ -z "$app_path" || ! -d "$app_path" ]]; then
   echo "Kshift-iOS.app not found. Run make ios-build first." >&2
   exit 1

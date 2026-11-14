@@ -42,6 +42,11 @@ targets:
         ENABLE_HARDENED_RUNTIME: NO
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
+      configs:
+        Debug:
+          INFOPLIST_KEY_CFBundleDisplayName: Kshift Dev
+        Release:
+          INFOPLIST_KEY_CFBundleDisplayName: Kshift
   Kshift-iOS:
     type: application
     platform: iOS
@@ -71,6 +76,11 @@ targets:
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_IDENTITY: "-"
+      configs:
+        Debug:
+          INFOPLIST_KEY_CFBundleDisplayName: Kshift Dev
+        Release:
+          INFOPLIST_KEY_CFBundleDisplayName: Kshift
   Kshift-iOS-PlannerTests:
     type: bundle.unit-test
     platform: iOS
