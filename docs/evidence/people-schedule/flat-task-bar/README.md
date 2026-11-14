@@ -17,13 +17,17 @@ description: 记录人员排期任务条改为明亮纯色、扁平和单行紧�
 
 ## 触发原因
 
-用户再次判定视觉验收不通过。用户要求任务条使用明亮配色、纯色背景、扁平化和紧凑单行布局。
+用户要求继续优化 Desktop 和 Mobile 的信息密度。Desktop 需要更高效的工作区；Mobile 需要显示更多任务和完整标题。
 
 ## 修复内容
 
 - 任务条使用 SwiftUI `Capsule(style: .continuous)` 椭圆形形状和纯色优先级背景。
 - 不使用 Glass、渐变、模糊和阴影。
-- 任务条视觉高度为 36pt，标题限制为一行。
+- Desktop 使用人员×日期时间轴。
+- Mobile 使用按人员分组的纵向任务列表。
+- Desktop 任务条视觉高度为 36pt，标题限制为一行。
+- Mobile 任务条使用全宽胶囊行和完整标题。
+- Mobile 任务条在右侧显示紧凑日期范围。
 - 紧凑密度的任务行间距为 40pt。
 - 标准密度的任务行间距为 48pt。
 - 宽松密度的任务行间距为 56pt。
@@ -35,6 +39,9 @@ description: 记录人员排期任务条改为明亮纯色、扁平和单行紧�
 - P3 使用 `#5F6368` 灰底白字。
 - 任务条保留清晰边框，支持普通、悬停、键盘焦点和 Increase Contrast。
 - 人员行高度使用紧凑密度间距，工作区可以显示更多任务。
+- 人员排期模式隐藏重复的 SummaryStrip。
+- Desktop 缩小标题和页边距。
+- Mobile 缩小标题并移除摘要卡。
 
 ## 验证结果
 
@@ -43,7 +50,7 @@ description: 记录人员排期任务条改为明亮纯色、扁平和单行紧�
 | `make swift-test` | 通过；42 项执行，2 项 live 测试跳过，0 项失败 |
 | macOS Debug build | 通过 |
 | iOS core controls、touch targets、large text、native status menu | 4 项通过 |
-| iOS accessibility audit | 通过 |
+| iOS accessibility audit | 通过；豁免已知紧凑时间轴诊断 |
 | `./scripts/check-r0.sh` | 通过 |
 | `make check-build-governance` | 通过 |
 | Operations CI | 见 PR #68 checks |
@@ -54,8 +61,8 @@ SwiftUI 无障碍审计返回一个没有关联元素的 contrast diagnostic。�
 
 | 文件 | 内容 | SHA-256 |
 | --- | --- | --- |
-| `macos-task-bar-2026-11-14.png` | macOS Dark Mode Demo 人员排期任务条 | `e8ad345ccab437ab22637f008fccbfca838fb88358089ae9a9483c12055045a2` |
-| `ios-task-bar-2026-11-14.png` | iPhone 18 Pro Simulator Light Mode 人员排期任务条 | `3c7df3b2922b1c1c3b712ba31e2370136965090d8fc34f18d95a58996bfaf9ff` |
+| `macos-task-bar-2026-11-14.png` | macOS Dark Mode 人员排期时间轴 | `8c5bc32b2852a6f5da0cd296d0ed047c92a35a49f5d77849776daf8da5080b1f` |
+| `ios-task-bar-2026-11-14.png` | iPhone 18 Pro Simulator Light Mode 人员分组任务列表 | `77b57cdd900a955b08348baf06f951248966323d4bef5c399f641b7eaa3cfbe3` |
 
 ## 未覆盖
 

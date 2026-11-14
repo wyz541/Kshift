@@ -49,31 +49,45 @@ struct PeopleScheduleView: View {
             scheduleToolbar
             Divider().opacity(0.5)
 
-            GeometryReader { proxy in
-                ScrollView(.vertical) {
-                    HStack(alignment: .top, spacing: 0) {
-                        peopleColumn
-                            .frame(width: peopleWidth)
+            if horizontalSizeClass == .compact {
+                compactSchedule
+            } else {
+                GeometryReader { proxy in
+                    ScrollView(.vertical) {
+                        HStack(alignment: .top, spacing: 0) {
+                            peopleColumn
+                                .frame(width: peopleWidth)
 
-                        Divider()
-                            .overlay(.separator)
+                            Divider()
+                                .overlay(.separator)
 
-                        timelineColumn(width: max(proxy.size.width - peopleWidth - 1, 1))
+                            timelineColumn(width: max(proxy.size.width - peopleWidth - 1, 1))
+                        }
+                        .frame(minHeight: proxy.size.height, alignment: .topLeading)
                     }
-                    .frame(minHeight: proxy.size.height, alignment: .topLeading)
+                    .scrollIndicators(.visible)
                 }
-                .scrollIndicators(.visible)
-                .contentMargins(
-                    .bottom,
-                    horizontalSizeClass == .compact ? 88 : 0,
-                    for: .scrollContent
-                )
             }
         }
         .background(.background)
         .accessibilityIdentifier("people-schedule-view")
         .accessibilityLabel("人员排期，\(rows.count) 人，\(model.scheduleRangeTitle)")
         .accessibilityElement(children: .contain)
+    }
+
+    private var compactSchedule: some View {
+        ScrollView(.vertical) {
+            LazyVStack(alignment: .leading, spacing: 10) {
+                ForEach(rows) { row in
+                    CompactSchedulePersonSection(model: model, row: row)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .padding(.bottom, 88)
+        }
+        .scrollIndicators(.visible)
+        .accessibilityLabel("人员排期，\(rows.count) 人，\(model.scheduleRangeTitle)")
     }
 
     private var scheduleToolbar: some View {
@@ -359,6 +373,280 @@ private struct PeopleScheduleRow: Identifiable {
     var urgentCount: Int {
         tasks.filter { $0.priority == .urgent }.count
     }
+}
+
+private struct CompactSchedulePersonSection: View {
+    @ObservedObject var model: AppModel
+    let row: PeopleScheduleRow
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var strongTextColor: Color {
+        colorScheme == .dark ? .white : .black
+    }
+
+    private var collapsed: Bool {
+        model.collapsedSchedulePersonIDs.contains(row.id)
+    }
+
+    private var sortedTasks: [TaskItem] {
+        row.tasks.sorted { lhs, rhs in
+            if lhs.scheduleStartDate != rhs.scheduleStartDate {
+                return lhs.scheduleStartDate < rhs.scheduleStartDate
+            }
+            return priorityOrder(lhs.priority) < priorityOrder(rhs.priority)
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 6) {
+            header
+
+            if !collapsed {
+                if sortedTasks.isEmpty {
+                    Text("本周期暂无任务")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.vertical, 8)
+                } else {
+                    LazyVStack(spacing: 4) {
+                        ForEach(sortedTasks) { task in
+                            CompactScheduleTaskCapsule(model: model, task: task)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(8)
+        .background(.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(.separator.opacity(0.6), lineWidth: 1)
+        }
+        .dropDestination(for: String.self) { taskIDs, _ in
+            guard let taskID = taskIDs.first,
+                  let task = model.filteredTasks.first(where: { $0.id == taskID }),
+                  let date = KshiftDate.date(
+                      from: task.scheduleStartDate,
+                      calendar: model.projectCalendar
+                  )
+            else {
+                return false
+            }
+            Swift.Task {
+                await model.moveScheduleTask(
+                    taskID: taskID,
+                    toAssigneeID: row.person?.id,
+                    date: date
+                )
+            }
+            return true
+        }
+    }
+
+    private var header: some View {
+        Button {
+            model.toggleSchedulePersonCollapsed(row.id)
+        } label: {
+            HStack(spacing: 8) {
+                avatar
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(row.person?.name ?? "未分配")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(strongTextColor)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(
+                        "\(row.person?.role.title ?? "无负责人") · \(row.tasks.count) 项任务"
+                    )
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(strongTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer(minLength: 4)
+
+                Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(strongTextColor)
+            }
+            .frame(minHeight: 36)
+            .contentShape(Rectangle())
+            .accessibilityHidden(true)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(rowAccessibilityLabel)
+        .accessibilityValue(collapsed ? "已折叠" : "已展开")
+        .accessibilityIdentifier("schedule-person-\(row.id)")
+    }
+
+    private var avatar: some View {
+        Group {
+            if let person = row.person {
+                PersonAvatar(person: person, size: 26)
+            } else {
+                Image(systemName: "person.crop.circle.badge.questionmark")
+                    .font(.body)
+                    .foregroundStyle(strongTextColor)
+                    .frame(width: 26, height: 26)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    private var rowAccessibilityLabel: String {
+        let name = row.person?.name ?? "未分配"
+        let role = row.person?.role.title ?? "无负责人"
+        return "\(name)，\(role)，\(row.tasks.count) 项任务，\(row.inProgressCount) 项进行中，\(row.urgentCount) 项 P0"
+    }
+
+    private func priorityOrder(_ priority: TaskPriority) -> Int {
+        switch priority {
+        case .urgent: 0
+        case .high: 1
+        case .medium: 2
+        case .low: 3
+        }
+    }
+}
+
+private struct CompactScheduleTaskCapsule: View {
+    @ObservedObject var model: AppModel
+    let task: TaskItem
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    @FocusState private var isFocused: Bool
+    @State private var isHovering = false
+
+    private var palette: SchedulePriorityPalette {
+        SchedulePriorityPalette(priority: task.priority)
+    }
+
+    private var taskShape: Capsule {
+        Capsule(style: .continuous)
+    }
+
+    private var dateLabel: String {
+        let start = task.scheduleStartDate.split(separator: "-")
+        let end = task.scheduleEndDate.split(separator: "-")
+        guard start.count == 3, end.count == 3 else {
+            return task.scheduleStartDate
+        }
+        if start == end {
+            return "\(start[1])/\(start[2])"
+        }
+        if start[1] == end[1] {
+            return "\(start[1])/\(start[2])–\(end[2])"
+        }
+        return "\(start[1])/\(start[2])–\(end[1])/\(end[2])"
+    }
+
+    var body: some View {
+        ZStack(alignment: .leading) {
+            taskShape.fill(palette.fill)
+                .padding(.vertical, 4)
+                .accessibilityHidden(true)
+
+            statusBadge
+
+            HStack(spacing: 6) {
+                Text(task.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(palette.foreground)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.88)
+                    .allowsTightening(true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityHidden(true)
+
+                Canvas { context, size in
+                    context.draw(
+                        Text(dateLabel)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(palette.foreground),
+                        at: CGPoint(x: size.width / 2, y: size.height / 2),
+                        anchor: .center
+                    )
+                }
+                .frame(width: 58, height: 18)
+                .accessibilityHidden(true)
+
+            }
+            .padding(.leading, 38)
+            .padding(.trailing, 10)
+            .allowsHitTesting(false)
+
+            Button {
+                model.presentDetails(task)
+            } label: {
+                Color.clear
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
+            .accessibilityHint("点击可查看任务详情。")
+            .accessibilityIdentifier("schedule-task-\(task.id)")
+            .draggable(task.id)
+            .focused($isFocused)
+        }
+        .frame(height: 44)
+        .overlay {
+            taskShape.strokeBorder(
+                contrast == .increased || isFocused
+                    ? (colorScheme == .dark ? Color.white : Color.black)
+                    : palette.foreground,
+                lineWidth: contrast == .increased || isFocused || isHovering ? 2 : 1
+            )
+            .padding(.vertical, 4)
+        }
+        .overlay(alignment: .leading) {
+            statusMenu
+        }
+        .contentShape(taskShape)
+        .onHover { isHovering = $0 }
+        .focusEffectDisabled()
+        .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
+    }
+
+    private var statusMenu: some View {
+        Menu {
+            ForEach(TaskStatus.allCases) { status in
+                Button {
+                    Swift.Task { await model.setStatus(task, to: status) }
+                } label: {
+                    Label(status.title, systemImage: status.symbol)
+                }
+            }
+        } label: {
+            Color.clear
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .frame(width: 44, height: 44)
+        .fixedSize(horizontal: true, vertical: true)
+        .contentShape(Rectangle())
+        .accessibilityLabel("\(task.title)，\(task.priority.code)，状态 \(task.status.title)。更改状态")
+        .accessibilityIdentifier("schedule-status-\(task.id)")
+    }
+
+    private var statusBadge: some View {
+        Image(systemName: task.status.symbol)
+            .font(.system(size: 14, weight: .bold))
+            .symbolRenderingMode(.monochrome)
+            .foregroundStyle(palette.foreground)
+            .frame(width: 32, height: 36)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
 }
 
 private struct PeopleSchedulePersonHeader: View {
