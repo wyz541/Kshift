@@ -2,7 +2,7 @@
 slug: /evidence/worktree-audit-2026-11-14
 title: Worktree 只读审计证据 2026-11-14
 type: report
-status: review
+status: active
 version: "1.0"
 updated: "2026-11-14"
 keywords:
@@ -11,12 +11,12 @@ keywords:
   - 清理候选
   - Git
   - 证据
-description: 记录现有任务 Worktree 的只读审计、清理候选、人工复核项和待批准状态。
+description: 记录现有任务 Worktree 的只读审计、清理批准、执行结果、复核项和清理后状态。
 ---
 
 # Worktree 只读审计证据 2026-11-14
 
-> 结论：审计记录现有 20 个任务 Worktree。15 个是 cleanup-candidate，5 个需要 manual-review。没有取得清理批准，未删除任何 Worktree、branch 或用户文件。
+> 结论：审计记录现有 20 个任务 Worktree。15 个候选已按批准清单清理，5 个仍需 manual-review。没有 force、`branch -D` 或未登记路径删除。
 
 ## 1. 范围和数量
 
@@ -29,7 +29,8 @@ description: 记录现有任务 Worktree 的只读审计、清理候选、人工
 | 创建 #48 Worktree 前实际数量 | 20 个任务 Worktree |
 | 创建 #48 Worktree 后实际数量 | 21 个任务 Worktree |
 | 本证据审计数量 | 20 个既有任务 Worktree |
-| 注册 Worktree 总数 | 22 个，包括主检出和 #48 Worktree |
+| 清理前注册 Worktree 总数 | 22 个，包括主检出和 #48 Worktree |
+| 清理后注册 Worktree 总数 | 7 个，包括主检出、#49 Worktree 和 5 个 manual-review |
 
 Issue #49 的 19 个数量与实测 20 个不一致。本证据审计全部 20 个既有任务 Worktree，不按正文数字截断。
 
@@ -49,6 +50,7 @@ python3 scripts/audit_worktrees.py \
 | 文件 | SHA-256 |
 | --- | --- |
 | `worktree-audit-2026-11-14.json` | `f37fddf92bc4e397586f80a5af0b03895d03298532bbb7cb1402a23bde392405` |
+| `worktree-audit-2026-11-14-post-cleanup.json` | `c2b977d9da823f50023ba8aa2983d894604e0d6ea6ecd10908f6c59993583d10` |
 
 审计工具只调用 `git worktree list`、`git status`、`git for-each-ref`、`git rev-parse`、`git merge-base` 和 `git rev-list`。工具不执行 fetch、prune、remove、branch 删除或文件写入。
 
@@ -62,25 +64,25 @@ python3 scripts/audit_worktrees.py \
 
 ## 4. 清理候选
 
-以下 15 项路径已注册、Git 状态为 clean，并且 HEAD 已合并到本地的 `origin/main`。这些结论只表示候选。
+以下 15 项路径已登记、Git 状态为 clean，并且 HEAD 已合并到本地的 `origin/main`。`@wyz541` 已批准这 15 项。
 
 | Issue | Branch | HEAD | 路径 | 证据 | 批准 |
 | --- | --- | --- | --- | --- | --- |
-| #7 | `task/day-plan-ui-consolidation` | `71d83b18da9e` | `~/repo/_worktrees/Kshift/day-plan-ui-consolidation` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #24 | `issue-24-issue-forms` | `542bec8cd61f` | `~/repo/_worktrees/Kshift/issue-24-issue-forms` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #26 | `detached` | `56802725f128` | `~/repo/_worktrees/Kshift/issue-26-relations` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #3, #16 | `task/16-ownership-time-semantics` | `a2583e983b5d` | `~/repo/_worktrees/Kshift/issue-3-r0-formal-review` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #6 | `issue-6-shared-swiftui-foundation` | `b74032f736e8` | `~/repo/_worktrees/Kshift/issue-6-shared-swiftui-foundation` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #7 | `issue-7-live-history-e2e` | `844fd7bff7d4` | `~/repo/_worktrees/Kshift/issue-7-live-history-e2e` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #7 | `issue-7-r2-daily-planner` | `6cba4c57ea6c` | `~/repo/_worktrees/Kshift/issue-7-r2-daily-planner` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #7 | `issue-7-timezone-p0-e2e` | `5dfd5a90de8b` | `~/repo/_worktrees/Kshift/issue-7-timezone-p0-e2e` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #9 | `issue-9-acceptance` | `92d589110aa1` | `~/repo/_worktrees/Kshift/issue-9-acceptance` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #9 | `issue-9-preview-lifecycle` | `c9cb6d8fd7cb` | `~/repo/_worktrees/Kshift/issue-9-preview-lifecycle` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #9 | `issue-9-r4-r5` | `651c40f74038` | `~/repo/_worktrees/Kshift/issue-9-r4-r5` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #25 | `task/25-labels-project` | `c56b395b6037` | `~/repo/_worktrees/Kshift/task-25-labels-project` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #27 | `task/27-deriveddata-governance` | `19feefa60bac` | `~/repo/_worktrees/Kshift/task-27-deriveddata-governance` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #4 | `task-4-r1-server-postgres` | `2db27fe8a112` | `~/repo/_worktrees/Kshift/task-4-r1-server-postgres` | Git history; no worktree-only evidence | pending `@wyz541` |
-| #8 | `task/8-r3-plan-depth` | `5bce503bab53` | `~/repo/_worktrees/Kshift/task-8-r3-plan-depth` | Git history; no worktree-only evidence | pending `@wyz541` |
+| #7 | `task/day-plan-ui-consolidation` | `71d83b18da9e` | `~/repo/_worktrees/Kshift/day-plan-ui-consolidation` | Git history; no worktree-only evidence | approved; removed |
+| #24 | `issue-24-issue-forms` | `542bec8cd61f` | `~/repo/_worktrees/Kshift/issue-24-issue-forms` | Git history; no worktree-only evidence | approved; removed |
+| #26 | `detached` | `56802725f128` | `~/repo/_worktrees/Kshift/issue-26-relations` | Git history; no worktree-only evidence | approved; removed |
+| #3, #16 | `task/16-ownership-time-semantics` | `a2583e983b5d` | `~/repo/_worktrees/Kshift/issue-3-r0-formal-review` | Git history; no worktree-only evidence | approved; removed |
+| #6 | `issue-6-shared-swiftui-foundation` | `b74032f736e8` | `~/repo/_worktrees/Kshift/issue-6-shared-swiftui-foundation` | Git history; no worktree-only evidence | approved; removed |
+| #7 | `issue-7-live-history-e2e` | `844fd7bff7d4` | `~/repo/_worktrees/Kshift/issue-7-live-history-e2e` | Git history; no worktree-only evidence | approved; removed |
+| #7 | `issue-7-r2-daily-planner` | `6cba4c57ea6c` | `~/repo/_worktrees/Kshift/issue-7-r2-daily-planner` | Git history; no worktree-only evidence | approved; removed |
+| #7 | `issue-7-timezone-p0-e2e` | `5dfd5a90de8b` | `~/repo/_worktrees/Kshift/issue-7-timezone-p0-e2e` | Git history; no worktree-only evidence | approved; removed |
+| #9 | `issue-9-acceptance` | `92d589110aa1` | `~/repo/_worktrees/Kshift/issue-9-acceptance` | Git history; no worktree-only evidence | approved; removed |
+| #9 | `issue-9-preview-lifecycle` | `c9cb6d8fd7cb` | `~/repo/_worktrees/Kshift/issue-9-preview-lifecycle` | Git history; no worktree-only evidence | approved; removed |
+| #9 | `issue-9-r4-r5` | `651c40f74038` | `~/repo/_worktrees/Kshift/issue-9-r4-r5` | Git history; no worktree-only evidence | approved; removed |
+| #25 | `task/25-labels-project` | `c56b395b6037` | `~/repo/_worktrees/Kshift/task-25-labels-project` | Git history; no worktree-only evidence | approved; removed |
+| #27 | `task/27-deriveddata-governance` | `19feefa60bac` | `~/repo/_worktrees/Kshift/task-27-deriveddata-governance` | Git history; no worktree-only evidence | approved; removed |
+| #4 | `task-4-r1-server-postgres` | `2db27fe8a112` | `~/repo/_worktrees/Kshift/task-4-r1-server-postgres` | Git history; no worktree-only evidence | approved; removed |
+| #8 | `task/8-r3-plan-depth` | `5bce503bab53` | `~/repo/_worktrees/Kshift/task-8-r3-plan-depth` | Git history; no worktree-only evidence | approved; removed |
 
 `task/day-plan-ui-consolidation` 的 Issue 映射来自 [PR #19](https://github.com/wyz541/Kshift/pull/19) 的 `Refs #7`。本地审计工具只从 branch 和路径提取 Issue 提示。
 
@@ -174,31 +176,51 @@ python3 scripts/audit_worktrees.py \
 
 | 字段 | 值 |
 | --- | --- |
-| Approver | 待填写，批准人必须是 `@wyz541` |
-| Approved at | 待填写 |
-| Approved paths | 无 |
-| Approved branches | 无 |
+| Approver | `@wyz541` |
+| Approved at | `2026-11-14` |
+| Approval | “accept go with”；记录见 [Issue #49 批准评论](https://github.com/wyz541/Kshift/issues/49#issuecomment-6873570860) |
+| Approved paths | 上方 15 个 `approved; removed` 项 |
+| Approved branches | 15 个对应 branch；detached 项使用 `task/26-issue-relations` |
 | Evidence target | 15 个候选的证据位于已合并 Git 历史；清理前再次核对 |
-| Checks | 本证据的快照 |
+| Checks | PR #54 合并后重新审计；15 项仍为 clean、merged、unpushed=0 |
 
-批准记录完成前，15 个候选都不得删除。批准后必须重新运行审计。路径、branch 或状态变化时，原批准失效。
+批准范围只覆盖固定路径和 branch。路径、branch 或状态变化时，原批准失效。
 
 ## 8. 执行结果
 
-- Worktree removal：未执行。
-- Branch deletion：未执行。
+- Worktree removal：已移除批准的 15 个 Worktree。
+- Branch deletion：已使用 `git branch -d` 删除 15 个对应 branch。
+- Lifecycle cleanup：PR #54 合并后移除并删除 `issue/46-worktree-governance`。
 - User file deletion：未执行。
-- Cleanup result：等待 `@wyz541` 对固定路径和 branch 清单的明确批准。
+- Force removal：未执行。
+- `branch -D`：未执行。
+- Post-cleanup audit：7 个注册 Worktree；6 个任务 Worktree；0 个 cleanup-candidate；5 个 manual-review；1 个 active。
+- Residual task Worktrees：#3、#42、#5、#9 concurrency、#39。它们保持原位。
 
-## 9. 复验方法
+## 9. 清理后复验
 
-批准并执行清理后，再次运行以下命令。
+清理后运行以下命令。
 
 ```bash
-python3 scripts/audit_worktrees.py --repo . --format markdown
+python3 scripts/audit_worktrees.py \
+  --repo . \
+  --format json \
+  --expected-task-worktrees 6
 ```
 
-复验输出必须与批准清单一致。未处理项保留在 `manual-review`，并写明原因。
+结果如下。
+
+| 项目 | 结果 |
+| --- | --- |
+| 注册 Worktree | 7 |
+| 任务 Worktree | 6 |
+| `cleanup-candidate` | 0 |
+| `manual-review` | 5 |
+| `active` | 1，当前 #49 Worktree |
+| 未提交任务 Worktree | 3 |
+| 未合并任务 Worktree | 4 |
+
+`#49 Worktree` 在 PR #55 合并后按同一生命周期清理。未处理项保留在 `manual-review`。
 
 ## 10. 来源
 
