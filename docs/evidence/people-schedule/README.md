@@ -33,7 +33,7 @@ description: 列出 Issue #42 人员排期实现的规则入口、测试、截�
 | `2026-11-14-local.md` | 本机命令、结果、截图和未运行项 |
 | `macos-people-schedule-final.png` | macOS 人员排期主界面和跨日任务 |
 | `ios-people-schedule-final.png` | iOS Simulator 人员排期主界面和跨日任务 |
-| `flat-task-bar/README.md` | Desktop 时间轴和 Mobile 人员分组列表的明亮胶囊任务条证据 |
+| `glass-task-bar/README.md` | Desktop 时间轴和 Mobile 人员分组列表的 Liquid Glass 任务条证据 |
 
 ## 结论规则
 

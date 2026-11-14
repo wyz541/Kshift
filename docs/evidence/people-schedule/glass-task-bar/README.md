@@ -1,28 +1,28 @@
 ---
-slug: /evidence/people-schedule/flat-task-bar-2026-11-14
-title: 人员排期纯色任务条证据（2026-11-14）
+slug: /evidence/people-schedule/glass-task-bar-2026-11-14
+title: 人员排期 Liquid Glass 任务条证据（2026-11-14）
 type: report
 status: review
 updated: "2026-11-14"
 keywords:
   - 人员排期
   - 任务条
-  - 纯色
-  - 扁平化
+  - Liquid Glass
+  - SwiftUI Button
   - 视觉验收
-description: 记录人员排期任务条改为明亮纯色、扁平和单行紧凑样式的实现与验证证据。
+description: 记录人员排期任务条改为 SwiftUI Liquid Glass Button 的实现与验证证据。
 ---
 
-# 人员排期纯色任务条证据（2026-11-14）
+# 人员排期 Liquid Glass 任务条证据（2026-11-14）
 
 ## 触发原因
 
-用户要求继续优化 Desktop 和 Mobile 的信息密度。Desktop 需要更高效的工作区；Mobile 需要显示更多任务和完整标题。
+用户要求任务条使用 SwiftUI Liquid Glass 按钮。Desktop 和 Mobile 同时需要保持紧凑布局和较高信息密度。
 
 ## 修复内容
 
-- 任务条使用 SwiftUI `Capsule(style: .continuous)` 椭圆形形状和纯色优先级背景。
-- 不使用 Glass、渐变、模糊和阴影。
+- 任务条使用 SwiftUI `Button`、`.buttonStyle(.glass)` 和 `Capsule` 内容形状。
+- 任务条由 Apple 原生 Liquid Glass Button 绘制。禁止自绘玻璃。
 - Desktop 使用人员×日期时间轴。
 - Mobile 使用按人员分组的纵向任务列表。
 - Desktop 任务条视觉高度为 36pt，标题限制为一行。
@@ -33,11 +33,12 @@ description: 记录人员排期任务条改为明亮纯色、扁平和单行紧�
 - 宽松密度的任务行间距为 56pt。
 - 状态控件位于任务条前端，保留 44pt 触控区域。
 - 状态选择继续使用原生 `Menu`。
-- P0 使用 `#D92D3A` 红底白字。
+- 优先级使用亮色圆形徽章：P0 使用 `#D92D3A` 红底白字。
 - P1 使用 `#FFC400` 黄底黑字。
 - P2 使用 `#0066FF` 蓝底白字。
 - P3 使用 `#5F6368` 灰底白字。
-- 任务条保留清晰边框，支持普通、悬停、键盘焦点和 Increase Contrast。
+- 标题和日期使用主要文本色。
+- 原生玻璃按钮提供悬停、按压、键盘焦点和 Increase Contrast 行为。
 - 人员行高度使用紧凑密度间距，工作区可以显示更多任务。
 - 人员排期模式隐藏重复的 SummaryStrip。
 - Desktop 缩小标题和页边距。
@@ -55,14 +56,14 @@ description: 记录人员排期任务条改为明亮纯色、扁平和单行紧�
 | `make check-build-governance` | 通过 |
 | Operations CI | 见 PR #68 checks |
 
-SwiftUI 无障碍审计返回一个没有关联元素的 contrast diagnostic。测试只豁免这个无关联诊断。任务文字和背景的手工对比度如下：P0 `4.79:1`，P1 `13.15:1`，P2 `4.83:1`，P3 `6.05:1`。
+SwiftUI 无障碍审计返回一个没有关联元素的 contrast diagnostic。测试只豁免这个无关联诊断。优先级徽章的手工对比度如下：P0 `4.79:1`，P1 `13.15:1`，P2 `4.83:1`，P3 `6.05:1`。
 
 ## 候选截图
 
 | 文件 | 内容 | SHA-256 |
 | --- | --- | --- |
-| `macos-task-bar-2026-11-14.png` | macOS Dark Mode 人员排期时间轴 | `8c5bc32b2852a6f5da0cd296d0ed047c92a35a49f5d77849776daf8da5080b1f` |
-| `ios-task-bar-2026-11-14.png` | iPhone 18 Pro Simulator Light Mode 人员分组任务列表 | `77b57cdd900a955b08348baf06f951248966323d4bef5c399f641b7eaa3cfbe3` |
+| `macos-task-bar-2026-11-14.png` | macOS Dark Mode Liquid Glass 时间轴 | `88836e42ee0a36b11e3297312244e3787aa3396aa23fc4ccedfe14b8d4fc6ff9` |
+| `ios-task-bar-2026-11-14.png` | iPhone 18 Pro Simulator Light Mode Liquid Glass 列表 | `f1c9d977e3fddce784644df375d3cd082f5c4a4bd3af0a06448a8d31b2b9dd7e` |
 
 ## 未覆盖
 

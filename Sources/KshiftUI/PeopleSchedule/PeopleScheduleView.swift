@@ -517,9 +517,6 @@ private struct CompactScheduleTaskCapsule: View {
     let task: TaskItem
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.colorSchemeContrast) private var contrast
-    @FocusState private var isFocused: Bool
-    @State private var isHovering = false
 
     private var palette: SchedulePriorityPalette {
         SchedulePriorityPalette(priority: task.priority)
@@ -546,72 +543,59 @@ private struct CompactScheduleTaskCapsule: View {
 
     var body: some View {
         ZStack(alignment: .leading) {
-            taskShape.fill(palette.fill)
-                .padding(.vertical, 4)
-                .accessibilityHidden(true)
-
-            statusBadge
-
-            HStack(spacing: 6) {
-                Text(task.title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(palette.foreground)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .minimumScaleFactor(0.88)
-                    .allowsTightening(true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityHidden(true)
-
-                Canvas { context, size in
-                    context.draw(
-                        Text(dateLabel)
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(palette.foreground),
-                        at: CGPoint(x: size.width / 2, y: size.height / 2),
-                        anchor: .center
-                    )
-                }
-                .frame(width: 58, height: 18)
-                .accessibilityHidden(true)
-
-            }
-            .padding(.leading, 38)
-            .padding(.trailing, 10)
-            .allowsHitTesting(false)
-
             Button {
                 model.presentDetails(task)
             } label: {
-                Color.clear
-                    .contentShape(Rectangle())
+                ZStack(alignment: .leading) {
+                    statusBadge
+
+                    HStack(spacing: 6) {
+                        Text(task.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .minimumScaleFactor(0.88)
+                            .allowsTightening(true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityHidden(true)
+
+                        Canvas { context, size in
+                            context.draw(
+                                Text(dateLabel)
+                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(.primary),
+                                at: CGPoint(x: size.width / 2, y: size.height / 2),
+                                anchor: .center
+                            )
+                        }
+                        .frame(width: 58, height: 18)
+                        .accessibilityHidden(true)
+                    }
+                    .padding(.leading, 38)
+                    .padding(.trailing, 10)
+                    .allowsHitTesting(false)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 36)
+                .contentShape(taskShape)
             }
-            .buttonStyle(.plain)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .buttonStyle(.glass)
+            .tint(colorScheme == .dark ? Color.white : Color.black)
+            .buttonBorderShape(.capsule)
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
             .contentShape(Rectangle())
             .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
             .accessibilityHint("点击可查看任务详情。")
             .accessibilityIdentifier("schedule-task-\(task.id)")
             .draggable(task.id)
-            .focused($isFocused)
-        }
-        .frame(height: 44)
-        .overlay {
-            taskShape.strokeBorder(
-                contrast == .increased || isFocused
-                    ? (colorScheme == .dark ? Color.white : Color.black)
-                    : palette.foreground,
-                lineWidth: contrast == .increased || isFocused || isHovering ? 2 : 1
-            )
-            .padding(.vertical, 4)
+            .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
         }
         .overlay(alignment: .leading) {
             statusMenu
         }
-        .contentShape(taskShape)
-        .onHover { isHovering = $0 }
-        .focusEffectDisabled()
-        .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
+        .contentShape(Rectangle())
     }
 
     private var statusMenu: some View {
@@ -638,15 +622,18 @@ private struct CompactScheduleTaskCapsule: View {
     }
 
     private var statusBadge: some View {
-        Image(systemName: task.status.symbol)
-            .font(.system(size: 14, weight: .bold))
-            .symbolRenderingMode(.monochrome)
-            .foregroundStyle(palette.foreground)
-            .frame(width: 32, height: 36)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+        ZStack {
+            Circle().fill(palette.fill)
+            Image(systemName: task.status.symbol)
+                .font(.system(size: 13, weight: .bold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(palette.foreground)
+        }
+        .frame(width: 26, height: 26)
+        .frame(width: 36, height: 36)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
-
 }
 
 private struct PeopleSchedulePersonHeader: View {
@@ -981,11 +968,7 @@ private struct PeopleScheduleTaskCapsule: View {
     let scrollProxy: ScrollViewProxy
     let scrollToDay: (Date, ScrollViewProxy, Bool) -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.colorSchemeContrast) private var contrast
     @Environment(\.colorScheme) private var colorScheme
-    @FocusState private var isFocused: Bool
-    @State private var isHovering = false
 
     private var taskWidth: CGFloat {
         CGFloat(slice.dayCount) * dateWidth - 6
@@ -1010,14 +993,6 @@ private struct PeopleScheduleTaskCapsule: View {
         Capsule(style: .continuous)
     }
 
-    private var taskFill: Color {
-        palette.fill
-    }
-
-    private var taskForeground: Color {
-        palette.foreground
-    }
-
     private var dateLabel: String {
         if slice.task.scheduleStartDate == slice.task.scheduleEndDate {
             return slice.task.scheduleEndDate
@@ -1028,50 +1003,40 @@ private struct PeopleScheduleTaskCapsule: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                taskShape
-                    .fill(taskFill)
+                Button {
+                    model.presentDetails(task)
+                } label: {
+                    ZStack(alignment: .leading) {
+                        statusBadge
+
+                        Text(task.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .minimumScaleFactor(0.88)
+                            .allowsTightening(true)
+                            .frame(
+                                maxWidth: max(geometry.size.width - 44, 20),
+                                maxHeight: .infinity,
+                                alignment: .leading
+                            )
+                            .offset(x: max(titleLeading, 36))
+                            .accessibilityHidden(true)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(taskShape)
-                    .onTapGesture {
-                        model.presentDetails(task)
-                    }
-                    .accessibilityHidden(true)
-
-                statusBadge
-
-                Text(task.title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(taskForeground)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .minimumScaleFactor(0.88)
-                    .allowsTightening(true)
-                    .frame(
-                        maxWidth: max(geometry.size.width - 44, 20),
-                        maxHeight: .infinity,
-                        alignment: .leading
-                    )
-                    .offset(x: max(titleLeading, 36))
-                    .allowsHitTesting(false)
-                    .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
-                    .accessibilityHint("点击可查看任务详情。")
-                    .accessibilityAction(named: "查看任务详情") {
-                        model.presentDetails(task)
-                    }
-                    .accessibilityIdentifier("schedule-task-\(task.id)")
             }
-            .clipShape(taskShape)
-            .overlay {
-                if contrast == .increased || isFocused {
-                    taskShape.strokeBorder(
-                        colorScheme == .dark ? Color.white : Color.black,
-                        lineWidth: 2
-                    )
-                } else {
-                    taskShape.strokeBorder(
-                        colorScheme == .dark ? Color.white : Color.black,
-                        lineWidth: isHovering ? 2 : 1
-                    )
-                }
+            .buttonStyle(.glass)
+                .tint(colorScheme == .dark ? Color.white : Color.black)
+                .buttonBorderShape(.capsule)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(taskShape)
+                .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
+                .accessibilityHint("点击可查看任务详情。")
+                .accessibilityIdentifier("schedule-task-\(task.id)")
+                .draggable(task.id)
+                .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
             }
             .overlay(alignment: .leading) {
                 statusMenu
@@ -1086,14 +1051,6 @@ private struct PeopleScheduleTaskCapsule: View {
             }
         }
         .contentShape(taskShape)
-        .onHover { isHovering = $0 }
-        .draggable(task.id)
-        .focusable()
-        .focused($isFocused)
-        .focusEffectDisabled()
-        .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
-        .animation(reduceMotion ? nil : .snappy(duration: 0.16), value: isHovering)
-        .accessibilityElement(children: .contain)
     }
 
     private var statusMenu: some View {
@@ -1120,13 +1077,17 @@ private struct PeopleScheduleTaskCapsule: View {
     }
 
     private var statusBadge: some View {
-        Image(systemName: task.status.symbol)
-            .font(.system(size: 14, weight: .bold))
-            .symbolRenderingMode(.monochrome)
-            .foregroundStyle(taskForeground)
-            .frame(width: 44, height: 44)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+        ZStack {
+            Circle().fill(palette.fill)
+            Image(systemName: task.status.symbol)
+                .font(.system(size: 13, weight: .bold))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(palette.foreground)
+        }
+        .frame(width: 26, height: 26)
+        .frame(width: 36, height: 36)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func resizeHandle(edge: ScheduleResizeEdge) -> some View {
