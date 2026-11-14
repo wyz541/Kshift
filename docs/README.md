@@ -3,7 +3,7 @@ slug: /docs
 title: Kshift 文档
 type: reference
 status: active
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - 文档入口
   - Spec
@@ -27,6 +27,7 @@ description: 提供 Kshift Spec、ADR、决策和合同的阅读入口。
 | 5 | [Open Questions](decisions/open-questions.md) | 查看 owner、截止日期和影响 |
 | 6 | [ADR Index](adr/README.md) | 理解关键决策的原因和取舍 |
 | 7 | [Contracts](contracts/README.md) | 实现协议和 Release 规则 |
+| 8 | [Issue Relations](governance/issue-relations.md) | 查询原生事项关系和执行审计 |
 
 ## 状态说明
 

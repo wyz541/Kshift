@@ -23,15 +23,23 @@
 
 Issue 不复制 Spec 的完整规则。Issue 只写本次交付范围和验证方法。
 
+Feature 必须使用原生 sub-issues。Feature 至少有 1 个交付子 Issue，并且恰好有 1 个 Acceptance 子 Issue。Acceptance 必须阻塞于全部交付子 Issue。
+
+Research 必须在“来源 Discussion”章节写 1 个 Discussion 链接。直接创建的 Research Issue 写“无”。
+
+关系规则见 [`docs/governance/issue-relations.md`](docs/governance/issue-relations.md)。GitHub 原生关系是父子、硬阻塞和重复事项的真源。
+
 ## 工作流
 
 1. 从 `main` 创建短生命周期分支。
 2. 更新 Spec、ADR 或合同。必要时同步更新。
 3. 增加测试、示例或评审记录。
 4. 运行 R0 检查。
-5. 打开 PR。PR 必须链接 Issue。
-6. 评审人检查 Spec 追踪、决策状态和证据。
-7. 合并后更新 Issue 的验收清单。
+5. 运行关系审计。修复全部错误。
+6. 打开 PR。PR 正文必须写 `Closes #N` 或 `Part of #N`。
+7. 使用 `Closes` 前，确认主 Issue 已完成交付和验收。
+8. 评审人检查 Spec 追踪、决策状态和证据。
+9. 合并后更新 Issue 的验收清单。
 
 ## 决策变更
 
@@ -57,6 +65,7 @@ Issue 不复制 Spec 的完整规则。Issue 只写本次交付范围和验证�
 ## PR 检查
 
 - [ ] PR 链接了实现 Issue。
+- [ ] PR 正文使用 `Closes #N` 或 `Part of #N`。
 - [ ] Spec 章节链接有效。
 - [ ] 决策状态已更新。
 - [ ] ADR 已链接。
@@ -74,3 +83,13 @@ Issue 不复制 Spec 的完整规则。Issue 只写本次交付范围和验证�
 ```
 
 命令必须成功。检查结果需要写入 PR。
+
+## 关系审计
+
+运行以下命令。
+
+```bash
+python3 scripts/audit_issue_relations.py --repo wyz541/Kshift --issue <N>
+```
+
+审计 PR 时使用 `--pr <N>`。命令检查原生 sub-issues、Acceptance 阻塞、Research 来源和 PR 追踪语句。

@@ -4,7 +4,7 @@
 
 ## 追踪
 
-- Issue:
+- Issue: `Closes #N` or `Part of #N`
 - Spec:
 - Decision:
 - Contract:
@@ -27,6 +27,7 @@
 ## 检查
 
 - [ ] 已链接 Issue。
+- [ ] PR 使用 `Closes #N` 或 `Part of #N`。
 - [ ] 已更新决策状态。
 - [ ] 合同变更兼容或已新增版本。
 - [ ] 没有秘密或敏感数据。
