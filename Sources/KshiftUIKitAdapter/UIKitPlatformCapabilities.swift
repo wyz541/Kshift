@@ -40,5 +40,46 @@
     public func perform(_ feedback: KshiftPlatformFeedback) {
       feedbackHandler(feedback)
     }
+
+    public func exportImage(_ data: Data, suggestedFilename: String) async -> Bool {
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent(suggestedFilename)
+      do {
+        try data.write(to: url, options: .atomic)
+      } catch {
+        return false
+      }
+      return await withCheckedContinuation { continuation in
+        let controller = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, completed, _, _ in
+          continuation.resume(returning: completed)
+        }
+        topViewController()?.present(controller, animated: true)
+      }
+    }
+
+    public func printHTML(_ html: String, jobName: String) async -> Bool {
+      let controller = UIPrintInteractionController.shared
+      let information = UIPrintInfo.printInfo()
+      information.jobName = jobName
+      information.outputType = .general
+      controller.printInfo = information
+      controller.printFormatter = UIMarkupTextPrintFormatter(markupText: html)
+      return await withCheckedContinuation { continuation in
+        controller.present(animated: true) { _, completed, _ in
+          continuation.resume(returning: completed)
+        }
+      }
+    }
+
+    private func topViewController() -> UIViewController? {
+      let scene = UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .first { $0.activationState == .foregroundActive }
+      var controller = scene?.windows.first(where: \.isKeyWindow)?.rootViewController
+      while let presented = controller?.presentedViewController {
+        controller = presented
+      }
+      return controller
+    }
   }
 #endif

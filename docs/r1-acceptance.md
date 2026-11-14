@@ -3,7 +3,7 @@ slug: /docs/r1-acceptance
 title: Kshift R1 acceptance evidence
 type: evidence
 status: verified
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - acceptance
   - integration test
@@ -48,6 +48,9 @@ description: 记录 Issue #4 的质量门禁、migration digest 和恢复演练�
 - migration digest mismatch 阻止 startup check。
 
 ## Migration evidence
+
+R3 adds `0002_plan_depth.sql`。当前 schema version 为 `3`，migration count 为 `2`。
+以下 digest 保留为 R3 之前的 R1 历史证据。
 
 ```text
 schema_version=2

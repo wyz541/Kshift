@@ -158,6 +158,10 @@ public final class AppModel: ObservableObject {
         self.nowProvider = now
     }
 
+    public var platformCapabilities: any KshiftPlatformCapabilities {
+        platform
+    }
+
     public var tasks: [TaskItem] {
         snapshot?.tasks ?? []
     }

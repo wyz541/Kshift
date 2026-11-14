@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
 
-pub const SCHEMA_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 3;
 pub const MAX_PROJECT_NAME_CHARS: usize = 120;
 pub const MAX_TIME_ZONE_CHARS: usize = 64;
 pub const MAX_TASK_TITLE_CHARS: usize = 200;

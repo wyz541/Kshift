@@ -3,10 +3,16 @@ import SwiftUI
 
 struct PlannerView: View {
     @ObservedObject var model: AppModel
+    private let onOpenPlanDepth: () -> Void
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShowingFilters = false
     @State private var isShowingProjectPicker = false
+
+    init(model: AppModel, onOpenPlanDepth: @escaping () -> Void = {}) {
+        self.model = model
+        self.onOpenPlanDepth = onOpenPlanDepth
+    }
 
     private var usesAccessibilityLayout: Bool {
         dynamicTypeSize.isAccessibilitySize
@@ -137,6 +143,16 @@ struct PlannerView: View {
                         .accessibilityIdentifier("selected-date")
                 }
                 Spacer()
+                Button(action: onOpenPlanDepth) {
+                    Image(systemName: "chart.bar.doc.horizontal")
+                        .font(.title3.weight(.semibold))
+                        .frame(width: 44, height: 44)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.glass)
+                .accessibilityLabel("计划深度")
+                .accessibilityHint("打开甘特、历史、附件和报告")
+                .accessibilityIdentifier("open-plan-depth")
                 if model.isLoading {
                     ProgressView()
                         .controlSize(.small)

@@ -6,6 +6,8 @@ members = [
     "crates/kshift-server",
     "crates/kshift-client",
     "crates/kshift-ffi",
+    "crates/kshift-core",
+    "crates/kshift-plan-store",
 ]
 
 [workspace.package]

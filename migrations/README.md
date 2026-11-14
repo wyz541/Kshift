@@ -13,3 +13,8 @@ Rules:
 
 The server refuses to start unless PostgreSQL major version 18 and the
 database migration digest match the embedded migrations.
+
+## R3 migration
+
+`0002_plan_depth.sql` adds R3 snapshot, immutable history state and attachment
+content tables. Current schema version is `3` and migration count is `2`.

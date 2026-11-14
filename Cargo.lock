@@ -895,6 +895,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "kshift-core"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
 name = "kshift-domain"
 version = "0.1.0"
 dependencies = [
@@ -917,6 +929,21 @@ dependencies = [
  "serde_json",
  "tokio",
  "tokio-util",
+ "uuid",
+]
+
+[[package]]
+name = "kshift-plan-store"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "kshift-core",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "thiserror",
+ "tokio",
  "uuid",
 ]
 

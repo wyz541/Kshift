@@ -8,6 +8,7 @@ public struct KshiftRootView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isShowingFilters = false
     @State private var isShowingProjectAudit = false
+    @State private var isShowingPlanDepth = false
 
     public init(model: AppModel) {
         self.model = model
@@ -56,6 +57,7 @@ public struct KshiftRootView: View {
                 .help("查看项目审计")
                 .accessibilityIdentifier("project-audit")
 
+
                 Button {
                     model.presentNewTask(assigneeIDs: [])
                 } label: {
@@ -79,6 +81,9 @@ public struct KshiftRootView: View {
         }
         .sheet(isPresented: $isShowingProjectAudit) {
             ProjectAuditView(model: model)
+        }
+        .sheet(isPresented: $isShowingPlanDepth) {
+            KshiftPlanDepthFeatureView(capabilities: model.platformCapabilities)
         }
         .overlay(alignment: .top) {
             if let conflict = model.conflict {
@@ -131,14 +136,18 @@ public struct KshiftRootView: View {
     private var rootContent: some View {
         if horizontalSizeClass == .compact {
             NavigationStack {
-                PlannerView(model: model)
+                PlannerView(model: model) {
+                    isShowingPlanDepth = true
+                }
             }
         } else {
             NavigationSplitView {
                 SidebarView(model: model, usesNavigationLinks: false)
                     .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 310)
             } detail: {
-                PlannerView(model: model)
+                PlannerView(model: model) {
+                    isShowingPlanDepth = true
+                }
             }
             .navigationSplitViewStyle(.balanced)
         }

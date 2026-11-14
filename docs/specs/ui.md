@@ -68,6 +68,15 @@ flowchart TB
 - 原型源码只从 Git 提交 `84a8d1d` 追溯。
 - 后续需要拆分 `KshiftRootView` 时，创建内部 feature slice。禁止恢复第二套 app 入口。
 
+## 4.1 R3 计划深度 UI
+
+- `UI-R3-001`：`KshiftRootView` 必须提供可见的计划深度入口。
+- `UI-R3-002`：macOS 和 iOS 必须使用同一个 `KshiftPlanDepthFeatureView`。
+- `UI-R3-003`：看板任务卡必须使用 Apple 原生 Liquid Glass。
+- `UI-R3-004`：甘特、历史和报告必须使用稳定内容底板。
+- `UI-R3-005`：报告打印和图片导出不得重新读取 live project state。
+- `UI-R3-006`：R3 页面必须通过对比度、动态字号、触控区域、文字裁切和元素描述审计。
+
 ## 5. Liquid Glass 边界
 
 “应用尽用”按交互语义执行。

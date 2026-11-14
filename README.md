@@ -7,7 +7,7 @@
 - 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
 - Active Spec：7 篇领域 Spec，状态 `active`。
 - 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
-- 实现状态：Rust server、Rust client、C ABI 和 R2 共享日计划 UI 可构建；macOS/iOS live P0 E2E 已验证。
+- 实现状态：Rust server、Rust client、C ABI、R2 日计划 UI 和 R3 计划深度切片可构建；macOS/iOS live P0 E2E 已验证。
 - R4/R5 基座：备份、恢复、RBAC、部署和 Release 合同已加入。
 - 权威入口：[Active Spec 索引](docs/specs/index.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
@@ -245,6 +245,29 @@ Rust client 与 server 共用 `kshift-contract` 和 `kshift-domain`。Swift 只�
 - Token 不进入日志、URL、error projection 或 Release asset。
 - `unsafe` 只出现在 `kshift-ffi` 的适配层。
 
+## R3 计划深度
+
+R3 已进入共享 `KshiftRootView` 的“计划深度”入口。切片包含以下能力。
+
+- 子任务层级、依赖环检查、跨日排期和延迟任务统计。
+- 附件按 SHA-256 去重。单文件上限为 10 MiB。类型白名单校验扩展名和内容。
+- Admin 回退创建新 revision。审计记录保存恢复来源和内容摘要。
+- 报告固定 source revision。打印和 PNG 导出读取同一份报告。
+- 看板、甘特、历史、报告、Markdown 和附件视图在 macOS/iOS 共用。
+- 看板任务卡使用原生 Liquid Glass。甘特、历史和报告使用内容底板。
+
+R3 验收：
+
+```sh
+cargo test --workspace
+./scripts/test-plan-store.sh
+swift test
+xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
+```
+
+验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-DOMAIN](docs/specs/domain.md) 和 [KS-UI](docs/specs/ui.md)。
+
 ## R4/R5 运维与发布
 
 | 内容 | 入口 |
@@ -284,6 +307,7 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 | Rust client、cache 和 C ABI | [Client/FFI](docs/client-ffi.md) |
 | R2 功能和证据 | [MVP](docs/MVP.md) |
 | R2 截图和性能 | [Evidence](docs/evidence/README.md) |
+| R3 计划深度和报告 | [R3 Plan Depth](docs/r3-plan-depth.md) |
 | 贡献与评审流程 | [CONTRIBUTING](CONTRIBUTING.md) |
 
 ## 当前限制
