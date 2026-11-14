@@ -120,7 +120,24 @@ PASS #28 [Acceptance] 工程治理：验收 Issue/PR 工作流与构建产物治
 SUMMARY: 4 subject(s), 0 error(s), 0 warning(s)
 ```
 
-## 4. 单元测试
+## 4. PR 审计
+
+运行以下命令。
+
+```bash
+python3 scripts/audit_issue_relations.py --repo wyz541/Kshift --pr 31
+```
+
+实际结果如下。
+
+```text
+PASS PR #31 docs(governance): enforce native issue relations
+  INFO  closes=false
+  INFO  part_of=true
+SUMMARY: 1 subject(s), 0 error(s), 0 warning(s)
+```
+
+## 5. 单元测试
 
 运行以下命令。
 
@@ -135,13 +152,13 @@ Ran 10 tests in 0.000s
 OK
 ```
 
-## 5. 限制
+## 6. 限制
 
 自动审计不能判断 `blocked_by` 是否为真实硬阻塞。Owner 必须执行人工检查。
 
 跨仓库依赖没有同仓库原生 `blocked_by`。Owner 必须使用完整仓库引用并人工复核。
 
-## 6. 来源
+## 7. 来源
 
 1. [Issue #22：工程治理 Feature](https://github.com/wyz541/Kshift/issues/22)，访问日期 `2026-11-14`。
 2. [Issue #23：工程治理 Research](https://github.com/wyz541/Kshift/issues/23)，访问日期 `2026-11-14`。
