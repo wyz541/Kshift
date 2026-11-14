@@ -3,7 +3,7 @@ slug: /spec/traceability
 title: Kshift Spec v0.1 追踪表
 type: reference
 status: active
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - 追踪
   - Discussion
@@ -56,7 +56,7 @@ source: https://github.com/wyz541/Kshift/discussions/1
 | 仍需确认的 Spec 问题 | [15. 开放决策](kshift-spec-v0.1.md#15-开放决策) | `DEC-017` 至 `DEC-026` | [0007](../adr/0007-github-release-orchestrator.md) |
 | 协议大小上限 | [12. 合同与兼容](kshift-spec-v0.1.md#12-合同与兼容) | `DEC-027` | [0006](../adr/0006-grpc-protobuf-ffi.md) |
 | GitHub 多平台 Release Spec | [13.3 Release 门禁](kshift-spec-v0.1.md#133-release-门禁) | `DEC-013` | [0007](../adr/0007-github-release-orchestrator.md) |
-| GitHub 事项分流与治理 | [14. 项目治理](kshift-spec-v0.1.md#14-项目治理) | `DEC-016` | [README](../adr/README.md) |
+| GitHub 事项分流与治理 | [14. 项目治理](kshift-spec-v0.1.md#14-项目治理) | `DEC-016`、`DEC-032` 至 `DEC-039` | [0010](../adr/0010-issue-pr-and-local-build-governance.md) |
 
 ## 3. 下游 Issue 入口
 

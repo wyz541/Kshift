@@ -3,7 +3,7 @@ slug: /adr
 title: Kshift ADR 索引
 type: reference
 status: active
-updated: "2026-11-13"
+updated: "2026-11-14"
 keywords:
   - ADR
   - 架构决策
@@ -37,6 +37,7 @@ description: 列出 Kshift v1 的架构决策记录、状态和关联章节。
 | [0007](0007-github-release-orchestrator.md) | GitHub Release orchestrator | `accepted` | `DEC-013` |
 | [0008](0008-task-ownership-and-time-zones.md) | 任务负责人和时区语义 | `accepted` | `DEC-028` 至 `DEC-030` |
 | [0009](0009-single-day-plan-ui.md) | 唯一日计划 UI | `accepted` | `DEC-003`、`DEC-031` |
+| [0010](0010-issue-pr-and-local-build-governance.md) | Issue/PR 与本地构建治理 | `accepted` | `DEC-032` 至 `DEC-039` |
 
 ## 3. 模板
 

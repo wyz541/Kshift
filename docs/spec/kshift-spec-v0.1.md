@@ -4,7 +4,7 @@ title: Kshift Spec v0.1
 type: standard
 status: active
 version: "0.1"
-updated: "2026-11-13"
+updated: "2026-11-14"
 effective: "2026-11-13"
 keywords:
   - Kshift
@@ -538,8 +538,16 @@ flowchart TD
 - `GOV-006`：安全或私密事项使用 Security Advisory。
 - `GOV-007`：大功能使用 Feature Issue 和原生 sub-issues。
 - `GOV-008`：PR 必须包含验收证据和回滚说明。
+- `GOV-009`：类型标签使用 `type:`，领域标签使用 `area:`；每个开放实现 Issue 必须有一个类型标签和至少一个领域标签。
+- `GOV-010`：GitHub Project `Status` 是唯一状态来源。标签和 Issue 正文不得维护第二套状态。
+- `GOV-011`：一个 PR 只有一个主 Issue。最终关闭使用 `Closes #N`，前置 PR 使用 `Part of #N`。
+- `GOV-012`：每个 PR 必须判断文档、FAQ 和 Release note 影响。无需更新时必须写明“不适用”及原因。
+- `GOV-013`：Research 完成后回写来源 Discussion。RFC 类 Discussion 保持 Open；只有 Q&A 才可标记已答复。
+- `GOV-014`：PR 正文保存交付证据。Issue 或 Acceptance 保存最终验收证据。评论不能成为唯一证据。
+- `GOV-015`：本地 `xcodebuild` 使用 `build/DerivedData`。`build/` 不进入 Git。
+- `GOV-016`：Debug App 显示名为 `Kshift Dev`。Debug App 不复制到 Applications。每个平台只保留一个活跃 Debug 构建。
 
-决策状态见 [Decision Register](../decisions/decision-register.md)。未决项见 [Open Questions](../decisions/open-questions.md)。
+决策状态见 [Decision Register](../decisions/decision-register.md)。未决项见 [Open Questions](../decisions/open-questions.md)。治理细节和回滚方式见 [ADR-0010](../adr/0010-issue-pr-and-local-build-governance.md)。
 
 ## 15. 开放决策
 
@@ -559,6 +567,8 @@ flowchart TD
 | `OQ-010` | 产品成功指标的具体数值 | `@wyz541` | `2026-12-11` | 首轮试用和发布评审 |
 
 `OQ-011` 已关闭。最终大小上限见第 9 节和第 12 节。决策记录见 `DEC-027`。
+
+Issue/PR 工作流和本地构建治理的八项问题已由 Issue #23 关闭。最终选择见 `DEC-032` 至 `DEC-039`。
 
 ## 16. 正式评审结果
 
