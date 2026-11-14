@@ -4,6 +4,7 @@ use std::{env, fs, path::PathBuf};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR")?);
     let migrations_dir = manifest_dir.join("../../migrations");
+    println!("cargo:rerun-if-changed={}", migrations_dir.display());
     let mut entries = Vec::new();
 
     for entry in fs::read_dir(&migrations_dir)? {
