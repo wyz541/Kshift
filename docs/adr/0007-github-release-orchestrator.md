@@ -69,6 +69,6 @@ Stable Release 需要同一 source commit、完整证据、签名和 digest 校�
 
 ## 7. 关联
 
-- Spec: [13.3 Release 门禁](../spec/kshift-spec-v0.1.md#133-release-门禁)
+- Active Spec: [KS-RELEASE](../specs/release.md#4-单一写入者和-promote)
 - Decision: `DEC-013`
 - Contract: [Release Contract](../contracts/release-v0.1.md)

@@ -65,6 +65,6 @@ description: 固定 KshiftRootView 为唯一日计划 UI，并归档未接入应
 
 ## 7. 关联
 
-- Spec: [6. 体验与 UI](../spec/kshift-spec-v0.1.md#6-体验与-ui)
+- Active Spec: [KS-UI](../specs/ui.md#4-唯一日计划-ui)
 - Decision: `DEC-003`、`DEC-031`
 - ADR: [ADR-0002](0002-macos-ios-first.md)

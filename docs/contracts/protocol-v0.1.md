@@ -16,7 +16,7 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 
 # Kshift Protocol Contract v0.1
 
-> 结论：Rust client 和 server 只使用 `kshift.v1` protobuf。SwiftUI host 只使用 `kshift-ffi`。所有写入必须幂等并携带并发前置条件。
+> 结论：Rust client 和 server 只使用 `kshift.v1` protobuf。SwiftUI host 只使用 `kshift-ffi`。所有写入必须幂等并携带并发前置条件。当前规则见 [KS-ARCH](../specs/architecture.md) 和 [KS-DOMAIN](../specs/domain.md)。
 
 ## 1. 合同文件
 
@@ -231,6 +231,8 @@ description: 定义 Kshift v1 的传输、错误、幂等、快照、事件和 F
 
 ## 11. 关联
 
-- [Spec v0.1](../spec/kshift-spec-v0.1.md)
+- [KS-DOMAIN](../specs/domain.md)
+- [KS-ARCH](../specs/architecture.md)
+- [KS-OPS](../specs/operations.md)
 - [ADR-0005](../adr/0005-revisioned-snapshot-outbox.md)
 - [ADR-0006](../adr/0006-grpc-protobuf-ffi.md)

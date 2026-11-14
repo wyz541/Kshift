@@ -156,7 +156,7 @@ python3 scripts/audit_issue_relations.py --repo wyz541/Kshift --pr 42
 ## 10. 来源
 
 1. [Discussion #1：Kshift Issue/PR 风格 Spec](https://github.com/wyz541/Kshift/discussions/1)，访问日期 `2026-11-14`。
-2. [Spec v0.1：项目治理](../spec/kshift-spec-v0.1.md)，访问日期 `2026-11-14`。
+2. [KS-GOV：工程治理规范](../specs/governance.md)，访问日期 `2026-11-14`。
 3. [GitHub Docs：About sub-issues](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/adding-sub-issues)，访问日期 `2026-11-14`。
 4. [GitHub Docs：About issue dependencies](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-issue-dependencies)，访问日期 `2026-11-14`。
 

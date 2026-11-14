@@ -23,7 +23,7 @@ description: 记录历史决策和迁移映射；新决策进入 Issue。
 
 | 状态 | 使用规则 |
 | --- | --- |
-| `confirmed` | 已进入 Spec v0.1，可作为实现依据 |
+| `confirmed` | 已进入领域 Active Spec，可作为实现依据 |
 | `pending` | 没有最终选择；需要 owner、截止日期和影响范围 |
 | `rejected` | 明确不进入首版或永久禁止 |
 
@@ -95,7 +95,7 @@ description: 记录历史决策和迁移映射；新决策进入 Issue。
 
 ## 5. 关联文档
 
-- [Spec v0.1](../spec/kshift-spec-v0.1.md)
+- [Active Spec 索引](../specs/index.md)
 - [Open Questions](open-questions.md)
 - [ADR Index](../adr/README.md)
 - [Traceability](../spec/traceability.md)

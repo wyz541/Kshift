@@ -5,11 +5,11 @@
 ## 当前状态
 
 - 阶段：R1 Rust 服务核心、R1 Rust client/FFI 和 R2 共享 SwiftUI 基座。
-- Spec 版本：`0.1`，状态 `active`。
+- Active Spec：7 篇领域 Spec，状态 `active`。
 - 正式评审：[R0 Spec Review](docs/reviews/2026-11-13-r0-spec-review.md)。
 - 实现状态：Rust server、Rust client、C ABI、R2 日计划 UI 和 R3 计划深度切片可构建；macOS/iOS live P0 E2E 已验证。
 - R4/R5 基座：备份、恢复、RBAC、部署和 Release 合同已加入。
-- 权威入口：[Kshift Spec v0.1](docs/spec/kshift-spec-v0.1.md)。
+- 权威入口：[Active Spec 索引](docs/specs/index.md)。
 - 讨论来源：[Discussion #1](https://github.com/wyz541/Kshift/discussions/1)。
 - 总任务：[Issue #2](https://github.com/wyz541/Kshift/issues/2)。
 
@@ -266,7 +266,7 @@ xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
   -destination 'platform=iOS Simulator,name=iPhone 18 Pro' test
 ```
 
-验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-PLAN](docs/specs/plan-depth.md)。
+验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-DOMAIN](docs/specs/domain.md) 和 [KS-UI](docs/specs/ui.md)。
 
 ## R4/R5 运维与发布
 
@@ -294,7 +294,7 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 | --- | --- |
 | Active Spec 索引 | [Specs](docs/specs/index.md) |
 | 工程治理规范 | [KS-GOV](docs/specs/governance.md) |
-| 尚未迁移的领域规范 | [Spec v0.1](docs/spec/kshift-spec-v0.1.md) |
+| 产品、领域、架构、运维、UI 和 Release 规范 | [Active Specs](docs/specs/index.md) |
 | Discussion 到 Spec 的映射 | [Traceability](docs/spec/traceability.md) |
 | 决策过程 | [Research Issues](https://github.com/wyz541/Kshift/issues?q=is%3Aissue+label%3Atype%3Aresearch) |
 | 历史决策记录 | [Decision Register](docs/decisions/decision-register.md) |
