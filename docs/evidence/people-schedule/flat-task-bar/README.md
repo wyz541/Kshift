@@ -42,7 +42,7 @@ description: 记录人员排期任务条改为纯色、扁平、单行紧凑样�
 | iOS accessibility audit | 通过 |
 | `./scripts/check-r0.sh` | 通过 |
 | `make check-build-governance` | 通过 |
-| Operations CI | 待运行 |
+| Operations CI | 通过 |
 
 ## 候选截图
 
