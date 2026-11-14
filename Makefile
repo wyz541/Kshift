@@ -9,7 +9,7 @@ MACOS_APP := $(DERIVED_DATA)/Build/Products/Debug/Kshift-macOS.app
 IOS_APP := $(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/Kshift-iOS.app
 DRY_RUN ?= 0
 
-.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e test verify app-paths clean-build check-build-governance legacy-deriveddata-manifest clean
+.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e test verify app-paths clean-build check-build-governance legacy-deriveddata-manifest r4-load clean
 
 prepare-cargo-home:
 	@mkdir -p "$(CARGO_HOME)"
@@ -51,6 +51,9 @@ ios-test: ffi project
 
 live-ui-e2e:
 	KSHIFT_CARGO_OFFLINE=1 ./scripts/run-live-ui-e2e.sh
+
+r4-load:
+	KSHIFT_LOAD_DURATION_SECS="$${KSHIFT_LOAD_DURATION_SECS:-1800}" ./scripts/run-load-evidence.sh
 
 test: rust-fmt rust-lint rust-test swift-test
 	KSHIFT_SKIP_XCODE_TESTS=1 ./scripts/verify.sh

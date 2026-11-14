@@ -108,6 +108,23 @@ pub struct TestApi {
 
 impl TestApi {
     pub fn create(pool: PgPool, tokens: HashMap<Uuid, String>) -> Self {
+        Self::create_with_limits(
+            pool,
+            tokens,
+            ApiLimits {
+                unary_rpc: 100,
+                write_transactions: 8,
+                event_streams: 32,
+                streams_per_user: 1,
+            },
+        )
+    }
+
+    pub fn create_with_limits(
+        pool: PgPool,
+        tokens: HashMap<Uuid, String>,
+        limits: ApiLimits,
+    ) -> Self {
         let authenticator = TokenAuthenticator::from_entries(
             tokens
                 .iter()
@@ -115,12 +132,7 @@ impl TestApi {
         )
         .expect("test authenticator should build");
         let settings = ApiSettings {
-            limits: ApiLimits {
-                unary_rpc: 100,
-                write_transactions: 8,
-                event_streams: 32,
-                streams_per_user: 1,
-            },
+            limits,
             timeouts: ApiTimeouts {
                 unary_request: Duration::from_secs(15),
                 write_transaction: Duration::from_secs(10),
