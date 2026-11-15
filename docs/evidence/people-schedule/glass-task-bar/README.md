@@ -53,10 +53,12 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Blank day cell click 打开 responsive `TaskEditorView` popover。Popover default size 为 400pt × 560pt。
 - Regular PeopleSchedule 隐藏 duplicated global date navigation row。
 - Single schedule toolbar 包含 date picker、period control、density、sort、clear selection 和 settings。
+- Sidebar footer 使用 gear button，并打开 `KshiftAppSettingsView`。
+- Settings surface 包含 schedule layout、system accessibility shortcut 和 about information。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -65,6 +67,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `bb4dac51ae5252221d20ab3d1209d8cb890817e7b367fe9f2de08794547c775e` |
 | [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `93226b186e1e7be4873b192e5d5255f0246cc0e647693453f586820ad5d4a1c1` |
 | [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | Blank day cell click 和 responsive task editor popover | `e43b611faeb3c182886b459f46a8e0d52ea15ec92c53478a1d45328d67cabca9` |
+| [`macos-settings-2026-11-15.png`](./macos-settings-2026-11-15.png) | macOS 27.0.1；Light Mode | Sidebar settings button 和 `KshiftAppSettingsView` | `4933cff27082a3cf6be4579f7af5a14836727913453bea468c6a17ff57315271` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。
 

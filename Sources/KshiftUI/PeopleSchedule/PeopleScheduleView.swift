@@ -1263,44 +1263,7 @@ private struct PeopleScheduleSettingsPopover: View {
             Text("排期布局")
                 .font(.title3.weight(.semibold))
 
-            VStack(alignment: .leading, spacing: 6) {
-                Label("人员列宽度 \(Int(model.schedulePeopleColumnWidth))pt", systemImage: "person.2")
-                    .font(.caption.weight(.semibold))
-                Slider(
-                    value: Binding(
-                        get: { Double(model.schedulePeopleColumnWidth) },
-                        set: { model.setSchedulePeopleColumnWidth(CGFloat($0)) }
-                    ),
-                    in: 168...320,
-                    step: 4
-                )
-                .accessibilityLabel("人员列宽度")
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Label("日期列宽度 \(Int(model.scheduleDateColumnWidth))pt", systemImage: "calendar")
-                    .font(.caption.weight(.semibold))
-                Slider(
-                    value: Binding(
-                        get: { Double(model.scheduleDateColumnWidth) },
-                        set: { model.setScheduleDateColumnWidth(CGFloat($0)) }
-                    ),
-                    in: 96...360,
-                    step: 8
-                )
-                .accessibilityLabel("日期列宽度")
-            }
-
-            Picker("显示密度", selection: $model.scheduleDensity) {
-                ForEach(ScheduleDensity.allCases) { density in
-                    Text(density.title).tag(density)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            Text("布局设置按项目保存。")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            ScheduleLayoutSettingsSection(model: model)
         }
         .padding(18)
         .frame(width: 330)

@@ -4,6 +4,7 @@ import SwiftUI
 struct SidebarView: View {
     @ObservedObject var model: AppModel
     var usesNavigationLinks = false
+    @State private var isShowingSettings = false
 
     var body: some View {
         List(selection: Binding(
@@ -69,13 +70,18 @@ struct SidebarView: View {
                 }
                 Spacer()
                 Button {
-                    Swift.Task { await model.openAccessibilitySettings() }
+                    isShowingSettings = true
                 } label: {
-                    Image(systemName: "accessibility")
+                    Image(systemName: "gearshape.fill")
+                        .frame(width: 30, height: 30)
                 }
-                .buttonStyle(.glass)
-                .help("打开系统辅助功能设置")
-                .accessibilityLabel("打开系统辅助功能设置")
+                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .help("设置")
+                .accessibilityLabel("设置")
+                .accessibilityIdentifier("settings-button")
+                .sheet(isPresented: $isShowingSettings) {
+                    KshiftAppSettingsView(model: model)
+                }
             }
             .padding(12)
         }
