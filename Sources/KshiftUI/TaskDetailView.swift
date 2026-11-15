@@ -92,10 +92,11 @@ struct TaskDetailView: View {
                 .padding(16)
                 .kshiftContentBoard()
 
-                detailSection("说明") {
-                    Text(task.notes.isEmpty ? "无说明" : task.notes)
-                        .foregroundStyle(task.notes.isEmpty ? .secondary : .primary)
-                        .textSelection(.enabled)
+                detailSection("详情 · Markdown") {
+                    KshiftMarkdownText(
+                        source: task.notes.isEmpty ? "暂无详情" : task.notes,
+                        isPlaceholder: task.notes.isEmpty
+                    )
                 }
 
                 if !task.tags.isEmpty {

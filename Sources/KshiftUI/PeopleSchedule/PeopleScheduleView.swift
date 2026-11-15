@@ -619,8 +619,8 @@ private struct CompactScheduleTaskCapsule: View {
             .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
             .accessibilityHint("点击可查看任务详情。")
             .accessibilityIdentifier("schedule-task-\(task.id)")
+            .modifier(ScheduleTaskHoverPreviewModifier(model: model, task: task))
             .draggable(task.id)
-            .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
         }
         .overlay(alignment: .leading) {
             statusMenu
@@ -1110,8 +1110,8 @@ private struct PeopleScheduleTaskCapsule: View {
                 .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
                 .accessibilityHint("点击可查看任务详情。")
                 .accessibilityIdentifier("schedule-task-\(task.id)")
+                .modifier(ScheduleTaskHoverPreviewModifier(model: model, task: task))
                 .draggable(task.id)
-                .help("\(task.title)\n\(task.priority.code) · \(task.status.title) · \(dateLabel)")
             }
             .overlay(alignment: .leading) {
                 statusMenu

@@ -151,6 +151,8 @@ flowchart TB
 - `UI-PPL-020`：Click blank schedule day cell 必须使用 clicked person 和 clicked date 创建 local `TaskDraft`。交互必须打开 `TaskEditorView` 的 `popover` presentation。Popover default size 必须为 400pt × 560pt。Popup layout 必须使用 responsive assignee row 和 two-date row。该交互不得设置 root `editorDraft` 或复用 sheet presentation。
 - `UI-PPL-021`：Regular horizontal-size PeopleSchedule 必须隐藏 PlannerView 的 global date navigation row。Schedule toolbar 必须是唯一 date 和 period navigation source。Schedule toolbar 必须包含 date picker、period control、density、sort、clear selection 和 settings。Compact horizontal-size class 必须保留 view picker 和 compact action bar。
 - `UI-PPL-022`：Sidebar footer 的 trailing action 必须是 settings gear button。该按钮必须打开 `KshiftAppSettingsView`。Settings surface 必须包含 schedule layout controls、system accessibility shortcut 和 about information。禁止将 system accessibility settings 作为 footer button 的直接 action。Button accessibility identifier 必须为 `settings-button`。
+- `UI-PPL-023`：Task bar 必须在 pointer hover 450ms 后显示 adjacent preview panel。Preview panel 必须显示 title、status、priority、assignee、date、tags 和 rendered Markdown detail。Preview panel 必须是 read-only，并使用 accessibility identifier `task-preview-<task-id>`。
+- `UI-PPL-024`：Task detail 和 task editor 必须使用 shared Markdown renderer。Task editor 必须提供 `编写` 和 `预览` modes。Preview 必须支持 heading、paragraph、bullet list、numbered list、blockquote、divider 和 fenced code block。Inline Markdown 必须保留。Task detail 必须 render Markdown detail，不得显示 raw Markdown source。
 
 ## 8. 关联合同
 

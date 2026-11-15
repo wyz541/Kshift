@@ -58,10 +58,15 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - PeopleSchedule 不显示 legacy Plan Depth entry。
 - Other planner modes 保留 Plan Depth entry。
 - Plan Depth sheet 有 explicit Close button。Regular presentation 使用 `860pt × 700pt` minimum size。
+- Task bars show a delayed hover preview panel。
+- Hover preview contains task metadata and rendered Markdown details。
+- Task details and task editor use the shared Markdown renderer。
+- Markdown editor supports `编写` and `预览` modes。
+- Markdown preview supports headings、lists、quotes、dividers and fenced code。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -71,6 +76,8 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `6f5623633bc8a8ef973a1770ec52b1a3e99abf6bf1785200b7c59c2be4145389` |
 | [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | Blank day cell click 和 responsive task editor popover | `e43b611faeb3c182886b459f46a8e0d52ea15ec92c53478a1d45328d67cabca9` |
 | [`macos-settings-2026-11-15.png`](./macos-settings-2026-11-15.png) | macOS 27.0.1；Light Mode | Sidebar settings button 和 `KshiftAppSettingsView` | `4933cff27082a3cf6be4579f7af5a14836727913453bea468c6a17ff57315271` |
+| [`macos-task-hover-preview-2026-11-15.png`](./macos-task-hover-preview-2026-11-15.png) | macOS 27.0.1；Light Mode | Delayed task hover preview with rendered Markdown | `caeb728855c14eff128a24dc7fea4bb7f8c855d561a49c627fada63ff68bbc4a` |
+| [`macos-markdown-editor-2026-11-15.png`](./macos-markdown-editor-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown write and preview modes | `9a4339d153482025ea43510f6fe60fd0a4a30fc5b2adf7ef623358a99e8fffcc` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。
 
@@ -78,10 +85,11 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 | 检查 | 结果 |
 | --- | --- |
-| `make swift-test` | 通过；44 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
+| `make swift-test` | 通过；45 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
 | macOS Debug build | 通过 |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |
+| `testTaskMarkdownEditorWritesAndPreviewsBlocks` | 通过 |
 | `testPeopleScheduleAccessibilityAudit` | 通过 |
 | `testPeopleScheduleStatusControlOpensNativeMenu` | 通过 |
 | `testPeopleScheduleIsDefaultViewAndCoreControlsWork` | 通过 |

@@ -45,14 +45,11 @@ struct TaskEditorView: View {
                     .accessibilityIdentifier("task-title")
             }
 
-            fieldGroup("说明") {
-                TextEditor(text: $draft.notes)
-                    .font(.body)
-                    .frame(minHeight: 130)
-                    .padding(8)
-                    .scrollContentBackground(.hidden)
-                    .kshiftContentBoard()
-                    .accessibilityLabel("任务说明")
+            fieldGroup("详情 · Markdown") {
+                MarkdownEditorView(
+                    text: $draft.notes,
+                    minimumHeight: presentation == .popover ? 110 : 160
+                )
             }
 
             HStack(alignment: .top, spacing: 16) {

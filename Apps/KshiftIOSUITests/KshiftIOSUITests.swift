@@ -34,6 +34,33 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(created.waitForExistence(timeout: 5), app.debugDescription)
     }
 
+    func testTaskMarkdownEditorWritesAndPreviewsBlocks() throws {
+        let app = launchPlanner()
+        let addTask = firstMiaAddTask(in: app)
+        addTask.tap()
+
+        let title = taskTitleField(in: app)
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        title.tap()
+        title.typeText("Markdown preview task")
+
+        let markdownEditor = app.descendants(matching: .any)["markdown-editor"].firstMatch
+        XCTAssertTrue(markdownEditor.waitForExistence(timeout: 5), app.debugDescription)
+        markdownEditor.tap()
+        markdownEditor.typeText("# Details\n\n- First item\n- **Second item**")
+
+        let preview = app.buttons["预览"].firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 5), app.debugDescription)
+        preview.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["markdown-preview"].firstMatch
+                .waitForExistence(timeout: 5),
+            app.debugDescription
+        )
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Details")).firstMatch.exists)
+    }
+
     func testPeopleScheduleIsDefaultViewAndCoreControlsWork() throws {
         let app = launchPlannerWithDefaultView()
 
