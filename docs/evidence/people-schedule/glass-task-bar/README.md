@@ -61,14 +61,14 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Task bars show a delayed hover preview panel。
 - Hover preview contains task metadata and rendered Markdown details。
 - Task details and task editor use the shared Markdown renderer。
-- Task editor shows editable Markdown and rendered preview simultaneously in adaptive side-by-side or stacked panes。It has no `编写` / `预览` mode switch。
+- Task editor uses one Markdown workspace。A `源码` / `预览` mode switch changes the workspace content。New tasks default to source mode；existing tasks with content default to preview mode。
 - Markdown preview supports headings、lists、quotes、dividers and fenced code。
 - Status and priority controls use equal-width columns。Tag editing uses removable chips and an inline input。
 - Regular task detail and task editor sheets use a `680pt` minimum width。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。The task editor now uses compact section cards and live Markdown panes。Status and priority columns are aligned。Tags use compact removable chips。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。The task editor now uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -76,10 +76,11 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `4f9aa2754a4f5c5dccdf1760ce016acc32b820c8c0b29cf9bda79fcdf38c3a43` |
 | [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `78cedcbbf9ca3711e9bc549623202536f950db65374a6602a8c2140ab735a738` |
 | [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `6f5623633bc8a8ef973a1770ec52b1a3e99abf6bf1785200b7c59c2be4145389` |
-| [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | 640pt × 580pt task editor popover with section cards | `2c542f283c8bb479d23ac32d56655ac63c8ea848a1aaa11146f3bf59364c5d42` |
+| [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | 640pt × 580pt task editor popover with one Markdown workspace | `964e0ca87581ea6786cddc0bd13c55c1999d48135ca0cadd03ea2522b4b59265` |
 | [`macos-settings-2026-11-15.png`](./macos-settings-2026-11-15.png) | macOS 27.0.1；Light Mode | Sidebar settings button 和 `KshiftAppSettingsView` | `4933cff27082a3cf6be4579f7af5a14836727913453bea468c6a17ff57315271` |
 | [`macos-task-hover-preview-2026-11-15.png`](./macos-task-hover-preview-2026-11-15.png) | macOS 27.0.1；Light Mode | Delayed task hover preview with rendered Markdown | `caeb728855c14eff128a24dc7fea4bb7f8c855d561a49c627fada63ff68bbc4a` |
-| [`macos-markdown-editor-2026-11-15.png`](./macos-markdown-editor-2026-11-15.png) | macOS 27.0.1；Light Mode | Compact task editor with section cards, live Markdown panes, aligned metadata and tag chips | `7a341e9b578810915ae8fad55565e843e1453573329c56ae54ca7ba738cf6704` |
+| [`macos-markdown-editor-2026-11-15.png`](./macos-markdown-editor-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown preview mode inside the single task workspace | `ce4b5711e5d74fd9f406ca38c28f464a353901b6abc39e29bca71c754baca8b8` |
+| [`macos-markdown-source-2026-11-15.png`](./macos-markdown-source-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown source mode with the same single task workspace | `34a983e69c73f904e9f05a24b564a5825d06d16b3d7887eddf79b3d73daab858` |
 | [`macos-task-detail-2026-11-15.png`](./macos-task-detail-2026-11-15.png) | macOS 27.0.1；Light Mode | Task detail with summary card, rendered Markdown and tag chips | `77c7d05f27a678c9baa25b06adeb3744594316affb381841c8ad55969de18699` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。

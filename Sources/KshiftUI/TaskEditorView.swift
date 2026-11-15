@@ -11,6 +11,7 @@ struct TaskEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var draft: TaskDraft
+    @State private var markdownMode: MarkdownViewMode
     @State private var tagInput = ""
     @State private var validationMessage: String?
     @State private var isSaving = false
@@ -24,6 +25,11 @@ struct TaskEditorView: View {
         self.model = model
         self.presentation = presentation
         _draft = State(initialValue: initialDraft)
+        _markdownMode = State(
+            initialValue: initialDraft.notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                ? .source
+                : .preview
+        )
     }
 
     var body: some View {
@@ -39,12 +45,7 @@ struct TaskEditorView: View {
         VStack(alignment: .leading, spacing: 16) {
             titleField
 
-            panelSection("内容", systemImage: "text.alignleft") {
-                MarkdownEditorView(
-                    text: $draft.notes,
-                    paneHeight: markdownPaneHeight
-                )
-            }
+            markdownSection
 
             panelSection("属性", systemImage: "slider.horizontal.3") {
                 taskPropertyFields
@@ -76,6 +77,45 @@ struct TaskEditorView: View {
             }
         }
         .padding(20)
+    }
+
+    private var markdownSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Label("内容", systemImage: "text.alignleft")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.primary)
+
+                Spacer()
+
+                Picker("Markdown 显示模式", selection: $markdownMode) {
+                    ForEach(MarkdownViewMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 160)
+                .accessibilityLabel("Markdown 显示模式")
+                .accessibilityIdentifier("markdown-mode")
+            }
+
+            MarkdownEditorView(
+                text: $draft.notes,
+                mode: markdownMode,
+                paneHeight: markdownPaneHeight
+            )
+        }
+        .padding(14)
+        .background(
+            .primary.opacity(0.025),
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.separator, lineWidth: 1)
+                .allowsHitTesting(false)
+        }
     }
 
     private var titleField: some View {
@@ -279,9 +319,9 @@ struct TaskEditorView: View {
 
     private var markdownPaneHeight: CGFloat {
         if isCompactWidth {
-            return 170
+            return 180
         }
-        return presentation == .popover ? 180 : 190
+        return presentation == .popover ? 190 : 220
     }
 
     private var dueDateField: some View {

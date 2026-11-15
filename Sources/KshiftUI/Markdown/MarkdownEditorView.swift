@@ -1,44 +1,46 @@
 import SwiftUI
 
+enum MarkdownViewMode: String, CaseIterable, Identifiable {
+    case source
+    case preview
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .source: "源码"
+        case .preview: "预览"
+        }
+    }
+}
+
 struct MarkdownEditorView: View {
     @Binding var text: String
-    var paneHeight: CGFloat = 260
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    private var stacksVertically: Bool {
-        horizontalSizeClass == .compact
-    }
+    let mode: MarkdownViewMode
+    var paneHeight: CGFloat = 220
 
     var body: some View {
         Group {
-            if stacksVertically {
-                VStack(spacing: 12) {
-                    editorPane
-                    Divider()
-                    previewPane
-                }
-            } else {
-                HStack(alignment: .top, spacing: 14) {
-                    editorPane
-                    Divider()
-                    previewPane
-                }
+            switch mode {
+            case .source:
+                sourcePane
+            case .preview:
+                previewPane
             }
         }
+        .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
+        .background(
+            .primary.opacity(0.025),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
     }
 
-    private var paneShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
-    }
-
-    private var editorPane: some View {
+    private var sourcePane: some View {
         TextEditor(text: $text)
             .font(.system(.body, design: .monospaced))
             .padding(8)
             .scrollContentBackground(.hidden)
             .writingToolsBehavior(.disabled)
-            .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
-            .background(.primary.opacity(0.025), in: paneShape)
             .overlay(alignment: .topLeading) {
                 if text.isEmpty {
                     Text("输入 Markdown")
@@ -49,7 +51,7 @@ struct MarkdownEditorView: View {
                         .allowsHitTesting(false)
                 }
             }
-            .accessibilityLabel("Markdown 编辑器")
+            .accessibilityLabel("Markdown 源码")
             .accessibilityIdentifier("markdown-editor")
     }
 
@@ -62,8 +64,6 @@ struct MarkdownEditorView: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(14)
         }
-        .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
-        .background(.primary.opacity(0.015), in: paneShape)
         .accessibilityLabel("Markdown 预览")
         .accessibilityIdentifier("markdown-preview")
     }

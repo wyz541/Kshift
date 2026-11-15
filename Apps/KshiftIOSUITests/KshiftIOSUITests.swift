@@ -45,12 +45,17 @@ final class KshiftIOSUITests: XCTestCase {
         title.typeText("Markdown preview task")
 
         let markdownEditor = app.textViews["markdown-editor"].firstMatch
-        let preview = app.scrollViews["markdown-preview"].firstMatch
         XCTAssertTrue(markdownEditor.waitForExistence(timeout: 5), app.debugDescription)
-        XCTAssertTrue(preview.waitForExistence(timeout: 5), app.debugDescription)
 
         markdownEditor.tap()
         markdownEditor.typeText("# Details\n\n- First item\n- **Second item**")
+
+        let previewMode = app.buttons["预览"].firstMatch
+        XCTAssertTrue(previewMode.waitForExistence(timeout: 5), app.debugDescription)
+        previewMode.tap()
+
+        let preview = app.scrollViews["markdown-preview"].firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 5), app.debugDescription)
 
         let renderedHeading = app.staticTexts
             .matching(NSPredicate(format: "label CONTAINS %@", "Details"))
