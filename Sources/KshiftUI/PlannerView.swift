@@ -73,9 +73,11 @@ struct PlannerView: View {
             .background(.clear)
             .overlay(alignment: .bottomTrailing) {
                 if showsFloatingAddButton {
-                    Button {
-                        model.presentNewTask(assigneeIDs: [])
-                    } label: {
+                    TaskCreationButton(
+                        model: model,
+                        assigneeIDs: [],
+                        arrowEdge: .bottom
+                    ) {
                         Image(systemName: "plus")
                             .font(.title3.weight(.semibold))
                             .foregroundStyle(.white)

@@ -407,7 +407,7 @@ struct TaskEditorView: View {
             maxHeight: isCompactWidth ? .infinity : nil
         )
         .frame(
-            width: isCompactWidth ? nil : 640,
+            width: isCompactWidth ? nil : 560,
             height: isCompactWidth ? nil : 580
         )
         .background(.background)

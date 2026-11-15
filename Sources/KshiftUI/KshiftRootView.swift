@@ -65,13 +65,23 @@ public struct KshiftRootView: View {
                     Label("新建任务", systemImage: "plus")
                 }
                 .buttonStyle(KshiftCompactAccentGlassButtonStyle())
-                .keyboardShortcut("n", modifiers: .command)
+                .popover(
+                    item: newTaskDraftBinding,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .top
+                ) { draft in
+                    TaskEditorView(
+                        model: model,
+                        initialDraft: draft,
+                        presentation: .popover
+                    )
+                }
                 .accessibilityIdentifier(
                     dynamicTypeSize.isAccessibilitySize ? "add-task" : "toolbar-add-task"
                 )
             }
         }
-        .sheet(item: $model.editorDraft) { draft in
+        .sheet(item: editDraftBinding) { draft in
             TaskEditorView(model: model, initialDraft: draft)
         }
         .sheet(item: Binding(
@@ -145,6 +155,34 @@ public struct KshiftRootView: View {
                 Swift.Task { await model.refresh() }
             }
         }
+    }
+
+    private var newTaskDraftBinding: Binding<TaskDraft?> {
+        Binding(
+            get: {
+                guard let draft = model.editorDraft, draft.isNew else { return nil }
+                return draft
+            },
+            set: { draft in
+                if draft == nil {
+                    model.editorDraft = nil
+                }
+            }
+        )
+    }
+
+    private var editDraftBinding: Binding<TaskDraft?> {
+        Binding(
+            get: {
+                guard let draft = model.editorDraft, !draft.isNew else { return nil }
+                return draft
+            },
+            set: { draft in
+                if draft == nil {
+                    model.editorDraft = nil
+                }
+            }
+        )
     }
 
     private var planDepthBoundary: any KshiftPlanDepthBoundary {

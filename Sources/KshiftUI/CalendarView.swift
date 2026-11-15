@@ -90,9 +90,11 @@ struct CalendarView: View {
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button {
-                    model.presentNewTask(assigneeIDs: [], date: model.selectedDate)
-                } label: {
+                TaskCreationButton(
+                    model: model,
+                    assigneeIDs: [],
+                    date: model.selectedDate
+                ) {
                     Label("添加任务", systemImage: "plus")
                 }
                 .buttonStyle(.glassProminent)
