@@ -130,7 +130,7 @@ flowchart TB
 - `UI-PPL-003`：人员行必须显示头像、姓名、角色、任务数、进行中数量、P0 数量和折叠按钮。
 - `UI-PPL-004`：人员列默认宽度为 `196pt`。日期列宽度必须限制在 `96pt` 至 `360pt`。
 - `UI-PPL-005`：密度必须包含紧凑、标准和宽松。默认密度为紧凑。
-- `UI-PPL-006`：任务条必须使用 SwiftUI `Button`、`.buttonStyle(.plain)` 和原生 `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))`。Light Mode 的 tint opacity 必须为 `0.28`。Dark Mode 的 tint opacity 必须为 `0.45`。任务条使用明亮优先级圆形徽章、36pt 视觉高度和单行标题。紧凑、标准和宽松密度的任务行间距分别为 40pt、48pt 和 56pt。禁止把 `.buttonStyle(.glass)` 用作最终任务条。禁止纯黑背景、自绘玻璃、渐变、模糊和阴影。P0 徽章使用 `#D92D3A`，P1 徽章使用 `#FFC400`，P2 徽章使用 `#0066FF`，P3 徽章使用 `#5F6368`。状态图标和标题必须保持 WCAG AA 对比度。
+- `UI-PPL-006`：任务条必须使用 SwiftUI `Button`、`.buttonStyle(.plain)` 和原生 `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))`。Light Mode 的 tint opacity 必须为 `0.28`。Dark Mode 的 tint opacity 必须为 `0.45`。任务条使用 36pt 视觉高度和单行标题。日期 slice 的水平 inset 必须为 4pt。标题宽度必须按任务条剩余宽度计算，使用 tail truncation，并 clip 到胶囊边界。紧凑、标准和宽松密度的任务行间距分别为 40pt、48pt 和 56pt。禁止把 `.buttonStyle(.glass)` 用作最终任务条。禁止纯黑背景、自绘玻璃、渐变、模糊和阴影。P0 徽章使用 `#D92D3A`，P1 徽章使用 `#FFC400`，P2 徽章使用 `#0066FF`，P3 徽章使用 `#5F6368`。结构和标题必须保持 WCAG AA 对比度。
 - `UI-PPL-007`：已完成任务使用完成状态图标表达。禁止降低整条任务条的文本对比度。状态控件使用原生菜单显示状态文字和图标。悬停不得自动打开状态菜单。
 - `UI-PPL-008`：任务泳道必须避免重叠。任务排序先使用优先级，再使用状态权重。
 - `UI-PPL-009`：横向裁切任务必须把标题吸附到视口可见边缘。完整可见任务必须把标题放回任务起点。
@@ -141,6 +141,7 @@ flowchart TB
 - `UI-PPL-014`：人员排期必须提供网格语义、图标按钮标签、键盘焦点、悬停预览和 Reduce Motion 行为。
 - `UI-PPL-015`：`compact` 水平尺寸类必须使用按人员分组的纵向任务列表。任务条必须使用 UI-PPL-006 的全宽原生染色玻璃、`Capsule(style: .continuous)` 和单行标题。常规水平尺寸类继续使用人员×日期时间轴。
 - `UI-PPL-016`：人员排期模式不得显示重复的 `SummaryStrip`。任务数量显示在排期工具栏和人员分组标题中。
+- `UI-PPL-017`：任务状态徽章必须使用 28pt 外框、3pt 优先级色环、白色中性内盘和 `13pt` heavy 状态符号。`todo` 使用 `circle.dashed`，`inProgress` 使用 `clock.fill`，`blocked` 使用 `exclamationmark.octagon.fill`，`done` 使用 `checkmark`。状态菜单保持 44pt 触控区域。
 
 ## 8. 关联合同
 

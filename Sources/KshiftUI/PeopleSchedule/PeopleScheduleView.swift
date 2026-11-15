@@ -554,48 +554,47 @@ private struct CompactScheduleTaskCapsule: View {
             Button {
                 model.presentDetails(task)
             } label: {
-                ZStack(alignment: .leading) {
+                HStack(spacing: ScheduleTaskMetrics.contentSpacing) {
                     statusBadge
 
-                    HStack(spacing: 6) {
-                        Text(task.title)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .minimumScaleFactor(0.88)
-                            .allowsTightening(true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .accessibilityHidden(true)
-
-                        Canvas { context, size in
-                            context.draw(
-                                Text(dateLabel)
-                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                    .foregroundStyle(.primary),
-                                at: CGPoint(x: size.width / 2, y: size.height / 2),
-                                anchor: .center
-                            )
-                        }
-                        .frame(width: 58, height: 18)
+                    Text(task.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .minimumScaleFactor(0.88)
+                        .allowsTightening(true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .clipped()
                         .accessibilityHidden(true)
+
+                    Canvas { context, size in
+                        context.draw(
+                            Text(dateLabel)
+                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(.primary),
+                            at: CGPoint(x: size.width / 2, y: size.height / 2),
+                            anchor: .center
+                        )
                     }
-                    .padding(.leading, 38)
-                    .padding(.trailing, 10)
-                    .allowsHitTesting(false)
+                    .frame(width: 58, height: 18)
+                    .accessibilityHidden(true)
                 }
-                .frame(maxWidth: .infinity)
-                .frame(height: 36)
-                .contentShape(taskShape)
+                .padding(.leading, ScheduleTaskMetrics.statusLeadingInset)
+                .padding(.trailing, ScheduleTaskMetrics.trailingInset)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: ScheduleTaskMetrics.visualHeight)
+                .clipShape(taskShape)
+                .allowsHitTesting(false)
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
-            .frame(height: 36)
+            .frame(height: ScheduleTaskMetrics.visualHeight)
             .glassEffect(
                 .regular.tint(glassTint).interactive(),
                 in: taskShape
             )
-            .frame(height: 44)
+            .frame(height: ScheduleTaskMetrics.hitHeight)
             .contentShape(Rectangle())
             .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
             .accessibilityHint("点击可查看任务详情。")
@@ -620,12 +619,12 @@ private struct CompactScheduleTaskCapsule: View {
             }
         } label: {
             Color.clear
-                .frame(width: 44, height: 44)
+                .frame(width: ScheduleTaskMetrics.hitHeight, height: ScheduleTaskMetrics.hitHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .frame(width: 44, height: 44)
+        .frame(width: ScheduleTaskMetrics.hitHeight, height: ScheduleTaskMetrics.hitHeight)
         .fixedSize(horizontal: true, vertical: true)
         .contentShape(Rectangle())
         .accessibilityLabel("\(task.title)，\(task.priority.code)，状态 \(task.status.title)。更改状态")
@@ -633,17 +632,7 @@ private struct CompactScheduleTaskCapsule: View {
     }
 
     private var statusBadge: some View {
-        ZStack {
-            Circle().fill(palette.fill)
-            Image(systemName: task.status.symbol)
-                .font(.system(size: 13, weight: .bold))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(palette.foreground)
-        }
-        .frame(width: 26, height: 26)
-        .frame(width: 36, height: 36)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        ScheduleTaskStatusBadge(status: task.status, priority: task.priority)
     }
 }
 
@@ -892,11 +881,14 @@ private struct PeopleScheduleTimelineRow: View {
                             scrollToDay: scrollToDay
                         )
                         .frame(
-                            width: max(CGFloat(slice.dayCount) * dateWidth - 6, 32),
-                            height: 36
+                            width: max(
+                                CGFloat(slice.dayCount) * dateWidth - ScheduleTaskMetrics.horizontalInset * 2,
+                                32
+                            ),
+                            height: ScheduleTaskMetrics.visualHeight
                         )
                         .offset(
-                            x: CGFloat(slice.startIndex) * dateWidth + 3,
+                            x: CGFloat(slice.startIndex) * dateWidth + ScheduleTaskMetrics.horizontalInset,
                             y: CGFloat(slice.lane) * laneHeight + 2
                         )
                         .glassEffectID(slice.id, in: glassNamespace)
@@ -987,7 +979,7 @@ private struct PeopleScheduleTaskCapsule: View {
     @Environment(\.colorScheme) private var colorScheme
 
     private var taskWidth: CGFloat {
-        CGFloat(slice.dayCount) * dateWidth - 6
+        CGFloat(slice.dayCount) * dateWidth - ScheduleTaskMetrics.horizontalInset * 2
     }
 
     private var titleLeading: CGFloat {
@@ -998,7 +990,10 @@ private struct PeopleScheduleTaskCapsule: View {
             horizontalOffset: horizontalOffset,
             viewportWidth: viewportWidth
         )
-        return min(leading, max(taskWidth - 44, 8))
+        return min(
+            max(leading, ScheduleTaskMetrics.contentLeading),
+            max(taskWidth - ScheduleTaskMetrics.trailingInset, 0)
+        )
     }
 
     private var palette: SchedulePriorityPalette {
@@ -1037,14 +1032,18 @@ private struct PeopleScheduleTaskCapsule: View {
                             .minimumScaleFactor(0.88)
                             .allowsTightening(true)
                             .frame(
-                                maxWidth: max(geometry.size.width - 44, 20),
-                                maxHeight: .infinity,
+                                width: PeopleScheduleLayout.clippedTitleWidth(
+                                    taskWidth: geometry.size.width,
+                                    leadingInset: max(titleLeading, ScheduleTaskMetrics.contentLeading)
+                                ),
+                                height: geometry.size.height,
                                 alignment: .leading
                             )
-                            .offset(x: max(titleLeading, 36))
+                            .offset(x: max(titleLeading, ScheduleTaskMetrics.contentLeading))
                             .accessibilityHidden(true)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                    .clipShape(taskShape)
                     .contentShape(taskShape)
                 }
                 .buttonStyle(.plain)
@@ -1086,12 +1085,12 @@ private struct PeopleScheduleTaskCapsule: View {
             }
         } label: {
             Color.clear
-                .frame(width: 44, height: 44)
+                .frame(width: ScheduleTaskMetrics.hitHeight, height: ScheduleTaskMetrics.hitHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
-        .frame(width: 44, height: 44)
+        .frame(width: ScheduleTaskMetrics.hitHeight, height: ScheduleTaskMetrics.hitHeight)
         .fixedSize(horizontal: true, vertical: true)
         .contentShape(Rectangle())
         .accessibilityLabel("\(task.title)，\(task.priority.code)，状态 \(task.status.title)。更改状态")
@@ -1099,17 +1098,7 @@ private struct PeopleScheduleTaskCapsule: View {
     }
 
     private var statusBadge: some View {
-        ZStack {
-            Circle().fill(palette.fill)
-            Image(systemName: task.status.symbol)
-                .font(.system(size: 13, weight: .bold))
-                .symbolRenderingMode(.monochrome)
-                .foregroundStyle(palette.foreground)
-        }
-        .frame(width: 26, height: 26)
-        .frame(width: 36, height: 36)
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        ScheduleTaskStatusBadge(status: task.status, priority: task.priority)
     }
 
     private func resizeHandle(edge: ScheduleResizeEdge) -> some View {
@@ -1264,6 +1253,52 @@ private struct PeopleScheduleSettingsPopover: View {
     }
 }
 
+private enum ScheduleTaskMetrics {
+    static let horizontalInset: CGFloat = 4
+    static let visualHeight: CGFloat = 36
+    static let hitHeight: CGFloat = 44
+    static let statusLeadingInset: CGFloat = 2
+    static let contentSpacing: CGFloat = 4
+    static let trailingInset: CGFloat = 6
+    static let statusFrame: CGFloat = 28
+    static let contentLeading: CGFloat = statusFrame + contentSpacing
+}
+
+private struct ScheduleTaskStatusBadge: View {
+    let status: TaskStatus
+    let priority: TaskPriority
+
+    private var palette: SchedulePriorityPalette {
+        SchedulePriorityPalette(priority: priority)
+    }
+
+    private var symbol: String {
+        switch status {
+        case .todo: "circle.dashed"
+        case .inProgress: "clock.fill"
+        case .blocked: "exclamationmark.octagon.fill"
+        case .done: "checkmark"
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            Circle().fill(palette.fill)
+            Circle()
+                .fill(Color.white.opacity(0.96))
+                .padding(3)
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .heavy))
+                .symbolRenderingMode(.monochrome)
+                .foregroundStyle(palette.statusGlyph)
+        }
+        .frame(width: 28, height: 28)
+        .frame(width: ScheduleTaskMetrics.statusFrame, height: ScheduleTaskMetrics.statusFrame)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 private struct SchedulePriorityPalette {
     let priority: TaskPriority
 
@@ -1280,6 +1315,13 @@ private struct SchedulePriorityPalette {
         switch priority {
         case .high: .black
         default: .white
+        }
+    }
+
+    var statusGlyph: Color {
+        switch priority {
+        case .high: .black
+        default: fill
         }
     }
 }
