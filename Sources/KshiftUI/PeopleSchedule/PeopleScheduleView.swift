@@ -632,7 +632,7 @@ private struct CompactScheduleTaskCapsule: View {
     }
 
     private var statusBadge: some View {
-        ScheduleTaskStatusBadge(status: task.status, priority: task.priority)
+        ScheduleTaskStatusBadge(status: task.status)
     }
 }
 
@@ -1029,7 +1029,7 @@ private struct PeopleScheduleTaskCapsule: View {
                             .foregroundStyle(.primary)
                             .lineLimit(1)
                             .truncationMode(.tail)
-                            .minimumScaleFactor(0.88)
+                            .minimumScaleFactor(0.78)
                             .allowsTightening(true)
                             .frame(
                                 width: PeopleScheduleLayout.clippedTitleWidth(
@@ -1098,7 +1098,7 @@ private struct PeopleScheduleTaskCapsule: View {
     }
 
     private var statusBadge: some View {
-        ScheduleTaskStatusBadge(status: task.status, priority: task.priority)
+        ScheduleTaskStatusBadge(status: task.status)
     }
 
     private func resizeHandle(edge: ScheduleResizeEdge) -> some View {
@@ -1254,23 +1254,18 @@ private struct PeopleScheduleSettingsPopover: View {
 }
 
 private enum ScheduleTaskMetrics {
-    static let horizontalInset: CGFloat = 4
+    static let horizontalInset: CGFloat = 8
     static let visualHeight: CGFloat = 36
     static let hitHeight: CGFloat = 44
-    static let statusLeadingInset: CGFloat = 2
-    static let contentSpacing: CGFloat = 4
-    static let trailingInset: CGFloat = 6
-    static let statusFrame: CGFloat = 28
+    static let statusLeadingInset: CGFloat = 4
+    static let contentSpacing: CGFloat = 3
+    static let trailingInset: CGFloat = 3
+    static let statusFrame: CGFloat = 26
     static let contentLeading: CGFloat = statusFrame + contentSpacing
 }
 
 private struct ScheduleTaskStatusBadge: View {
     let status: TaskStatus
-    let priority: TaskPriority
-
-    private var palette: SchedulePriorityPalette {
-        SchedulePriorityPalette(priority: priority)
-    }
 
     private var symbol: String {
         switch status {
@@ -1281,18 +1276,35 @@ private struct ScheduleTaskStatusBadge: View {
         }
     }
 
+    private var accent: Color {
+        switch status {
+        case .todo: Color(hex: "#8E8E93")
+        case .inProgress: Color(hex: "#0A84FF")
+        case .blocked: Color(hex: "#FF453A")
+        case .done: Color(hex: "#30D158")
+        }
+    }
+
+    private var glyph: Color {
+        switch status {
+        case .todo: Color(hex: "#4B4B50")
+        case .inProgress: Color(hex: "#0057C8")
+        case .blocked: Color(hex: "#A61B1B")
+        case .done: Color(hex: "#0F7A3D")
+        }
+    }
+
     var body: some View {
         ZStack {
-            Circle().fill(palette.fill)
+            Circle().fill(accent)
             Circle()
                 .fill(Color.white.opacity(0.96))
                 .padding(3)
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .heavy))
                 .symbolRenderingMode(.monochrome)
-                .foregroundStyle(palette.statusGlyph)
+                .foregroundStyle(glyph)
         }
-        .frame(width: 28, height: 28)
         .frame(width: ScheduleTaskMetrics.statusFrame, height: ScheduleTaskMetrics.statusFrame)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
@@ -1315,13 +1327,6 @@ private struct SchedulePriorityPalette {
         switch priority {
         case .high: .black
         default: .white
-        }
-    }
-
-    var statusGlyph: Color {
-        switch priority {
-        case .high: .black
-        default: fill
         }
     }
 }

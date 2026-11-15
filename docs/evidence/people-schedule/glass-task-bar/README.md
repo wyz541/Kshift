@@ -27,27 +27,30 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Dark Mode 使用优先级颜色作为 tint，opacity 为 `0.45`。
 - Desktop 任务条和 Mobile 任务条分别使用一个 `GlassEffectContainer` 分组相邻 glass effect。
 - 任务条视觉高度为 36pt，完整交互区域为 44pt。
-- 日期 slice 使用统一的 4pt 水平 inset，任务条与日期边界保持同一左基线。
+- 日期 slice 使用统一的 8pt 水平 inset。任务条保留日期间距，不贴边绘制。
 - 标题使用任务条剩余宽度、tail truncation 和胶囊边界 clipping。标题不得绘制到胶囊外部。
 - Desktop 使用人员×日期时间轴。Mobile 使用按人员分组的纵向列表。
 - 桌面紧凑、标准和宽松密度的任务行间距分别为 40pt、48pt 和 56pt。
 - 状态控件位于任务条前端。状态选择继续使用原生 `Menu`。
-- 状态徽章使用 28pt 外框、3pt 优先级色环、白色中性内盘和 `13pt` heavy 符号。
-- `todo` 使用 `circle.dashed`。`inProgress` 使用 `clock.fill`。`blocked` 使用 `exclamationmark.octagon.fill`。`done` 使用 `checkmark`。
+- 状态徽章使用 26pt 外框、3pt 状态语义色环、白色中性内盘和 `13pt` heavy 符号。
+- `todo` 使用 `circle.dashed` 和灰色。
+- `inProgress` 使用 `clock.fill` 和蓝色。
+- `blocked` 使用 `exclamationmark.octagon.fill` 和红色。
+- `done` 使用 `checkmark` 和绿色；accent 为 `#30D158`，glyph 为 `#0F7A3D`。
 - 状态菜单保持 44pt 触控区域。
-- 优先级使用明亮色环和 task bar tint：P0 使用 `#D92D3A`，P1 使用 `#FFC400`，P2 使用 `#0066FF`，P3 使用 `#5F6368`。
+- 优先级继续由 task bar tint 表达：P0 使用 `#D92D3A`，P1 使用 `#FFC400`，P2 使用 `#0066FF`，P3 使用 `#5F6368`。
 - 禁止纯黑任务条背景、自绘玻璃、渐变、模糊和阴影。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条左边缘对齐日期网格；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
-| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `186f67758ef370cd4e70a52882842c1a963a99e826e7966aa578accba8785aa5` |
-| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `ef898b400b1e554509e6bde798624455f4346e83095f4c9bacafbd22eac5883f` |
-| [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `eb471da6fc77e6a0bc7cc4239192d84257073fe1e34ea16c0c31af017a468914` |
-| [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `99ce479536261a4971fd6182a4ec2ec2095ee1adfb23b78000e0f47323c6766b` |
+| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `133ce6f2ed0ee727f1654d591e08459d2712e0d00847061163dfeb9962cd2cf1` |
+| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `c22782a57f7ef70aa550f6858d38e1314de108ee6c7318d978f6390949e5fd83` |
+| [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `eb27a35df9f77c797b87b5cf7b40fb79709d6a1e03bcac76b5b18ab1fc23f49e` |
+| [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `05ce31cc8f8d84b5370229d0f85031ef62dde1330a57b8c9244906ca348fbfd9` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。
 
