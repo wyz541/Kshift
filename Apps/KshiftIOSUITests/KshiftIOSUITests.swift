@@ -94,6 +94,8 @@ final class KshiftIOSUITests: XCTestCase {
                 "编辑者 · 2 项任务",
                 "Review window",
                 "VoiceOver",
+                "未分配",
+                "无负责人 · 1 项任务",
             ])
             let waivedDenseChartLayout = denseChartLabels.contains(label)
                 && (issue.auditType == .dynamicType || issue.auditType == .textClipped)

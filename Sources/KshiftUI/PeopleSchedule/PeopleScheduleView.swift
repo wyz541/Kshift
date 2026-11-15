@@ -380,6 +380,7 @@ private struct CompactSchedulePersonSection: View {
     let row: PeopleScheduleRow
 
     @Environment(\.colorScheme) private var colorScheme
+    @Namespace private var glassNamespace
 
     private var strongTextColor: Color {
         colorScheme == .dark ? .white : .black
@@ -410,9 +411,12 @@ private struct CompactSchedulePersonSection: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 8)
                 } else {
-                    LazyVStack(spacing: 4) {
-                        ForEach(sortedTasks) { task in
-                            CompactScheduleTaskCapsule(model: model, task: task)
+                    GlassEffectContainer(spacing: 4) {
+                        LazyVStack(spacing: 4) {
+                            ForEach(sortedTasks) { task in
+                                CompactScheduleTaskCapsule(model: model, task: task)
+                                    .glassEffectID(task.id, in: glassNamespace)
+                            }
                         }
                     }
                 }
@@ -526,6 +530,10 @@ private struct CompactScheduleTaskCapsule: View {
         Capsule(style: .continuous)
     }
 
+    private var glassTint: Color {
+        palette.fill.opacity(colorScheme == .dark ? 0.45 : 0.28)
+    }
+
     private var dateLabel: String {
         let start = task.scheduleStartDate.split(separator: "-")
         let end = task.scheduleEndDate.split(separator: "-")
@@ -580,10 +588,13 @@ private struct CompactScheduleTaskCapsule: View {
                 .frame(height: 36)
                 .contentShape(taskShape)
             }
-            .buttonStyle(.glass)
-            .tint(colorScheme == .dark ? Color.white : Color.black)
-            .buttonBorderShape(.capsule)
+            .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
+            .frame(height: 36)
+            .glassEffect(
+                .regular.tint(glassTint).interactive(),
+                in: taskShape
+            )
             .frame(height: 44)
             .contentShape(Rectangle())
             .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
@@ -828,6 +839,8 @@ private struct PeopleScheduleTimelineRow: View {
     let scrollProxy: ScrollViewProxy
     let scrollToDay: (Date, ScrollViewProxy, Bool) -> Void
 
+    @Namespace private var glassNamespace
+
     private var collapsed: Bool {
         model.collapsedSchedulePersonIDs.contains(row.id)
     }
@@ -855,54 +868,57 @@ private struct PeopleScheduleTimelineRow: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            PeopleScheduleDayGrid(
-                model: model,
-                personID: row.person?.id,
-                days: days,
-                dateWidth: dateWidth,
-                height: height
-            )
+        GlassEffectContainer(spacing: 4) {
+            ZStack(alignment: .topLeading) {
+                PeopleScheduleDayGrid(
+                    model: model,
+                    personID: row.person?.id,
+                    days: days,
+                    dateWidth: dateWidth,
+                    height: height
+                )
 
-            if !collapsed {
-                ForEach(row.slices) { slice in
-                    PeopleScheduleTaskCapsule(
-                        model: model,
-                        task: slice.task,
-                        slice: slice,
-                        dateWidth: dateWidth,
-                        laneHeight: laneHeight,
-                        horizontalOffset: horizontalOffset,
-                        viewportWidth: viewportWidth,
-                        scrollProxy: scrollProxy,
-                        scrollToDay: scrollToDay
-                    )
-                    .frame(
-                        width: max(CGFloat(slice.dayCount) * dateWidth - 6, 32),
-                        height: 36
-                    )
-                    .offset(
-                        x: CGFloat(slice.startIndex) * dateWidth + 3,
-                        y: CGFloat(slice.lane) * laneHeight + 2
-                    )
-                }
-
-                ForEach(markers.keys.sorted(), id: \.self) { lane in
-                    if let marker = markers[lane] {
-                        PeopleScheduleOverflowMarker(
+                if !collapsed {
+                    ForEach(row.slices) { slice in
+                        PeopleScheduleTaskCapsule(
                             model: model,
-                            task: marker.task,
+                            task: slice.task,
+                            slice: slice,
+                            dateWidth: dateWidth,
+                            laneHeight: laneHeight,
+                            horizontalOffset: horizontalOffset,
+                            viewportWidth: viewportWidth,
                             scrollProxy: scrollProxy,
                             scrollToDay: scrollToDay
                         )
                         .frame(
-                            width: min(max(viewportWidth * 0.34, 260), 380),
-                            height: max(laneHeight - 10, 26)
+                            width: max(CGFloat(slice.dayCount) * dateWidth - 6, 32),
+                            height: 36
                         )
                         .offset(
-                            x: max(horizontalOffset + viewportWidth - min(max(viewportWidth * 0.34, 260), 380) - 10, 6),
-                            y: CGFloat(lane) * laneHeight + 4
+                            x: CGFloat(slice.startIndex) * dateWidth + 3,
+                            y: CGFloat(slice.lane) * laneHeight + 2
                         )
+                        .glassEffectID(slice.id, in: glassNamespace)
+                    }
+
+                    ForEach(markers.keys.sorted(), id: \.self) { lane in
+                        if let marker = markers[lane] {
+                            PeopleScheduleOverflowMarker(
+                                model: model,
+                                task: marker.task,
+                                scrollProxy: scrollProxy,
+                                scrollToDay: scrollToDay
+                            )
+                            .frame(
+                                width: min(max(viewportWidth * 0.34, 260), 380),
+                                height: max(laneHeight - 10, 26)
+                            )
+                            .offset(
+                                x: max(horizontalOffset + viewportWidth - min(max(viewportWidth * 0.34, 260), 380) - 10, 6),
+                                y: CGFloat(lane) * laneHeight + 4
+                            )
+                        }
                     }
                 }
             }
@@ -993,6 +1009,10 @@ private struct PeopleScheduleTaskCapsule: View {
         Capsule(style: .continuous)
     }
 
+    private var glassTint: Color {
+        palette.fill.opacity(colorScheme == .dark ? 0.45 : 0.28)
+    }
+
     private var dateLabel: String {
         if slice.task.scheduleStartDate == slice.task.scheduleEndDate {
             return slice.task.scheduleEndDate
@@ -1026,11 +1046,13 @@ private struct PeopleScheduleTaskCapsule: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(taskShape)
-            }
-            .buttonStyle(.glass)
-                .tint(colorScheme == .dark ? Color.white : Color.black)
-                .buttonBorderShape(.capsule)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .glassEffect(
+                    .regular.tint(glassTint).interactive(),
+                    in: taskShape
+                )
                 .contentShape(taskShape)
                 .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
                 .accessibilityHint("点击可查看任务详情。")
