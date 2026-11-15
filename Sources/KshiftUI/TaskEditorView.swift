@@ -9,8 +9,9 @@ enum TaskEditorPresentation {
 struct TaskEditorView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var draft: TaskDraft
-    @State private var tagText: String
+    @State private var tagInput = ""
     @State private var validationMessage: String?
     @State private var isSaving = false
     private let presentation: TaskEditorPresentation
@@ -23,7 +24,6 @@ struct TaskEditorView: View {
         self.model = model
         self.presentation = presentation
         _draft = State(initialValue: initialDraft)
-        _tagText = State(initialValue: initialDraft.tags.joined(separator: ", "))
     }
 
     var body: some View {
@@ -45,52 +45,15 @@ struct TaskEditorView: View {
                     .accessibilityIdentifier("task-title")
             }
 
-            fieldGroup("详情 · Markdown") {
-                MarkdownEditorView(
-                    text: $draft.notes,
-                    minimumHeight: presentation == .popover ? 110 : 160
-                )
-            }
+            MarkdownEditorView(
+                text: $draft.notes,
+                paneHeight: markdownPaneHeight
+            )
 
-            HStack(alignment: .top, spacing: 16) {
-                fieldGroup("状态") {
-                    Picker("状态", selection: $draft.status) {
-                        ForEach(TaskStatus.allCases) { status in
-                            Label(status.title, systemImage: status.symbol)
-                                .tag(status)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-                fieldGroup("优先级") {
-                    Picker("优先级", selection: $draft.priority) {
-                        ForEach(TaskPriority.allCases) { priority in
-                            Text(priority.title).tag(priority)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-            }
-
-            if presentation == .popover {
-                assigneeField
-
-                HStack(alignment: .top, spacing: 16) {
-                    startDateField
-                    dueDateField
-                }
-            } else {
-                HStack(alignment: .top, spacing: 16) {
-                    assigneeField
-                    startDateField
-                    dueDateField
-                }
-            }
+            taskPropertyFields
 
             fieldGroup("标签") {
-                TextField("例如：发布, 审核", text: $tagText)
-                    .textFieldStyle(.roundedBorder)
-                    .accessibilityLabel("任务标签")
+                TaskTagEditor(tags: $draft.tags, input: $tagInput)
             }
 
             if draft.taskID != nil {
@@ -113,7 +76,94 @@ struct TaskEditorView: View {
                 ConflictInlineView(model: model, notice: conflict, dismiss: dismiss.callAsFunction)
             }
         }
-        .padding(22)
+        .padding(24)
+    }
+
+    private var taskPropertyFields: some View {
+        VStack(spacing: 16) {
+            HStack(alignment: .top, spacing: 16) {
+                statusField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                priorityField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            if horizontalSizeClass == .compact {
+                assigneeField
+
+                HStack(alignment: .top, spacing: 16) {
+                    startDateField
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    dueDateField
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                HStack(alignment: .top, spacing: 16) {
+                    assigneeField
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    startDateField
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    dueDateField
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+        }
+    }
+
+    private var statusField: some View {
+        fieldGroup("状态") {
+            Menu {
+                ForEach(TaskStatus.allCases) { status in
+                    Button {
+                        draft.status = status
+                    } label: {
+                        Label(
+                            status.title,
+                            systemImage: status == draft.status ? "checkmark" : status.symbol
+                        )
+                    }
+                }
+            } label: {
+                TaskMetadataControlLabel(
+                    title: draft.status.title,
+                    systemImage: draft.status.symbol,
+                    tint: draft.status.tint
+                )
+            }
+            .menuIndicator(.hidden)
+            .buttonStyle(.plain)
+            .accessibilityLabel("任务状态")
+            .accessibilityValue(draft.status.title)
+            .accessibilityIdentifier("task-status")
+        }
+    }
+
+    private var priorityField: some View {
+        fieldGroup("优先级") {
+            Menu {
+                ForEach(TaskPriority.allCases) { priority in
+                    Button {
+                        draft.priority = priority
+                    } label: {
+                        Label(
+                            priority.title,
+                            systemImage: priority == draft.priority ? "checkmark" : "flag.fill"
+                        )
+                    }
+                }
+            } label: {
+                TaskMetadataControlLabel(
+                    title: draft.priority.title,
+                    systemImage: "flag.fill",
+                    tint: draft.priority.tint
+                )
+            }
+            .menuIndicator(.hidden)
+            .buttonStyle(.plain)
+            .accessibilityLabel("任务优先级")
+            .accessibilityValue(draft.priority.title)
+            .accessibilityIdentifier("task-priority")
+        }
     }
 
     private var assigneeField: some View {
@@ -142,11 +192,17 @@ struct TaskEditorView: View {
                     }
                 }
             } label: {
-                Text(assigneeSummary)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                TaskMetadataControlLabel(
+                    title: assigneeSummary,
+                    systemImage: "person.2",
+                    tint: .blue
+                )
             }
-            .pickerStyle(.menu)
+            .menuIndicator(.hidden)
+            .buttonStyle(.plain)
+            .accessibilityLabel("任务负责人")
+            .accessibilityValue(assigneeSummary)
+            .accessibilityIdentifier("task-assignee")
         }
     }
 
@@ -161,8 +217,22 @@ struct TaskEditorView: View {
                 displayedComponents: .date
             )
             .labelsHidden()
+            .datePickerStyle(.compact)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .environment(\.timeZone, model.projectTimeZone)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var isCompactWidth: Bool {
+        horizontalSizeClass == .compact
+    }
+
+    private var markdownPaneHeight: CGFloat {
+        if isCompactWidth {
+            return 220
+        }
+        return presentation == .popover ? 230 : 280
     }
 
     private var dueDateField: some View {
@@ -173,15 +243,19 @@ struct TaskEditorView: View {
                 displayedComponents: .date
             )
             .labelsHidden()
+            .datePickerStyle(.compact)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .environment(\.timeZone, model.projectTimeZone)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var sheetBody: some View {
         NavigationStack {
             ScrollView {
                 editorFields
-                    .frame(maxWidth: 620, alignment: .leading)
+                    .frame(maxWidth: 780, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
             .background(.background)
             .navigationTitle(draft.isNew ? "新建任务" : "编辑任务")
@@ -195,7 +269,12 @@ struct TaskEditorView: View {
                 }
             }
             .interactiveDismissDisabled(isSaving)
-            .frame(idealWidth: 620, idealHeight: 670)
+            .frame(
+                minWidth: isCompactWidth ? nil : 820,
+                idealWidth: isCompactWidth ? nil : 860,
+                minHeight: isCompactWidth ? nil : 680,
+                idealHeight: isCompactWidth ? nil : 740
+            )
         }
     }
 
@@ -234,7 +313,14 @@ struct TaskEditorView: View {
             }
             .padding(12)
         }
-        .frame(width: 400, height: 560)
+        .frame(
+            maxWidth: isCompactWidth ? .infinity : nil,
+            maxHeight: isCompactWidth ? .infinity : nil
+        )
+        .frame(
+            width: isCompactWidth ? nil : 720,
+            height: isCompactWidth ? nil : 600
+        )
         .background(.background)
         .interactiveDismissDisabled(isSaving)
     }
@@ -266,6 +352,7 @@ struct TaskEditorView: View {
                 .textCase(.uppercase)
             content()
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func save() {
@@ -286,10 +373,7 @@ struct TaskEditorView: View {
         isSaving = true
         var submitted = draft
         submitted.title = trimmedTitle
-        submitted.tags = tagText
-            .components(separatedBy: CharacterSet(charactersIn: ",，\n"))
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
+        submitted.tags = TaskTagValues.adding(tagInput, to: draft.tags)
         Swift.Task {
             let saved = await model.saveTask(submitted)
             isSaving = false
@@ -313,6 +397,39 @@ struct TaskEditorView: View {
         } else {
             draft.assigneeIDs.append(id)
         }
+    }
+}
+
+private struct TaskMetadataControlLabel: View {
+    let title: String
+    let systemImage: String
+    let tint: Color
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: systemImage)
+                .foregroundStyle(tint)
+                .accessibilityHidden(true)
+
+            Text(title)
+                .lineLimit(1)
+
+            Spacer(minLength: 8)
+
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
+        .font(.callout.weight(.medium))
+        .padding(.horizontal, 10)
+        .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+        .background(.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(tint.opacity(0.16), lineWidth: 1)
+        }
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 

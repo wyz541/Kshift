@@ -159,7 +159,7 @@ private struct BoardColumnView: View {
                 .font(.subheadline.weight(.medium))
             Text("拖入任务或新建一项。")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.72))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)

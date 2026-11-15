@@ -5,7 +5,12 @@ struct TaskDetailView: View {
     @ObservedObject var model: AppModel
     let taskID: String
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isConfirmingDelete = false
+
+    private var isCompactWidth: Bool {
+        horizontalSizeClass == .compact
+    }
 
     private var task: TaskItem? {
         model.task(withID: taskID)
@@ -66,7 +71,12 @@ struct TaskDetailView: View {
             } message: { _ in
                 Text("删除会写入项目审计记录。此操作不能静默撤销。")
             }
-            .frame(idealWidth: 620, idealHeight: 720)
+            .frame(
+                minWidth: isCompactWidth ? nil : 820,
+                idealWidth: isCompactWidth ? nil : 860,
+                minHeight: isCompactWidth ? nil : 680,
+                idealHeight: isCompactWidth ? nil : 740
+            )
         }
     }
 
@@ -92,17 +102,25 @@ struct TaskDetailView: View {
                 .padding(16)
                 .kshiftContentBoard()
 
-                detailSection("详情 · Markdown") {
-                    KshiftMarkdownText(
-                        source: task.notes.isEmpty ? "暂无详情" : task.notes,
-                        isPlaceholder: task.notes.isEmpty
-                    )
+                KshiftMarkdownText(
+                    source: task.notes.isEmpty ? "暂无详情" : task.notes,
+                    isPlaceholder: task.notes.isEmpty
+                )
+                .padding(18)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    .primary.opacity(0.02),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(.separator, lineWidth: 1)
+                        .allowsHitTesting(false)
                 }
 
                 if !task.tags.isEmpty {
                     detailSection("标签") {
-                        Text(task.tags.map { "#\($0)" }.joined(separator: "  "))
-                            .textSelection(.enabled)
+                        TaskTagList(tags: task.tags)
                     }
                 }
 
@@ -140,8 +158,8 @@ struct TaskDetailView: View {
                     }
                 }
             }
-            .padding(22)
-            .frame(maxWidth: 720, alignment: .leading)
+            .padding(28)
+            .frame(maxWidth: 900, alignment: .leading)
         }
         .background(.background)
         .accessibilityIdentifier("task-detail")

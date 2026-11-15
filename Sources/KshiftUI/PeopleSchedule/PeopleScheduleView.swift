@@ -998,7 +998,7 @@ private struct PeopleScheduleBlankDayCell: View {
                 }
                 return true
             }
-            .popover(item: $draft, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) { draft in
+            .popover(item: $draft, attachmentAnchor: .rect(.bounds), arrowEdge: .top) { draft in
                 TaskEditorView(
                     model: model,
                     initialDraft: draft,

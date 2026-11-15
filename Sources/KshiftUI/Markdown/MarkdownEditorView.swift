@@ -1,65 +1,79 @@
 import SwiftUI
 
-enum MarkdownEditorMode: String, CaseIterable, Identifiable {
-    case write
-    case preview
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .write: "编写"
-        case .preview: "预览"
-        }
-    }
-}
-
 struct MarkdownEditorView: View {
     @Binding var text: String
-    var minimumHeight: CGFloat = 150
+    var paneHeight: CGFloat = 260
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    @State private var mode: MarkdownEditorMode = .write
+    private var stacksVertically: Bool {
+        horizontalSizeClass == .compact
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Picker("Markdown mode", selection: $mode) {
-                ForEach(MarkdownEditorMode.allCases) { mode in
-                    Text(mode.title)
-                        .tag(mode)
+        Group {
+            if stacksVertically {
+                VStack(spacing: 12) {
+                    editorPane
+                    previewPane
                 }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 180)
-            .accessibilityLabel("Markdown 编辑模式")
-            .accessibilityIdentifier("markdown-mode")
-
-            Group {
-                switch mode {
-                case .write:
-                    TextEditor(text: $text)
-                        .font(.system(.body, design: .monospaced))
-                        .padding(8)
-                        .scrollContentBackground(.hidden)
-                        .writingToolsBehavior(.disabled)
-                        .frame(minHeight: minimumHeight)
-                        .kshiftContentBoard()
-                        .accessibilityLabel("Markdown 编辑器")
-                        .accessibilityIdentifier("markdown-editor")
-                case .preview:
-                    ScrollView {
-                        KshiftMarkdownText(
-                            source: text.isEmpty ? "暂无内容" : text,
-                            isPlaceholder: text.isEmpty
-                        )
-                        .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .topLeading)
-                        .padding(12)
-                    }
-                    .kshiftContentBoard()
-                    .accessibilityIdentifier("markdown-preview")
+            } else {
+                HStack(alignment: .top, spacing: 12) {
+                    editorPane
+                    previewPane
                 }
             }
         }
+    }
+
+    private var paneShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 13, style: .continuous)
+    }
+
+    private var editorPane: some View {
+        TextEditor(text: $text)
+            .font(.system(.body, design: .monospaced))
+            .padding(8)
+            .scrollContentBackground(.hidden)
+            .writingToolsBehavior(.disabled)
+            .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
+            .background(.primary.opacity(0.025), in: paneShape)
+            .overlay {
+                paneShape
+                    .strokeBorder(.separator, lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
+            .overlay(alignment: .topLeading) {
+                if text.isEmpty {
+                    Text("输入 Markdown")
+                        .font(.system(.body, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 16)
+                        .allowsHitTesting(false)
+                }
+            }
+            .accessibilityLabel("Markdown 编辑器")
+            .accessibilityIdentifier("markdown-editor")
+    }
+
+    private var previewPane: some View {
+        ScrollView {
+            KshiftMarkdownText(
+                source: text.isEmpty ? "暂无内容" : text,
+                isPlaceholder: text.isEmpty
+            )
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(14)
+        }
+        .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
+        .background(.primary.opacity(0.015), in: paneShape)
+        .overlay {
+            paneShape
+                .strokeBorder(.separator, lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+        .accessibilityLabel("Markdown 预览")
+        .accessibilityIdentifier("markdown-preview")
     }
 }
 
