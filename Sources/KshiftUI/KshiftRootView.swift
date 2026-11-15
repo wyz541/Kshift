@@ -35,7 +35,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("筛选", systemImage: model.filter.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(KshiftCompactGlassButtonStyle())
                 .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
                     FilterPopover(model: model)
                 }
@@ -46,7 +46,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("刷新", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(KshiftCompactGlassButtonStyle())
                 .help("刷新共享快照")
 
                 Button {
@@ -54,7 +54,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("审计", systemImage: "clock.arrow.circlepath")
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(KshiftCompactGlassButtonStyle())
                 .help("查看项目审计")
                 .accessibilityIdentifier("project-audit")
 
@@ -64,7 +64,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("新建任务", systemImage: "plus")
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(KshiftCompactAccentGlassButtonStyle())
                 .keyboardShortcut("n", modifiers: .command)
                 .accessibilityIdentifier(
                     dynamicTypeSize.isAccessibilitySize ? "add-task" : "toolbar-add-task"

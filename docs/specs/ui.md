@@ -90,6 +90,7 @@ flowchart TB
 | 看板中可拖拽、可选择、可执行命令的任务卡片 | `Glass.regular` 外表面 | 玻璃直接承载低对比文字 |
 | 人员排期任务条 | SwiftUI `Button` + `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))` 和明亮优先级徽章 | `.buttonStyle(.glass)` 作为最终任务条、自绘玻璃、渐变、模糊和阴影 |
 | 人员排期工具栏按钮 | `KshiftCompactGlassButtonStyle`、neutral glass 和 primary content | accent-tinted `.buttonStyle(.glass)`、过高的玻璃容器 |
+| 窗口 primaryAction toolbar | secondary actions 使用 `KshiftCompactGlassButtonStyle`；最多一个 primary action 使用 `KshiftCompactAccentGlassButtonStyle` | 多个 `.glassProminent` actions、deep accent-tinted clusters |
 | 同组相邻玻璃卡片 | 共用一个 `GlassEffectContainer` | 每卡片一个 container |
 | 纯展示卡片 | 标准材质或清晰内容底板 | 用玻璃作为唯一可读表面 |
 | 正文、密集表格、人员排期、长文本编辑 | 清晰内容底板 | 低对比玻璃正文 |
@@ -102,6 +103,7 @@ flowchart TB
 - `UI-GLS-005`：同屏玻璃 effect 和 container 必须有性能上限。
 - `UI-GLS-006`：超过实测预算时，优先保留导航和当前操作卡片。
 - `UI-GLS-007`：使用系统语义色和 tint。禁止用玻璃透明度承载状态含义。
+- `UI-GLS-008`：Window primaryAction toolbar 必须使用 one-level hierarchy。Secondary actions 使用 neutral `KshiftCompactGlassButtonStyle`。At most one primary action 使用 `KshiftCompactAccentGlassButtonStyle`。Visual height 必须为 34pt。Outer hit target 不得小于 44pt。Accent glass opacity 不得高于 `0.18` in Light Mode and `0.30` in Dark Mode。禁止 multiple `.glassProminent` actions。
 
 ## 6. 无障碍与性能
 
