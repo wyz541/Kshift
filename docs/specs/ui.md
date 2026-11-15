@@ -89,6 +89,7 @@ flowchart TB
 | 次要操作和浮动操作 | `.buttonStyle(.glass)` 或原生 `.glassEffect(...)` | 每控件单独创建容器 |
 | 看板中可拖拽、可选择、可执行命令的任务卡片 | `Glass.regular` 外表面 | 玻璃直接承载低对比文字 |
 | 人员排期任务条 | SwiftUI `Button` + `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))` 和明亮优先级徽章 | `.buttonStyle(.glass)` 作为最终任务条、自绘玻璃、渐变、模糊和阴影 |
+| 人员排期工具栏按钮 | `KshiftCompactGlassButtonStyle`、neutral glass 和 primary content | accent-tinted `.buttonStyle(.glass)`、过高的玻璃容器 |
 | 同组相邻玻璃卡片 | 共用一个 `GlassEffectContainer` | 每卡片一个 container |
 | 纯展示卡片 | 标准材质或清晰内容底板 | 用玻璃作为唯一可读表面 |
 | 正文、密集表格、人员排期、长文本编辑 | 清晰内容底板 | 低对比玻璃正文 |
@@ -142,6 +143,7 @@ flowchart TB
 - `UI-PPL-015`：`compact` 水平尺寸类必须使用按人员分组的纵向任务列表。任务条必须使用 UI-PPL-006 的全宽原生染色玻璃、`Capsule(style: .continuous)` 和单行标题。常规水平尺寸类继续使用人员×日期时间轴。
 - `UI-PPL-016`：人员排期模式不得显示重复的 `SummaryStrip`。任务数量显示在排期工具栏和人员分组标题中。
 - `UI-PPL-017`：任务状态徽章必须使用 26pt 外框、3pt 状态语义色环、白色中性内盘和 `13pt` heavy 状态符号。`todo` 使用 `circle.dashed` 和 `#8E8E93`/`#4B4B50`。`inProgress` 使用 `clock.fill` 和 `#0A84FF`/`#0057C8`。`blocked` 使用 `exclamationmark.octagon.fill` 和 `#FF453A`/`#A61B1B`。`done` 使用 `checkmark` 和 `#30D158`/`#0F7A3D`。优先级继续由 task bar tint 表达。状态菜单保持 44pt 触控区域。
+- `UI-PPL-018`：Planner toolbar 和 PeopleSchedule toolbar 的 action buttons 必须使用 `KshiftCompactGlassButtonStyle`。Visual height 必须为 34pt。Outer hit target 不得小于 44pt。Content 必须使用 primary color。Glass 必须使用 neutral `.glassEffect(.regular.interactive())`。禁止 accent-tinted `.buttonStyle(.glass)` 和 oversized glass container。Schedule toolbar 的 vertical padding 必须为 4pt，minimum height 必须为 52pt。
 
 ## 8. 关联合同
 

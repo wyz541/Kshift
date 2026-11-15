@@ -152,10 +152,10 @@ struct PlannerView: View {
                 Button(action: onOpenPlanDepth) {
                     Image(systemName: "chart.bar.doc.horizontal")
                         .font(.title3.weight(.semibold))
-                        .frame(width: 44, height: 44)
+                        .frame(width: 30, height: 30)
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(KshiftCompactGlassButtonStyle())
                 .accessibilityLabel("计划深度")
                 .accessibilityHint("打开甘特、历史、附件和报告")
                 .accessibilityIdentifier("open-plan-depth")
@@ -230,9 +230,9 @@ struct PlannerView: View {
             Image(systemName: model.filter.isActive
                 ? "line.3.horizontal.decrease.circle.fill"
                 : "line.3.horizontal.decrease.circle")
-                .frame(width: 44, height: 44)
+                .frame(width: 30, height: 30)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(KshiftCompactGlassButtonStyle())
         .accessibilityLabel("筛选任务")
         .accessibilityIdentifier("filter-button")
         .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
@@ -245,9 +245,9 @@ struct PlannerView: View {
             Swift.Task { await model.refresh() }
         } label: {
             Image(systemName: "arrow.clockwise")
-                .frame(width: 44, height: 44)
+                .frame(width: 30, height: 30)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(KshiftCompactGlassButtonStyle())
         .accessibilityLabel("刷新共享快照")
         .accessibilityIdentifier("refresh-button")
     }
@@ -265,27 +265,27 @@ struct PlannerView: View {
                 model.addDaysToSelection(-1)
             } label: {
                 Image(systemName: "chevron.left")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("前一天")
 
             Button {
                 model.selectToday()
             } label: {
                 Image(systemName: "calendar.badge.clock")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("今天")
 
             Button {
                 model.addDaysToSelection(1)
             } label: {
                 Image(systemName: "chevron.right")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("后一天")
         }
     }
@@ -314,10 +314,10 @@ struct PlannerView: View {
                 }
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
             .menuStyle(.button)
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("排序")
             .accessibilityIdentifier("sort-menu")
 
@@ -325,9 +325,9 @@ struct PlannerView: View {
                 model.clearSelection()
             } label: {
                 Image(systemName: "xmark.circle")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .disabled(model.selectedTaskIDs.isEmpty)
             .help("清除任务选择")
             .accessibilityLabel("清除选择")

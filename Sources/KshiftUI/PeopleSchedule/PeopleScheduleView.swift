@@ -92,15 +92,15 @@ struct PeopleScheduleView: View {
 
     private var scheduleToolbar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 HStack(spacing: 6) {
                     Button {
                         model.moveSchedulePeriod(-1)
                     } label: {
                         Image(systemName: "chevron.left")
-                            .frame(width: 44, height: 44)
+                            .frame(width: 30, height: 30)
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
                     .accessibilityLabel("上一周期")
                     .accessibilityIdentifier("schedule-previous")
 
@@ -108,10 +108,10 @@ struct PeopleScheduleView: View {
                         model.selectScheduleToday()
                     } label: {
                         Label("今天", systemImage: "calendar.badge.clock")
-                            .frame(minHeight: 44)
+                            .frame(minHeight: 34)
                             .foregroundStyle(strongTextColor)
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
                     .accessibilityLabel("今天")
                     .accessibilityIdentifier("schedule-today")
 
@@ -119,9 +119,9 @@ struct PeopleScheduleView: View {
                         model.moveSchedulePeriod(1)
                     } label: {
                         Image(systemName: "chevron.right")
-                            .frame(width: 44, height: 44)
+                            .frame(width: 30, height: 30)
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
                     .accessibilityLabel("下一周期")
                     .accessibilityIdentifier("schedule-next")
                 }
@@ -163,19 +163,19 @@ struct PeopleScheduleView: View {
                     isShowingSettings.toggle()
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .frame(width: 44, height: 44)
+                        .frame(width: 30, height: 30)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(KshiftCompactGlassButtonStyle())
                 .accessibilityLabel("排期布局设置")
                 .accessibilityIdentifier("schedule-settings")
                 .popover(isPresented: $isShowingSettings, arrowEdge: .bottom) {
                     PeopleScheduleSettingsPopover(model: model)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 4)
         }
-        .frame(minHeight: 64)
+        .frame(minHeight: 52)
     }
 
     private var peopleColumn: some View {

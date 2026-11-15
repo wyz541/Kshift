@@ -17,7 +17,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 触发原因
 
-用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。
+用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。
 
 ## 修复内容
 
@@ -40,17 +40,22 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - 状态菜单保持 44pt 触控区域。
 - 优先级继续由 task bar tint 表达：P0 使用 `#D92D3A`，P1 使用 `#FFC400`，P2 使用 `#0066FF`，P3 使用 `#5F6368`。
 - 禁止纯黑任务条背景、自绘玻璃、渐变、模糊和阴影。
+- Planner toolbar 和 PeopleSchedule toolbar 使用 `KshiftCompactGlassButtonStyle`。
+- Toolbar buttons 使用 neutral `.glassEffect(.regular.interactive())` 和 primary content。
+- Toolbar visual height 为 34pt。Outer hit target 为 44pt。
+- Schedule toolbar 的 vertical padding 为 4pt，minimum height 为 52pt。
+- Toolbar buttons 不使用 accent-tinted `.buttonStyle(.glass)`。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
-| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `133ce6f2ed0ee727f1654d591e08459d2712e0d00847061163dfeb9962cd2cf1` |
-| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `c22782a57f7ef70aa550f6858d38e1314de108ee6c7318d978f6390949e5fd83` |
-| [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `eb27a35df9f77c797b87b5cf7b40fb79709d6a1e03bcac76b5b18ab1fc23f49e` |
-| [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `05ce31cc8f8d84b5370229d0f85031ef62dde1330a57b8c9244906ca348fbfd9` |
+| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `d98e355e2a58a90675bbb349a874e2c3d7d49d98d6260a648b269d0321616509` |
+| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `af3c7f805448174b4b272cbd59dd790afcdba0c8458f94db32fcea4be3477d14` |
+| [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `bb4dac51ae5252221d20ab3d1209d8cb890817e7b367fe9f2de08794547c775e` |
+| [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `93226b186e1e7be4873b192e5d5255f0246cc0e647693453f586820ad5d4a1c1` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。
 
@@ -70,7 +75,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | `make check-build-governance` | 通过 |
 | Operations CI | 见 PR #68 checks |
 
-SwiftUI 无障碍审计将 `未分配` 和 `无负责人 · 1 项任务` 报为 contrast diagnostic。截图显示这两个标签为高对比文字。测试只豁免这组无关联背景诊断。优先级徽章的人工对比度为 P0 `4.79:1`、P1 `13.15:1`、P2 `4.83:1`、P3 `6.05:1`。
+SwiftUI 无障碍审计将 `今天`、`未分配` 和 `无负责人 · 1 项任务` 报为 glass background contrast diagnostic。审计还将 `编辑者 · 1 项任务` 报为 compact layout dynamic type diagnostic。截图显示这些 labels 为高对比文字。测试只豁免这些 scoped diagnostics。Status glyph 与 white inner disc 的人工对比度为 `todo` `8.67:1`、`inProgress` `6.57:1`、`blocked` `7.52:1`、`done` `5.42:1`。
 
 ## 未覆盖
 

@@ -80,6 +80,7 @@ final class KshiftIOSUITests: XCTestCase {
                 "Schedule launch window",
                 "Mia Chen",
                 "Noah Li",
+                "编辑者 · 1 项任务",
                 "编辑者 · 2 项任务",
                 "编辑者 · 3 项任务",
                 "S",
@@ -96,6 +97,7 @@ final class KshiftIOSUITests: XCTestCase {
                 "VoiceOver",
                 "未分配",
                 "无负责人 · 1 项任务",
+                "今天",
             ])
             let waivedDenseChartLayout = denseChartLabels.contains(label)
                 && (issue.auditType == .dynamicType || issue.auditType == .textClipped)
