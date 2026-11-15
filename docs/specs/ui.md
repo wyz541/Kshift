@@ -70,12 +70,13 @@ flowchart TB
 
 ## 4.1 R3 计划深度 UI
 
-- `UI-R3-001`：`KshiftRootView` 必须提供可见的计划深度入口。
+- `UI-R3-001`：PlannerView 必须在 view mode 不是 PeopleSchedule 时提供 visible Plan Depth entry。PeopleSchedule 不得显示 legacy Plan Depth entry。
 - `UI-R3-002`：macOS 和 iOS 必须使用同一个 `KshiftPlanDepthFeatureView`。
 - `UI-R3-003`：看板任务卡必须使用 Apple 原生 Liquid Glass。
 - `UI-R3-004`：甘特、历史和报告必须使用稳定内容底板。
 - `UI-R3-005`：报告打印和图片导出不得重新读取 live project state。
 - `UI-R3-006`：R3 页面必须通过对比度、动态字号、触控区域、文字裁切和元素描述审计。
+- `UI-R3-007`：Plan Depth sheet 必须提供 explicit Close action，accessibility identifier 为 `close-plan-depth`。Regular horizontal-size presentation 必须有 `860pt` minimum width 和 `700pt` minimum height。
 
 ## 5. Liquid Glass 边界
 

@@ -55,17 +55,20 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Single schedule toolbar 包含 date picker、period control、density、sort、clear selection 和 settings。
 - Sidebar footer 使用 gear button，并打开 `KshiftAppSettingsView`。
 - Settings surface 包含 schedule layout、system accessibility shortcut 和 about information。
+- PeopleSchedule 不显示 legacy Plan Depth entry。
+- Other planner modes 保留 Plan Depth entry。
+- Plan Depth sheet 有 explicit Close button。Regular presentation 使用 `860pt × 700pt` minimum size。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
-| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `7d336bd00d6fe5d300b6b38d6c81d1d0565542a4fd9b7940810cf5d13c13a94c` |
-| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `c665073218d6a30b962d9686ab4b4c9ab1e7c16b53831c470eb3ce5f86601fce` |
-| [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `bb4dac51ae5252221d20ab3d1209d8cb890817e7b367fe9f2de08794547c775e` |
-| [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `93226b186e1e7be4873b192e5d5255f0246cc0e647693453f586820ad5d4a1c1` |
+| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `b635f517f5991b917e67119b2d1448ea46c8bec232a330d6d728a9bd970182d3` |
+| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `4f9aa2754a4f5c5dccdf1760ce016acc32b820c8c0b29cf9bda79fcdf38c3a43` |
+| [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `78cedcbbf9ca3711e9bc549623202536f950db65374a6602a8c2140ab735a738` |
+| [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `6f5623633bc8a8ef973a1770ec52b1a3e99abf6bf1785200b7c59c2be4145389` |
 | [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | Blank day cell click 和 responsive task editor popover | `e43b611faeb3c182886b459f46a8e0d52ea15ec92c53478a1d45328d67cabca9` |
 | [`macos-settings-2026-11-15.png`](./macos-settings-2026-11-15.png) | macOS 27.0.1；Light Mode | Sidebar settings button 和 `KshiftAppSettingsView` | `4933cff27082a3cf6be4579f7af5a14836727913453bea468c6a17ff57315271` |
 
@@ -84,6 +87,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | `testPeopleScheduleIsDefaultViewAndCoreControlsWork` | 通过 |
 | `testAccessibilityTextSizeKeepsCoreActionsAvailable` | 通过 |
 | `testCoreActionsMeetMinimumTouchTargets` | 通过 |
+| `testPlanDepthFlowAndAccessibilityAudit` | 通过；native toolbar Close 的 scoped contrast/Dynamic Type false positives |
 | `./scripts/check-r0.sh` | 通过 |
 | `make check-build-governance` | 通过 |
 | Operations CI | 见 PR #68 checks |

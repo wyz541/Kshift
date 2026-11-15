@@ -149,16 +149,18 @@ struct PlannerView: View {
                         .accessibilityIdentifier("selected-date")
                 }
                 Spacer()
-                Button(action: onOpenPlanDepth) {
-                    Image(systemName: "chart.bar.doc.horizontal")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 30, height: 30)
-                        .contentShape(Rectangle())
+                if model.viewMode != .peopleSchedule {
+                    Button(action: onOpenPlanDepth) {
+                        Image(systemName: "chart.bar.doc.horizontal")
+                            .font(.title3.weight(.semibold))
+                            .frame(width: 30, height: 30)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .accessibilityLabel("计划深度")
+                    .accessibilityHint("打开甘特、历史、附件和报告")
+                    .accessibilityIdentifier("open-plan-depth")
                 }
-                .buttonStyle(KshiftCompactGlassButtonStyle())
-                .accessibilityLabel("计划深度")
-                .accessibilityHint("打开甘特、历史、附件和报告")
-                .accessibilityIdentifier("open-plan-depth")
                 if model.isLoading {
                     ProgressView()
                         .controlSize(.small)
