@@ -126,6 +126,22 @@ struct PeopleScheduleView: View {
                     .accessibilityIdentifier("schedule-next")
                 }
 
+                if horizontalSizeClass == .regular {
+                    DatePicker(
+                        "选择日期",
+                        selection: Binding(
+                            get: { model.selectedDate },
+                            set: { model.selectDate($0) }
+                        ),
+                        displayedComponents: .date
+                    )
+                    .labelsHidden()
+                    .environment(\.timeZone, model.projectTimeZone)
+                    .fixedSize()
+                    .accessibilityLabel("选择日期")
+                    .accessibilityIdentifier("schedule-date-picker")
+                }
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(model.scheduleRangeTitle)
                         .font(.headline.weight(.semibold))
@@ -158,6 +174,10 @@ struct PeopleScheduleView: View {
                 .frame(width: 100)
                 .accessibilityLabel("显示密度")
                 .accessibilityIdentifier("schedule-density")
+
+                if horizontalSizeClass == .regular {
+                    PlannerUtilityControls(model: model)
+                }
 
                 Button {
                     isShowingSettings.toggle()

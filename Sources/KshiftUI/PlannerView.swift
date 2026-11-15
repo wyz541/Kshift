@@ -175,10 +175,12 @@ struct PlannerView: View {
         if usesAccessibilityLayout {
             accessibilityControls
         } else if horizontalSizeClass == .regular {
-            HStack(spacing: 10) {
-                dateNavigation
-                Spacer()
-                utilityControls
+            if model.viewMode != .peopleSchedule {
+                HStack(spacing: 10) {
+                    dateNavigation
+                    Spacer()
+                    PlannerUtilityControls(model: model)
+                }
             }
         } else {
             VStack(alignment: .leading, spacing: 10) {
@@ -219,7 +221,7 @@ struct PlannerView: View {
             filterButton
             refreshButton
             Spacer()
-            utilityControls
+            PlannerUtilityControls(model: model)
         }
     }
 
@@ -304,7 +306,13 @@ struct PlannerView: View {
         .fixedSize()
     }
 
-    private var utilityControls: some View {
+
+}
+
+struct PlannerUtilityControls: View {
+    @ObservedObject var model: AppModel
+
+    var body: some View {
         HStack(spacing: 8) {
             Menu {
                 Picker("排序", selection: $model.sortOption) {

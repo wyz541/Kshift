@@ -51,18 +51,20 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - macOS work area 使用 `AppKitScrollWheelRouter`。Vertical wheel 驱动 vertical scroll view。Shift + wheel 驱动 horizontal timeline。
 - Blank day cell click 使用 clicked person 和 clicked date 创建 local `TaskDraft`。
 - Blank day cell click 打开 responsive `TaskEditorView` popover。Popover default size 为 400pt × 560pt。
+- Regular PeopleSchedule 隐藏 duplicated global date navigation row。
+- Single schedule toolbar 包含 date picker、period control、density、sort、clear selection 和 settings。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
-| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `658d83a274fc122b33ad46999a8b00de2639f7cf62809963e440ee65cf134c92` |
-| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `71e7ce37b4a591620a43f9185d08b185ad9fecdfbe77fd3b0596eb3c48ffe63c` |
+| [`macos-task-bar-light-2026-11-15.png`](./macos-task-bar-light-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Light Mode | Desktop 人员×日期时间轴 | `7d336bd00d6fe5d300b6b38d6c81d1d0565542a4fd9b7940810cf5d13c13a94c` |
+| [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `c665073218d6a30b962d9686ab4b4c9ab1e7c16b53831c470eb3ce5f86601fce` |
 | [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `bb4dac51ae5252221d20ab3d1209d8cb890817e7b367fe9f2de08794547c775e` |
 | [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `93226b186e1e7be4873b192e5d5255f0246cc0e647693453f586820ad5d4a1c1` |
-| [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | Blank day cell click 和 responsive task editor popover | `dd94bdd7b07f1af9e162cb1960cb9e55a833fcd8d9982be2a5e96e6e4521aa49` |
+| [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | Blank day cell click 和 responsive task editor popover | `e43b611faeb3c182886b459f46a8e0d52ea15ec92c53478a1d45328d67cabca9` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。
 
