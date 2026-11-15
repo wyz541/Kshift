@@ -933,34 +933,68 @@ private struct PeopleScheduleDayGrid: View {
     var body: some View {
         HStack(spacing: 0) {
             ForEach(days, id: \.self) { day in
-                let isToday = model.isProjectToday(day)
-                let isSelected = model.projectCalendar.isDate(day, inSameDayAs: model.selectedDate)
-                Rectangle()
-                    .fill(dayBackground(isToday: isToday, isSelected: isSelected))
-                    .overlay(alignment: .trailing) {
-                        Rectangle().fill(.separator.opacity(0.55)).frame(width: 0.5)
-                    }
-                    .frame(width: dateWidth, height: height)
-                    .dropDestination(for: String.self) { taskIDs, _ in
-                        guard let taskID = taskIDs.first else { return false }
-                        Swift.Task {
-                            await model.moveScheduleTask(
-                                taskID: taskID,
-                                toAssigneeID: personID,
-                                date: day
-                            )
-                        }
-                        return true
-                    }
-                    .accessibilityHidden(true)
+                PeopleScheduleBlankDayCell(
+                    model: model,
+                    personID: personID,
+                    day: day,
+                    dateWidth: dateWidth,
+                    height: height
+                )
             }
         }
         .frame(width: CGFloat(days.count) * dateWidth, height: height, alignment: .leading)
     }
+}
 
-    private func dayBackground(isToday: Bool, isSelected: Bool) -> Color {
-        if isToday { return Color.accentColor.opacity(0.08) }
-        if isSelected { return Color.accentColor.opacity(0.035) }
+private struct PeopleScheduleBlankDayCell: View {
+    @ObservedObject var model: AppModel
+    let personID: String?
+    let day: Date
+    let dateWidth: CGFloat
+    let height: CGFloat
+
+    @State private var draft: TaskDraft?
+
+    var body: some View {
+        Rectangle()
+            .fill(dayBackground)
+            .overlay(alignment: .trailing) {
+                Rectangle().fill(.separator.opacity(0.55)).frame(width: 0.5)
+            }
+            .frame(width: dateWidth, height: height)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                let assigneeIDs = personID.map { [$0] } ?? []
+                draft = model.newTaskDraft(assigneeIDs: assigneeIDs, date: day)
+            }
+            .dropDestination(for: String.self) { taskIDs, _ in
+                guard let taskID = taskIDs.first else { return false }
+                Swift.Task {
+                    await model.moveScheduleTask(
+                        taskID: taskID,
+                        toAssigneeID: personID,
+                        date: day
+                    )
+                }
+                return true
+            }
+            .popover(item: $draft, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) { draft in
+                TaskEditorView(
+                    model: model,
+                    initialDraft: draft,
+                    presentation: .popover
+                )
+            }
+            .accessibilityHidden(true)
+    }
+
+    private var dayBackground: Color {
+        if model.isProjectToday(day) {
+            return Color.accentColor.opacity(0.08)
+        }
+        if model.projectCalendar.isDate(day, inSameDayAs: model.selectedDate) {
+            return Color.accentColor.opacity(0.035)
+        }
         return Color.clear
     }
 }

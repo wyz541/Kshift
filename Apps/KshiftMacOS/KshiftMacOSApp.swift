@@ -8,10 +8,18 @@
 
   @main
   struct KshiftMacOSApp: App {
-    @StateObject private var model = KshiftRuntimeEnvironment.makeModel(
-      client: KshiftClientFactory.makeDefault(),
-      platform: AppKitPlatformCapabilities()
-    )
+    @StateObject private var model: AppModel
+
+    init() {
+      let platform = AppKitPlatformCapabilities()
+      platform.installScrollWheelRouting()
+      _model = StateObject(
+        wrappedValue: KshiftRuntimeEnvironment.makeModel(
+          client: KshiftClientFactory.makeDefault(),
+          platform: platform
+        )
+      )
+    }
 
     var body: some Scene {
       WindowGroup {

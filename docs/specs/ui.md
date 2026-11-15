@@ -146,6 +146,8 @@ flowchart TB
 - `UI-PPL-016`：人员排期模式不得显示重复的 `SummaryStrip`。任务数量显示在排期工具栏和人员分组标题中。
 - `UI-PPL-017`：任务状态徽章必须使用 26pt 外框、3pt 状态语义色环、白色中性内盘和 `13pt` heavy 状态符号。`todo` 使用 `circle.dashed` 和 `#8E8E93`/`#4B4B50`。`inProgress` 使用 `clock.fill` 和 `#0A84FF`/`#0057C8`。`blocked` 使用 `exclamationmark.octagon.fill` 和 `#FF453A`/`#A61B1B`。`done` 使用 `checkmark` 和 `#30D158`/`#0F7A3D`。优先级继续由 task bar tint 表达。状态菜单保持 44pt 触控区域。
 - `UI-PPL-018`：Planner toolbar 和 PeopleSchedule toolbar 的 action buttons 必须使用 `KshiftCompactGlassButtonStyle`。Visual height 必须为 34pt。Outer hit target 不得小于 44pt。Content 必须使用 primary color。Glass 必须使用 neutral `.glassEffect(.regular.interactive())`。禁止 accent-tinted `.buttonStyle(.glass)` 和 oversized glass container。Schedule toolbar 的 vertical padding 必须为 4pt，minimum height 必须为 52pt。
+- `UI-PPL-019`：macOS work area 必须将 vertical wheel route 到 nearest vertical scroll view。Shift + wheel 必须 route 到 nearest horizontal scroll view。Wheel routing 必须保留 precise scrolling deltas。Event handling 必须位于 `KshiftAppKitAdapter`。
+- `UI-PPL-020`：Click blank schedule day cell 必须使用 clicked person 和 clicked date 创建 local `TaskDraft`。交互必须打开 `TaskEditorView` 的 `popover` presentation。Popover default size 必须为 400pt × 560pt。Popup layout 必须使用 responsive assignee row 和 two-date row。该交互不得设置 root `editorDraft` 或复用 sheet presentation。
 
 ## 8. 关联合同
 

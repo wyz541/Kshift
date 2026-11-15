@@ -458,8 +458,9 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
-        guard let projectID = selectedProjectID else { return }
+    public func newTaskDraft(assigneeIDs: [String], date: Date? = nil) -> TaskDraft? {
+        guard let projectID = selectedProjectID else { return nil }
+        let targetDate = KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar)
         let position = selectedDateTasks
             .filter { task in
                 assigneeIDs.isEmpty
@@ -469,13 +470,17 @@ public final class AppModel: ObservableObject {
             .map(\.position)
             .max()
             .map { $0 + 1024 } ?? 1024
-        editorDraft = TaskDraft(
+        return TaskDraft(
             projectID: projectID,
             assigneeIDs: assigneeIDs,
-            startDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
-            dueDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
+            startDate: targetDate,
+            dueDate: targetDate,
             position: position
         )
+    }
+
+    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
+        editorDraft = newTaskDraft(assigneeIDs: assigneeIDs, date: date)
     }
 
     public func selectDate(_ date: Date) {

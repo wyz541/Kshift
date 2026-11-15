@@ -62,6 +62,25 @@ final class AppModelTests: XCTestCase {
         XCTAssertTrue(model.selectedDateTasks.isEmpty)
     }
 
+    func testNewTaskDraftUsesClickedAssigneeAndDateWithoutPresentingSheet() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        let clickedDate = KshiftDate.date(
+            from: "2026-11-16",
+            calendar: model.projectCalendar
+        ) ?? .now
+
+        let draft = model.newTaskDraft(
+            assigneeIDs: ["person-noah"],
+            date: clickedDate
+        )
+
+        XCTAssertEqual(draft?.assigneeIDs, ["person-noah"])
+        XCTAssertEqual(draft?.startDate, clickedDate)
+        XCTAssertEqual(draft?.dueDate, clickedDate)
+        XCTAssertNil(model.editorDraft)
+    }
+
     func testCreateCommandUsesCurrentRevision() async {
         let (model, client) = makeModel()
         await model.bootstrap()

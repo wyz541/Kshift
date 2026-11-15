@@ -30,6 +30,10 @@
       self.feedbackHandler = feedbackHandler
     }
 
+    public func installScrollWheelRouting() {
+      AppKitScrollWheelRouter.shared.install()
+    }
+
     public func openExternalURL(_ url: URL) async -> Bool {
       openURLHandler(url)
     }
