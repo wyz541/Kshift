@@ -36,23 +36,21 @@ struct TaskEditorView: View {
     }
 
     private var editorFields: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            fieldGroup("标题") {
-                TextField("例如：确认发布清单", text: $draft.title, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1...3)
-                    .accessibilityLabel("任务标题")
-                    .accessibilityIdentifier("task-title")
+        VStack(alignment: .leading, spacing: 16) {
+            titleField
+
+            panelSection("内容", systemImage: "text.alignleft") {
+                MarkdownEditorView(
+                    text: $draft.notes,
+                    paneHeight: markdownPaneHeight
+                )
             }
 
-            MarkdownEditorView(
-                text: $draft.notes,
-                paneHeight: markdownPaneHeight
-            )
+            panelSection("属性", systemImage: "slider.horizontal.3") {
+                taskPropertyFields
+            }
 
-            taskPropertyFields
-
-            fieldGroup("标签") {
+            panelSection("标签", systemImage: "tag") {
                 TaskTagEditor(tags: $draft.tags, input: $tagInput)
             }
 
@@ -63,6 +61,7 @@ struct TaskEditorView: View {
                 )
                 .font(.caption)
                 .foregroundStyle(.secondary)
+                .padding(.horizontal, 4)
             }
 
             if let validationMessage {
@@ -76,7 +75,57 @@ struct TaskEditorView: View {
                 ConflictInlineView(model: model, notice: conflict, dismiss: dismiss.callAsFunction)
             }
         }
-        .padding(24)
+        .padding(20)
+    }
+
+    private var titleField: some View {
+        TextField(
+            "任务标题",
+            text: $draft.title,
+            prompt: Text("任务标题"),
+            axis: .vertical
+        )
+        .font(.title3.weight(.semibold))
+        .textFieldStyle(.plain)
+        .lineLimit(1...3)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
+        .background(
+            .primary.opacity(0.04),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(.separator, lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+        .accessibilityLabel("任务标题")
+        .accessibilityIdentifier("task-title")
+    }
+
+    private func panelSection<Content: View>(
+        _ title: String,
+        systemImage: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(title, systemImage: systemImage)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+
+            content()
+        }
+        .padding(14)
+        .background(
+            .primary.opacity(0.025),
+            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.separator, lineWidth: 1)
+                .allowsHitTesting(false)
+        }
     }
 
     private var taskPropertyFields: some View {
@@ -230,9 +279,9 @@ struct TaskEditorView: View {
 
     private var markdownPaneHeight: CGFloat {
         if isCompactWidth {
-            return 220
+            return 170
         }
-        return presentation == .popover ? 230 : 280
+        return presentation == .popover ? 180 : 190
     }
 
     private var dueDateField: some View {
@@ -254,7 +303,7 @@ struct TaskEditorView: View {
         NavigationStack {
             ScrollView {
                 editorFields
-                    .frame(maxWidth: 780, alignment: .leading)
+                    .frame(maxWidth: 680, alignment: .leading)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .background(.background)
@@ -270,10 +319,10 @@ struct TaskEditorView: View {
             }
             .interactiveDismissDisabled(isSaving)
             .frame(
-                minWidth: isCompactWidth ? nil : 820,
-                idealWidth: isCompactWidth ? nil : 860,
-                minHeight: isCompactWidth ? nil : 680,
-                idealHeight: isCompactWidth ? nil : 740
+                minWidth: isCompactWidth ? nil : 680,
+                idealWidth: isCompactWidth ? nil : 720,
+                minHeight: isCompactWidth ? nil : 640,
+                idealHeight: isCompactWidth ? nil : 720
             )
         }
     }
@@ -318,8 +367,8 @@ struct TaskEditorView: View {
             maxHeight: isCompactWidth ? .infinity : nil
         )
         .frame(
-            width: isCompactWidth ? nil : 720,
-            height: isCompactWidth ? nil : 600
+            width: isCompactWidth ? nil : 640,
+            height: isCompactWidth ? nil : 580
         )
         .background(.background)
         .interactiveDismissDisabled(isSaving)
@@ -404,6 +453,11 @@ private struct TaskMetadataControlLabel: View {
     let title: String
     let systemImage: String
     let tint: Color
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var minimumHeight: CGFloat {
+        horizontalSizeClass == .compact ? 44 : 34
+    }
 
     var body: some View {
         HStack(spacing: 7) {
@@ -423,7 +477,7 @@ private struct TaskMetadataControlLabel: View {
         }
         .font(.callout.weight(.medium))
         .padding(.horizontal, 10)
-        .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading)
         .background(.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: 10, style: .continuous)

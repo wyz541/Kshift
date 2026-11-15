@@ -17,7 +17,12 @@ struct TaskTagList: View {
 struct TaskTagEditor: View {
     @Binding var tags: [String]
     @Binding var input: String
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @FocusState private var isInputFocused: Bool
+
+    private var inputMinimumHeight: CGFloat {
+        horizontalSizeClass == .compact ? 44 : 28
+    }
 
     var body: some View {
         TagFlowLayout(spacing: 7, expandsLastItem: true) {
@@ -49,7 +54,7 @@ struct TaskTagEditor: View {
                     .accessibilityIdentifier("task-tag-input")
             }
             .padding(.horizontal, 10)
-            .frame(minHeight: 28)
+            .frame(minHeight: inputMinimumHeight)
             .background(.primary.opacity(0.05), in: Capsule())
         }
         .padding(10)
@@ -98,6 +103,11 @@ enum TaskTagValues {
 private struct TaskTagChip: View {
     let tag: String
     var onRemove: (() -> Void)?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var chipHeight: CGFloat {
+        onRemove != nil && horizontalSizeClass == .compact ? 44 : 28
+    }
 
     var body: some View {
         HStack(spacing: 4) {
@@ -109,7 +119,10 @@ private struct TaskTagChip: View {
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
                         .font(.caption2.weight(.bold))
-                        .frame(width: 18, height: 18)
+                        .frame(
+                            width: horizontalSizeClass == .compact ? 34 : 18,
+                            height: chipHeight
+                        )
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -119,7 +132,7 @@ private struct TaskTagChip: View {
         .foregroundStyle(.tint)
         .padding(.leading, 10)
         .padding(.trailing, onRemove == nil ? 10 : 5)
-        .frame(minHeight: 28)
+        .frame(minHeight: chipHeight)
         .background(.tint.opacity(0.1), in: Capsule())
     }
 }

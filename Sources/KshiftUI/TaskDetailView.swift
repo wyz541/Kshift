@@ -72,35 +72,52 @@ struct TaskDetailView: View {
                 Text("删除会写入项目审计记录。此操作不能静默撤销。")
             }
             .frame(
-                minWidth: isCompactWidth ? nil : 820,
-                idealWidth: isCompactWidth ? nil : 860,
-                minHeight: isCompactWidth ? nil : 680,
-                idealHeight: isCompactWidth ? nil : 740
+                minWidth: isCompactWidth ? nil : 680,
+                idealWidth: isCompactWidth ? nil : 720,
+                minHeight: isCompactWidth ? nil : 640,
+                idealHeight: isCompactWidth ? nil : 720
             )
         }
     }
 
     private func taskContent(_ task: TaskItem) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(task.title)
-                        .font(.largeTitle.weight(.bold))
-                        .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(task.title)
+                            .font(.title.weight(.bold))
+                            .fixedSize(horizontal: false, vertical: true)
 
-                    HStack(spacing: 8) {
-                        StatusBadge(status: task.status)
-                        PriorityBadge(priority: task.priority)
+                        HStack(spacing: 8) {
+                            StatusBadge(status: task.status)
+                            PriorityBadge(priority: task.priority)
+                        }
+                    }
+
+                    Divider()
+
+                    HStack(spacing: 20) {
+                        DetailFact(title: "负责人", value: model.assigneeNames(for: task))
+                        DetailFact(
+                            title: "日期",
+                            value: task.scheduleStartDate == task.scheduleEndDate
+                                ? task.dueDate
+                                : "\(task.scheduleStartDate) 至 \(task.scheduleEndDate)"
+                        )
+                        DetailFact(title: "版本", value: "v\(task.version)")
                     }
                 }
-
-                HStack(spacing: 18) {
-                    DetailFact(title: "负责人", value: model.assigneeNames(for: task))
-                    DetailFact(title: "日期", value: task.scheduleStartDate == task.scheduleEndDate ? task.dueDate : "\(task.scheduleStartDate) 至 \(task.scheduleEndDate)")
-                    DetailFact(title: "版本", value: "v\(task.version)")
+                .padding(20)
+                .background(
+                    .primary.opacity(0.025),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous)
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .strokeBorder(.separator, lineWidth: 1)
+                        .allowsHitTesting(false)
                 }
-                .padding(16)
-                .kshiftContentBoard()
 
                 KshiftMarkdownText(
                     source: task.notes.isEmpty ? "暂无详情" : task.notes,
@@ -158,8 +175,8 @@ struct TaskDetailView: View {
                     }
                 }
             }
-            .padding(28)
-            .frame(maxWidth: 900, alignment: .leading)
+            .padding(24)
+            .frame(maxWidth: 720, alignment: .leading)
         }
         .background(.background)
         .accessibilityIdentifier("task-detail")

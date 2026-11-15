@@ -14,11 +14,13 @@ struct MarkdownEditorView: View {
             if stacksVertically {
                 VStack(spacing: 12) {
                     editorPane
+                    Divider()
                     previewPane
                 }
             } else {
-                HStack(alignment: .top, spacing: 12) {
+                HStack(alignment: .top, spacing: 14) {
                     editorPane
+                    Divider()
                     previewPane
                 }
             }
@@ -37,11 +39,6 @@ struct MarkdownEditorView: View {
             .writingToolsBehavior(.disabled)
             .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
             .background(.primary.opacity(0.025), in: paneShape)
-            .overlay {
-                paneShape
-                    .strokeBorder(.separator, lineWidth: 1)
-                    .allowsHitTesting(false)
-            }
             .overlay(alignment: .topLeading) {
                 if text.isEmpty {
                     Text("输入 Markdown")
@@ -67,11 +64,6 @@ struct MarkdownEditorView: View {
         }
         .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
         .background(.primary.opacity(0.015), in: paneShape)
-        .overlay {
-            paneShape
-                .strokeBorder(.separator, lineWidth: 1)
-                .allowsHitTesting(false)
-        }
         .accessibilityLabel("Markdown 预览")
         .accessibilityIdentifier("markdown-preview")
     }
