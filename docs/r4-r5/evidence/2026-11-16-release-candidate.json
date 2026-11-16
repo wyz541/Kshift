@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "run_id": 43882883172,
+  "run_url": "https://github.com/wyz541/Kshift/actions/runs/43882883172",
+  "workflow": "Release candidates",
+  "event": "workflow_dispatch",
+  "channel": "preview",
+  "version": "0.1.0",
+  "tag_expected": "v0.1.0-preview.1",
+  "source_commit": "8214716fc7da387005a836820cd66b057511ea1f",
+  "jobs": {
+    "candidate_contract": "success",
+    "server": "success",
+    "source": "success",
+    "macos": "skipped",
+    "ios": "skipped"
+  },
+  "artifacts": {
+    "source": {
+      "artifact_name": "release-fragment-source",
+      "artifact_zip_sha256": "8b044f762747a714ee5e7c573975ac2142aee7a6dcc2d990c2a0f0d08edffd0b",
+      "asset_name": "kshift-0.1.0-source.tar.gz",
+      "asset_size_bytes": 9162328,
+      "asset_sha256": "bb20c897e14a50c50704ba2168187aebb67beaa64b4880df713f016a9a3e3e5e",
+      "fragment_sha256": "474c8d4f8178dce224dbc21a6820e1f978188e04d4c0154aa66979fcdbc367c0"
+    },
+    "server": {
+      "artifact_name": "release-fragment-server-macos",
+      "artifact_zip_sha256": "a0379e56e094612c79f88970c56214992fc407039df22ce59d30215ee7ff8957",
+      "asset_name": "kshift-0.1.0-server-macos-arm64.tar.gz",
+      "asset_size_bytes": 4311937,
+      "asset_sha256": "753b68b7227c4462e15612ddd4df2020fdf86db202a3394d841a802d2dd2ed0b",
+      "fragment_sha256": "4af35fcd5d662637e26e3100a68099a10dd7b49cdbe4dba5cc762dd55bc6e795"
+    }
+  },
+  "attestations": {
+    "source": {
+      "verified": true,
+      "signer_workflow": ".github/workflows/release-candidates.yml"
+    },
+    "server": {
+      "verified": true,
+      "signer_workflow": ".github/workflows/release-platform-server.yml"
+    }
+  },
+  "releases_created": 0,
+  "tags_created": 0,
+  "covered": [
+    "server candidate build",
+    "source archive",
+    "SHA-256 fragments",
+    "GitHub artifact attestation"
+  ],
+  "uncovered": [
+    "macOS candidate",
+    "iOS candidate",
+    "Draft",
+    "Promote",
+    "Stable signing",
+    "TestFlight"
+  ]
+}
