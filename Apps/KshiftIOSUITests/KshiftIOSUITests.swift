@@ -230,6 +230,38 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(app.textFields["task-title"].firstMatch.waitForExistence(timeout: 5))
     }
 
+    func testFilterPopoverUsesCompactChipSelection() throws {
+        let app = launchPlannerWithDefaultView()
+        let filterButton = element(
+            in: app,
+            identifier: "filter-button",
+            labelContains: "筛选任务"
+        )
+        XCTAssertTrue(filterButton.waitForExistence(timeout: 8), app.debugDescription)
+        filterButton.tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["filter-popover"].firstMatch
+                .waitForExistence(timeout: 8),
+            app.debugDescription
+        )
+
+        let mia = app.buttons["filter-assignee-person-mia"].firstMatch
+        XCTAssertTrue(mia.waitForExistence(timeout: 5), app.debugDescription)
+        mia.tap()
+        XCTAssertEqual(mia.value as? String, "已选择")
+
+        let reset = app.buttons["重置"].firstMatch
+        XCTAssertTrue(reset.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(reset.isEnabled)
+        reset.tap()
+        XCTAssertEqual(mia.value as? String, "未选择")
+
+        let done = app.buttons["完成"].firstMatch
+        XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
+        done.tap()
+    }
+
     func testCoreActionsMeetMinimumTouchTargets() throws {
         let app = launchPlanner()
 

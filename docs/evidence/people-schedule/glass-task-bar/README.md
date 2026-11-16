@@ -17,7 +17,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 触发原因
 
-用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。最新视觉反馈指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。
+用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。最新视觉反馈指出 filter popover 的 internal content 使用过长 switch rows，不能快速 scan 和 batch select conditions，并指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。
 
 ## 修复内容
 
@@ -58,6 +58,10 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Regular PeopleSchedule 隐藏 duplicated global date navigation row。
 - Single schedule toolbar 包含 date picker、period control、density、sort、filter 和 settings。
 - Schedule filter action 打开 `FilterPopover`，不再占用 clear-selection slot。
+- `FilterPopover` uses a `300pt × 580pt` fixed surface with fixed header and footer. The header shows active-condition count and reset action. The footer shows filtered-task count and a prominent `完成` action.
+- Filter content uses compact multi-select chips. It does not use long vertical switch rows. Assignee chips use an adaptive two-column grid. Status and priority chips use four-column grids. Tag chips use an adaptive grid. Sort options use a two-column grid.
+- Selected filter chips show a tint, outline, selected accessibility state and `已选择` accessibility value. Wide chips show a checkmark. Compact status and priority chips keep primary text color so bright P1 yellow and neutral todo tints do not produce low-contrast white text. Reset restores all filters and manual sort.
+- The popover width avoids clipping at the right schedule-toolbar anchor. The popover height keeps all sort options visible above the fixed footer.
 - Schedule sort menu 直接显示 `手动顺序`、`优先级`、`标题` 和 `最近更新`。菜单不得包含 nested `排序 >` submenu。
 - Sidebar footer 使用 gear button，并打开 `KshiftAppSettingsView`。
 - Settings surface 包含 schedule layout、system accessibility shortcut 和 about information。
@@ -101,6 +105,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-person-header-min-width-2026-11-16.png`](./macos-person-header-min-width-2026-11-16.png) | macOS 27.0.1；Light Mode；`168pt` people column；Compact density | Person header with separated name/disclosure and role/metrics rows | `f9af5d1b879a31b6d96fc5a0597a2c85f984793cd32364816296bff0313184b9` |
 | [`macos-window-toolbar-native-glass-2026-11-16.png`](./macos-window-toolbar-native-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Native Liquid Glass toolbar group with flat actions and one accent New Task action | `0a22e7064f5cbe8330fd1687764883beccef27e7c598a6b39d693446bf1f1d62` |
 | [`macos-schedule-filter-2026-11-16.png`](./macos-schedule-filter-2026-11-16.png) | macOS 27.0.1；Light Mode | Schedule utility group with sort, filter and settings actions | `1b9bb7a12ae80379b088cfe25f6e256f5d53972793c87eb8e3f3af3f8fe2c69d` |
+| [`macos-filter-popover-compact-2026-11-16.png`](./macos-filter-popover-compact-2026-11-16.png) | macOS 27.0.1；Light Mode；`300pt × 580pt` popover | Compact chip-based filter content with fixed header, footer and complete sort grid | `24ee439cbf34132002e40a89b6205bddebb47ece312cad0fb09c0fe140ebf8e6` |
 | [`macos-schedule-sort-menu-direct-2026-11-16.png`](./macos-schedule-sort-menu-direct-2026-11-16.png) | macOS 27.0.1；Light Mode | First-level sort menu with direct options and current-item checkmark | `6952cd5713431793677f2c2f0cf78893bf601b14d4b4357b9107d9aefa585325` |
 | [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `简约` mode | `99a924541746d848c90a23356840d57e840d9d7cdd545f36250be0d1c055a13f` |
 | [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `详情` mode | `e4b5abdfa2fbef4bc5cc6f66d7c719d73a0704228a5fab24f2d5520a0a05c910` |
@@ -117,6 +122,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | Person-header density check | 通过；`168pt` width with compact and standard and comfortable density |
 | Window-toolbar manual visual check | 通过；single native glass surface；flat filter/refresh/audit actions；accent New Task |
 | Schedule-filter interaction check | 通过；filter icon opens `FilterPopover`；compact layout keeps one filter action |
+| Filter-popover content visual check | 通过；`300pt × 580pt`；fixed header/footer；complete chip grids；no clipping or dead space |
 | Schedule-sort menu check | 通过；first-level options；current-item checkmark updates after selection |
 | Task-detail panel visual check | 通过；`简约` and `详情` modes；header/body/footer remain visible |
 | Task-detail history check | 通过；history popover opens |
@@ -128,6 +134,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | `testPeopleScheduleAccessibilityAudit` | 通过 |
 | `testPeopleScheduleStatusControlOpensNativeMenu` | 通过 |
 | `testPeopleScheduleIsDefaultViewAndCoreControlsWork` | 通过 |
+| `testFilterPopoverUsesCompactChipSelection` | 通过；chip selection、selected state、reset and Done action |
 | `testAccessibilityTextSizeKeepsCoreActionsAvailable` | 通过 |
 | `testCoreActionsMeetMinimumTouchTargets` | 通过 |
 | `testPlanDepthFlowAndAccessibilityAudit` | 通过；native toolbar Close 的 scoped contrast/Dynamic Type false positives |
