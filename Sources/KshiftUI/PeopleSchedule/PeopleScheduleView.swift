@@ -481,12 +481,30 @@ private struct CompactSchedulePersonSection: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(strongTextColor)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(
-                        "\(row.person?.role.title ?? "无负责人") · \(row.tasks.count) 项任务"
-                    )
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(strongTextColor)
-                    .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 6) {
+                        Text(
+                            "\(row.person?.role.title ?? "无负责人") · \(row.tasks.count) 项任务"
+                        )
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(strongTextColor)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .layoutPriority(1)
+
+                        Spacer(minLength: 2)
+
+                        if !collapsed {
+                            if row.inProgressCount > 0 {
+                                compactCountBadge(
+                                    row.inProgressCount,
+                                    label: "进行中"
+                                )
+                            }
+                            if row.urgentCount > 0 {
+                                compactCountBadge(row.urgentCount, label: "P0")
+                            }
+                        }
+                    }
                 }
 
                 Spacer(minLength: 4)
@@ -524,6 +542,14 @@ private struct CompactSchedulePersonSection: View {
         let name = row.person?.name ?? "未分配"
         let role = row.person?.role.title ?? "无负责人"
         return "\(name)，\(role)，\(row.tasks.count) 项任务，\(row.inProgressCount) 项进行中，\(row.urgentCount) 项 P0"
+    }
+
+    private func compactCountBadge(_ value: Int, label: String) -> some View {
+        Text("\(value) \(label)")
+            .font(.caption2.monospacedDigit().weight(.semibold))
+            .foregroundStyle(strongTextColor)
+            .fixedSize()
+            .accessibilityHidden(true)
     }
 
     private func priorityOrder(_ priority: TaskPriority) -> Int {

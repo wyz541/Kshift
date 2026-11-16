@@ -91,7 +91,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。The schedule utility group shows sort、filter 和 settings。The filter action opens `FilterPopover`。The sort menu shows all four options directly at the first level and marks the current option。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task detail titlebar now uses a visible red window-close light, a centered title, a neutral trailing mode control and a draggable chrome surface。The hover evidence shows the xmark that appears on the close control。The content uses a translucent Liquid Glass backdrop, grouped native glass surfaces, a fixed translucent footer and aligned priority/status strips。Accent color is limited to selected controls, Save and low-opacity context。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。The schedule utility group shows sort、filter 和 settings。The filter action opens `FilterPopover`。The sort menu shows all four options directly at the first level and marks the current option。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task detail titlebar now uses a visible red window-close light, a centered title, a neutral trailing mode control and a draggable chrome surface。The hover evidence shows the xmark that appears on the close control。The content uses a translucent Liquid Glass backdrop, grouped native glass surfaces, a fixed translucent footer and aligned priority/status strips。Accent color is limited to selected controls, Save and low-opacity context。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。The compact person header shows task count plus nonzero in-progress and P0 counts on the role line without overlap。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -99,6 +99,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-task-bar-dark-2026-11-15.png`](./macos-task-bar-dark-2026-11-15.png) | macOS 27.0.1；Xcode 27.2；Dark Mode | Desktop 人员×日期时间轴 | `4f9aa2754a4f5c5dccdf1760ce016acc32b820c8c0b29cf9bda79fcdf38c3a43` |
 | [`ios-task-bar-light-2026-11-15.png`](./ios-task-bar-light-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Mobile 人员分组列表 | `78cedcbbf9ca3711e9bc549623202536f950db65374a6602a8c2140ab735a738` |
 | [`ios-task-bar-dark-2026-11-15.png`](./ios-task-bar-dark-2026-11-15.png) | iPhone 18 Pro Simulator；iOS 27.0；Dark Mode | Mobile 人员分组列表 | `6f5623633bc8a8ef973a1770ec52b1a3e99abf6bf1785200b7c59c2be4145389` |
+| [`ios-person-metrics-2026-11-16.png`](./ios-person-metrics-2026-11-16.png) | iPhone 18 Pro Simulator；iOS 27.0；Light Mode | Compact person header with task count、`1 进行中` and `1 P0` metrics | `6012a30bf5403731dd8574f759bfff3b9217707b0dda9766f8838293613dcffd` |
 | [`macos-task-editor-popover-2026-11-15.png`](./macos-task-editor-popover-2026-11-15.png) | macOS 27.0.1；Light Mode | 560pt × 580pt toolbar New Task popover with one Markdown workspace | `80d1d80b9bed363dcca415cef891eeb63be8ee32eafe33960d3ec47d8a65311e` |
 | [`macos-settings-2026-11-15.png`](./macos-settings-2026-11-15.png) | macOS 27.0.1；Light Mode | Sidebar settings button 和 `KshiftAppSettingsView` | `4933cff27082a3cf6be4579f7af5a14836727913453bea468c6a17ff57315271` |
 | [`macos-task-hover-preview-2026-11-15.png`](./macos-task-hover-preview-2026-11-15.png) | macOS 27.0.1；Light Mode | Delayed task hover preview with rendered Markdown | `caeb728855c14eff128a24dc7fea4bb7f8c855d561a49c627fada63ff68bbc4a` |
@@ -136,7 +137,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | `testTaskDetailPanelShowsReferenceModesAndActions` | 通过；titlebar existence；`52pt` height；centered title；close/mode control order |
 | `testTaskMarkdownEditorWritesAndPreviewsBlocks` | 通过 |
 | `testAccessibilityAudit` | 通过 |
-| `testPeopleScheduleAccessibilityAudit` | 通过 |
+| `testPeopleScheduleAccessibilityAudit` | 通过；compact person metrics use scoped Dynamic Type false-positive waivers |
 | `testPeopleScheduleStatusControlOpensNativeMenu` | 通过 |
 | `testPeopleScheduleIsDefaultViewAndCoreControlsWork` | 通过 |
 | `testFilterPopoverUsesCompactChipSelection` | 通过；chip selection、selected state、reset and Done action |
@@ -147,7 +148,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | `make check-build-governance` | 通过 |
 | Operations CI | 见 PR #68 checks |
 
-SwiftUI 无障碍审计将 `今天`、`未分配` 和 `无负责人 · 1 项任务` 报为 glass background contrast diagnostic。审计还将 `编辑者 · 1 项任务` 报为 compact layout dynamic type diagnostic。截图显示这些 labels 为高对比文字。测试只豁免这些 scoped diagnostics。Status glyph 与 white inner disc 的人工对比度为 `todo` `8.67:1`、`inProgress` `6.57:1`、`blocked` `7.52:1`、`done` `5.42:1`。
+SwiftUI 无障碍审计将 `今天`、`未分配` 和 `无负责人 · 1 项任务` 报为 glass background contrast diagnostic。审计还将 `编辑者 · 1 项任务` 以及 compact person metric labels such as `1 进行中` and `1 P0` 报为 dynamic type diagnostic。These labels use relative caption fonts, and the screenshot shows readable text。测试只豁免这些 scoped diagnostics。Status glyph 与 white inner disc 的人工对比度为 `todo` `8.67:1`、`inProgress` `6.57:1`、`blocked` `7.52:1`、`done` `5.42:1`。
 
 ## 未覆盖
 
