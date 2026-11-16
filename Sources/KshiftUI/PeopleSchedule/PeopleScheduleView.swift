@@ -833,7 +833,7 @@ private struct PeopleScheduleDateHeader: View {
                 } label: {
                     VStack(spacing: 3) {
                         Text(day.formatted(
-                            Date.FormatStyle(timeZone: model.projectTimeZone).weekday(.narrow)
+                            Date.FormatStyle(timeZone: model.projectTimeZone).weekday(.abbreviated)
                         ))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(strongTextColor)
