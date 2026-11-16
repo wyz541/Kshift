@@ -31,6 +31,7 @@ struct TaskEditorView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draft: TaskDraft
@@ -133,15 +134,7 @@ struct TaskEditorView: View {
             )
         }
         .padding(14)
-        .background(
-            .primary.opacity(0.025),
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.separator, lineWidth: 1)
-                .allowsHitTesting(false)
-        }
+        .kshiftGlassCard(tint: Color.accentColor.opacity(0.06))
     }
 
     private var titleField: some View {
@@ -166,6 +159,7 @@ struct TaskEditorView: View {
                 .strokeBorder(.separator, lineWidth: 1)
                 .allowsHitTesting(false)
         }
+        .taskEditorGlassControl(tint: Color.accentColor.opacity(0.07), cornerRadius: 12)
         .accessibilityLabel("任务标题")
         .accessibilityIdentifier("task-title")
     }
@@ -183,15 +177,7 @@ struct TaskEditorView: View {
             content()
         }
         .padding(14)
-        .background(
-            .primary.opacity(0.025),
-            in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.separator, lineWidth: 1)
-                .allowsHitTesting(false)
-        }
+        .kshiftGlassCard(tint: Color.primary.opacity(0.025))
     }
 
     private var taskPropertyFields: some View {
@@ -361,6 +347,7 @@ struct TaskEditorView: View {
         .controlSize(.small)
         .frame(width: 144)
         .tint(.gray)
+        .taskEditorGlassControl(tint: Color.accentColor.opacity(0.05), cornerRadius: 10)
         .accessibilityLabel("任务编辑模式")
         .accessibilityIdentifier("task-editor-layout-mode")
     }
@@ -427,7 +414,7 @@ struct TaskEditorView: View {
                 titleField
             }
             .padding(14)
-            .kshiftGlassCard(tint: Color.accentColor.opacity(0.022))
+            .kshiftGlassCard(tint: Color.accentColor.opacity(0.08))
 
             descriptionWorkspace(paneHeight: markdownPaneHeight)
 
@@ -442,13 +429,13 @@ struct TaskEditorView: View {
 
             compactMetadataFields
                 .padding(14)
-                .kshiftGlassCard(tint: Color.blue.opacity(0.015))
+                .kshiftGlassCard(tint: Color.blue.opacity(0.06))
 
             fieldGroup("标签") {
                 TaskTagEditor(tags: $draft.tags, input: $tagInput)
             }
             .padding(14)
-            .kshiftGlassCard(tint: Color.orange.opacity(0.015))
+            .kshiftGlassCard(tint: Color.orange.opacity(0.07))
 
             editorStatusMessages
 
@@ -495,7 +482,7 @@ struct TaskEditorView: View {
             )
         }
         .padding(12)
-        .kshiftGlassCard(tint: Color.accentColor.opacity(0.025))
+        .kshiftGlassCard(tint: Color.accentColor.opacity(0.07))
     }
 
     private var priorityStrip: some View {
@@ -525,7 +512,7 @@ struct TaskEditorView: View {
                 }
             }
             .padding(3)
-            .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .taskEditorGlassControl(tint: Color.primary.opacity(0.025), cornerRadius: 10)
         }
     }
 
@@ -557,7 +544,7 @@ struct TaskEditorView: View {
                 }
             }
             .padding(3)
-            .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .taskEditorGlassControl(tint: Color.primary.opacity(0.025), cornerRadius: 10)
         }
     }
 
@@ -608,6 +595,7 @@ struct TaskEditorView: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(.separator, lineWidth: 1)
             }
+            .taskEditorGlassControl(tint: Color.blue.opacity(0.06), cornerRadius: 10)
             .accessibilityLabel("工时天数")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -650,63 +638,64 @@ struct TaskEditorView: View {
     }
 
     private var sheetFooter: some View {
-        HStack(spacing: 8) {
-            if currentTask != nil {
-                Button {
-                    isShowingHistory = true
-                } label: {
-                    Label("历史", systemImage: "clock.arrow.circlepath")
+        GlassEffectContainer(spacing: 8) {
+            HStack(spacing: 8) {
+                if currentTask != nil {
+                    Button {
+                        isShowingHistory = true
+                    } label: {
+                        Label("历史", systemImage: "clock.arrow.circlepath")
+                    }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .accessibilityIdentifier("task-history-button")
+
+                    Button {
+                        duplicateTask()
+                    } label: {
+                        if isDuplicating {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Label("复制", systemImage: "square.on.square")
+                        }
+                    }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .disabled(isSaving || isDuplicating)
+                    .accessibilityIdentifier("duplicate-task")
+
+                    Button(role: .destructive) {
+                        deleteCurrentTask()
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
+                    .buttonStyle(.glass)
+                    .tint(.red)
+                    .disabled(isSaving || isDuplicating)
+                    .accessibilityIdentifier("delete-task")
                 }
-                .buttonStyle(.bordered)
-                .accessibilityIdentifier("task-history-button")
+
+                Spacer()
+
+                Button("取消") { dismiss() }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .disabled(isSaving)
+                    .accessibilityIdentifier("cancel-task-editor")
 
                 Button {
-                    duplicateTask()
+                    save()
                 } label: {
-                    if isDuplicating {
+                    if isSaving {
                         ProgressView().controlSize(.small)
                     } else {
-                        Label("复制", systemImage: "square.on.square")
+                        Text("保存")
                     }
                 }
-                .buttonStyle(.bordered)
-                .disabled(isSaving || isDuplicating)
-                .accessibilityIdentifier("duplicate-task")
-
-                Button(role: .destructive) {
-                    deleteCurrentTask()
-                } label: {
-                    Label("删除", systemImage: "trash")
-                }
-                .buttonStyle(.bordered)
-                .tint(.red)
-                .disabled(isSaving || isDuplicating)
-                .accessibilityIdentifier("delete-task")
+                .buttonStyle(KshiftCompactAccentGlassButtonStyle())
+                .disabled(isSaving || draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("save-task")
             }
-
-            Spacer()
-
-            Button("取消") { dismiss() }
-                .buttonStyle(.bordered)
-                .disabled(isSaving)
-                .accessibilityIdentifier("cancel-task-editor")
-
-            Button {
-                save()
-            } label: {
-                if isSaving {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Text("保存")
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(isSaving || draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            .accessibilityIdentifier("save-task")
         }
-        .controlSize(.large)
         .padding(.horizontal, 20)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) {
             Rectangle()
@@ -905,17 +894,23 @@ struct TaskEditorView: View {
                     .fill(.ultraThinMaterial)
 
                 RadialGradient(
-                    colors: [Color.accentColor.opacity(0.11), .clear],
+                    colors: [
+                        Color.accentColor.opacity(colorScheme == .dark ? 0.22 : 0.16),
+                        .clear,
+                    ],
                     center: .topTrailing,
                     startRadius: 20,
-                    endRadius: 480
+                    endRadius: 500
                 )
 
                 RadialGradient(
-                    colors: [Color.orange.opacity(0.05), .clear],
+                    colors: [
+                        Color.orange.opacity(colorScheme == .dark ? 0.12 : 0.08),
+                        .clear,
+                    ],
                     center: .bottomLeading,
                     startRadius: 20,
-                    endRadius: 420
+                    endRadius: 440
                 )
             }
         }
@@ -1044,6 +1039,50 @@ struct TaskEditorView: View {
     }
 }
 
+private extension View {
+    func taskEditorGlassControl(tint: Color? = nil, cornerRadius: CGFloat) -> some View {
+        modifier(TaskEditorGlassControlModifier(tint: tint, cornerRadius: cornerRadius))
+    }
+}
+
+private struct TaskEditorGlassControlModifier: ViewModifier {
+    let tint: Color?
+    let cornerRadius: CGFloat
+
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+
+        if reduceTransparency || forceReduceTransparency {
+            content
+                .background(.background, in: shape)
+                .overlay {
+                    shape.strokeBorder(.separator, lineWidth: contrast == .increased ? 2 : 1)
+                }
+        } else if let tint {
+            content
+                .glassEffect(.regular.tint(tint).interactive(), in: shape)
+                .overlay {
+                    if contrast == .increased {
+                        shape.strokeBorder(.primary, lineWidth: 2)
+                    }
+                }
+        } else {
+            content
+                .glassEffect(.regular.interactive(), in: shape)
+                .overlay {
+                    if contrast == .increased {
+                        shape.strokeBorder(.primary, lineWidth: 2)
+                    }
+                }
+        }
+    }
+}
+
 private struct MarkdownFormattingToolbar: View {
     @Binding var text: String
     @Binding var mode: MarkdownViewMode
@@ -1097,7 +1136,7 @@ private struct MarkdownFormattingToolbar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .taskEditorGlassControl(tint: Color.accentColor.opacity(0.06), cornerRadius: 12)
     }
 
     private func formatButton(
@@ -1204,6 +1243,7 @@ private struct TaskMetadataControlLabel: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(tint.opacity(0.16), lineWidth: 1)
         }
+        .taskEditorGlassControl(tint: tint.opacity(0.07), cornerRadius: 10)
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
