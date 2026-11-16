@@ -157,6 +157,7 @@ flowchart TB
 - `UI-PPL-026`：Toolbar、planner floating action、board column action、calendar action and macOS menu 的 new-task action 必须打开 `TaskEditorView` popover。禁止 new-task action 使用 sheet。Popover 必须 anchor 到 initiating control；menu shortcut 可以 anchor 到 toolbar New Task button。Existing-task editing 可以继续使用 sheet。
 - `UI-PPL-027`：Sidebar 的 project selection 和 planning-view selection 必须使用 typed selection。Click planning-view row 不得写入 `selectedProjectID`。`selectProject` 必须 reject identifiers that are absent from the loaded project list。
 - `UI-PPL-028`：Task detail 必须使用 native SwiftUI Liquid Glass。Summary、content 和 activity surfaces 必须位于 `GlassEffectContainer` 中，并使用 `.glassEffect(.regular.tint(...), in: RoundedRectangle(...))`。Popup/sheet background 必须允许 ambient context 显示。Toolbar actions 必须使用 compact glass button styles。Reduce Transparency 必须切换到 opaque fallback。
+- `UI-PPL-029`：PeopleSchedule person header 不得使用 overlay 绘制 task metrics。Name 与 disclosure 必须位于首行；role 与 metrics 必须位于次行。Name 和 role 必须在 metrics 之前 tail truncate。Expanded header 必须显示 task count；in-progress 和 P0 metrics 只在 count 大于 0 时显示。Header 在 `168pt` 最小人员列宽下不得发生 text 与 metric overlap。
 
 ## 8. 关联合同
 

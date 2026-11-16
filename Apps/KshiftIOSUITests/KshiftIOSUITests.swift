@@ -107,6 +107,7 @@ final class KshiftIOSUITests: XCTestCase {
                 "Done item",
                 "VoiceOver",
                 "Schedule launch window",
+                "Review window",
                 "Mia Chen",
                 "Noah Li",
                 "编辑者 · 1 项任务",

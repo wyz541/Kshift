@@ -3,7 +3,7 @@ slug: /evidence/people-schedule/glass-task-bar-2026-11-15
 title: 人员排期原生染色 Liquid Glass 任务条证据（2026-11-15）
 type: report
 status: review
-updated: "2026-11-15"
+updated: "2026-11-16"
 keywords:
   - 人员排期
   - 任务条
@@ -17,7 +17,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 触发原因
 
-用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。
+用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。最新视觉反馈指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。
 
 ## 修复内容
 
@@ -70,10 +70,14 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Markdown preview supports headings、lists、quotes、dividers and fenced code。
 - Status and priority controls use equal-width columns。Tag editing uses removable chips and an inline input。
 - Regular task detail and task editor sheets use a `680pt` minimum width。
+- Person header no longer renders task metrics as an overlay。
+- Person header uses a name/disclosure row and a role/metrics row。The name and role tail-truncate before the metrics。
+- Expanded person header always shows the task count。In-progress and P0 metrics appear only when their count is non-zero。
+- Person header keeps separate text and metric bounds at the `168pt` minimum people-column width。
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task editor uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task editor uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -87,6 +91,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-markdown-editor-2026-11-15.png`](./macos-markdown-editor-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown preview mode inside the single task workspace | `ce4b5711e5d74fd9f406ca38c28f464a353901b6abc39e29bca71c754baca8b8` |
 | [`macos-markdown-source-2026-11-15.png`](./macos-markdown-source-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown source mode with the same single task workspace | `34a983e69c73f904e9f05a24b564a5825d06d16b3d7887eddf79b3d73daab858` |
 | [`macos-task-detail-liquid-glass-2026-11-16.png`](./macos-task-detail-liquid-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Liquid Glass task detail with summary, content, activity cards and glass toolbar actions | `6b3e480ebd323dbb7abd8ec1949d5e32ed15d0fa005806e7d9d4a97f37baf241` |
+| [`macos-person-header-min-width-2026-11-16.png`](./macos-person-header-min-width-2026-11-16.png) | macOS 27.0.1；Light Mode；`168pt` people column；Compact density | Person header with separated name/disclosure and role/metrics rows | `f9af5d1b879a31b6d96fc5a0597a2c85f984793cd32364816296bff0313184b9` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
@@ -96,6 +101,8 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | --- | --- |
 | `make swift-test` | 通过；49 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
 | macOS Debug build | 通过 |
+| Person-header manual visual check | 通过；`168pt` and `196pt` and `320pt` widths；compact density |
+| Person-header density check | 通过；`168pt` width with compact and standard and comfortable density |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |
 | `testTaskMarkdownEditorWritesAndPreviewsBlocks` | 通过 |

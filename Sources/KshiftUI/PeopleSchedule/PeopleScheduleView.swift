@@ -674,22 +674,42 @@ private struct PeopleSchedulePersonHeader: View {
         Button {
             model.toggleSchedulePersonCollapsed(row.id)
         } label: {
-            HStack(spacing: 9) {
+            HStack(spacing: 8) {
                 avatar
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(row.person?.name ?? "未分配")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(strongTextColor)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text(collapsed ? "\(row.tasks.count) 项任务" : roleLine)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(strongTextColor)
-                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 6) {
+                        Text(row.person?.name ?? "未分配")
+                            .font(.callout.weight(.semibold))
+                            .foregroundStyle(strongTextColor)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(strongTextColor)
+                            .fixedSize()
+                    }
+
+                    HStack(spacing: 6) {
+                        Text(detailLine)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(strongTextColor)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
+                            .layoutPriority(1)
+
+                        Spacer(minLength: 0)
+
+                        if shouldShowMetrics {
+                            metrics
+                                .fixedSize(horizontal: true, vertical: false)
+                        }
+                    }
                 }
-                Spacer(minLength: 4)
-                Image(systemName: collapsed ? "chevron.right" : "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(strongTextColor)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 44, maxHeight: .infinity, alignment: .leading)
@@ -700,21 +720,6 @@ private struct PeopleSchedulePersonHeader: View {
         .foregroundStyle(strongTextColor)
         .frame(height: height)
         .background(.background)
-        .overlay(alignment: .bottomTrailing) {
-            if !collapsed, !row.tasks.isEmpty, !dynamicTypeSize.isAccessibilitySize {
-                HStack(spacing: 5) {
-                    countBadge("\(row.tasks.count)", symbol: "list.bullet")
-                    if row.inProgressCount > 0 {
-                        countBadge("\(row.inProgressCount)", symbol: "circle.lefthalf.filled")
-                    }
-                    if row.urgentCount > 0 {
-                        countBadge("\(row.urgentCount)", symbol: "flag.fill")
-                    }
-                }
-                .padding(.trailing, 10)
-                .padding(.bottom, 5)
-            }
-        }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(rowAccessibilityLabel)
         .accessibilityValue(collapsed ? "已折叠" : "已展开")
@@ -735,9 +740,28 @@ private struct PeopleSchedulePersonHeader: View {
         .accessibilityHidden(true)
     }
 
-    private var roleLine: String {
+    private var shouldShowMetrics: Bool {
+        !collapsed && !dynamicTypeSize.isAccessibilitySize
+    }
+
+    private var detailLine: String {
         let role = row.person?.role.title ?? "无负责人"
-        return "\(role) · \(row.tasks.count) 项任务"
+        if collapsed || dynamicTypeSize.isAccessibilitySize {
+            return "\(role) · \(row.tasks.count) 项任务"
+        }
+        return role
+    }
+
+    private var metrics: some View {
+        HStack(spacing: 4) {
+            countBadge("\(row.tasks.count)", symbol: "list.bullet")
+            if row.inProgressCount > 0 {
+                countBadge("\(row.inProgressCount)", symbol: "circle.lefthalf.filled")
+            }
+            if row.urgentCount > 0 {
+                countBadge("\(row.urgentCount)", symbol: "flag.fill")
+            }
+        }
     }
 
     private var rowAccessibilityLabel: String {
