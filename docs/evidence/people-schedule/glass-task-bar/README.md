@@ -63,6 +63,9 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Task bars show a delayed hover preview panel。
 - Hover preview contains task metadata and rendered Markdown details。
 - Task details and task editor use the shared Markdown renderer。
+- Task detail uses a `GlassEffectContainer` with tinted native `.glassEffect` cards for summary, content, and activity。
+- Task detail uses a clear presentation background, ambient gradient context, and compact glass toolbar actions。
+- Reduce Transparency replaces glass cards with opaque system-background cards。
 - Task editor uses one Markdown workspace。A `源码` / `预览` mode switch changes the workspace content。New tasks default to source mode；existing tasks with content default to preview mode。
 - Markdown preview supports headings、lists、quotes、dividers and fenced code。
 - Status and priority controls use equal-width columns。Tag editing uses removable chips and an inline input。
@@ -83,9 +86,9 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-task-hover-preview-2026-11-15.png`](./macos-task-hover-preview-2026-11-15.png) | macOS 27.0.1；Light Mode | Delayed task hover preview with rendered Markdown | `caeb728855c14eff128a24dc7fea4bb7f8c855d561a49c627fada63ff68bbc4a` |
 | [`macos-markdown-editor-2026-11-15.png`](./macos-markdown-editor-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown preview mode inside the single task workspace | `ce4b5711e5d74fd9f406ca38c28f464a353901b6abc39e29bca71c754baca8b8` |
 | [`macos-markdown-source-2026-11-15.png`](./macos-markdown-source-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown source mode with the same single task workspace | `34a983e69c73f904e9f05a24b564a5825d06d16b3d7887eddf79b3d73daab858` |
-| [`macos-task-detail-2026-11-15.png`](./macos-task-detail-2026-11-15.png) | macOS 27.0.1；Light Mode | Task detail with summary card, rendered Markdown and tag chips | `77c7d05f27a678c9baa25b06adeb3744594316affb381841c8ad55969de18699` |
+| [`macos-task-detail-liquid-glass-2026-11-16.png`](./macos-task-detail-liquid-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Liquid Glass task detail with summary, content, activity cards and glass toolbar actions | `6b3e480ebd323dbb7abd8ec1949d5e32ed15d0fa005806e7d9d4a97f37baf241` |
 
-旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。它们不表示最终视觉结论。
+旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
 ## 验证结果
 

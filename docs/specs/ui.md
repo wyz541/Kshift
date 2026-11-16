@@ -156,6 +156,7 @@ flowchart TB
 - `UI-PPL-025`：Regular task detail 和 task editor sheet 的 minimum width 必须为 `680pt`。Schedule task editor popover 的 width 必须为 `560pt`。Task editor 必须使用 content sections、single Markdown workspace 和 aligned metadata columns。Status 与 priority 控件必须使用 equal-width columns。Tag editor 必须使用 removable tag chips 和 inline add input。
 - `UI-PPL-026`：Toolbar、planner floating action、board column action、calendar action and macOS menu 的 new-task action 必须打开 `TaskEditorView` popover。禁止 new-task action 使用 sheet。Popover 必须 anchor 到 initiating control；menu shortcut 可以 anchor 到 toolbar New Task button。Existing-task editing 可以继续使用 sheet。
 - `UI-PPL-027`：Sidebar 的 project selection 和 planning-view selection 必须使用 typed selection。Click planning-view row 不得写入 `selectedProjectID`。`selectProject` 必须 reject identifiers that are absent from the loaded project list。
+- `UI-PPL-028`：Task detail 必须使用 native SwiftUI Liquid Glass。Summary、content 和 activity surfaces 必须位于 `GlassEffectContainer` 中，并使用 `.glassEffect(.regular.tint(...), in: RoundedRectangle(...))`。Popup/sheet background 必须允许 ambient context 显示。Toolbar actions 必须使用 compact glass button styles。Reduce Transparency 必须切换到 opaque fallback。
 
 ## 8. 关联合同
 
