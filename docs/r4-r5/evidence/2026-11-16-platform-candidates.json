@@ -1,0 +1,99 @@
+{
+  "status": "passed",
+  "run_id": 43896233627,
+  "run_url": "https://github.com/wyz541/Kshift/actions/runs/43896233627",
+  "workflow": "Release candidates",
+  "channel": "preview",
+  "version": "0.1.0",
+  "tag_expected": "v0.1.0-preview.2",
+  "source_commit": "96afb71a757c0f8c2f38984f1bc12536a60cefa8",
+  "jobs": {
+    "candidate_contract": "success",
+    "server": "success",
+    "macos": "success",
+    "ios": "success",
+    "source": "success"
+  },
+  "artifacts": {
+    "source": {
+      "artifact_name": "release-fragment-source",
+      "artifact_zip_sha256": "c33b87f7860f1b2eed6958672841b3f52bfc18063450282d470ccdd6982a510e",
+      "asset_name": "kshift-0.1.0-source.tar.gz",
+      "asset_size_bytes": 9471541,
+      "asset_sha256": "597af241f82c2540e3abf8ba8c51987cec95cbe741edca158fc8fd90e3fcd753",
+      "fragment_sha256": "8f94f511bf8b665f7bc2be2c00515f3632cdf5286ea835a80d03c2ae2455d957"
+    },
+    "server": {
+      "artifact_name": "release-fragment-server-macos",
+      "artifact_zip_sha256": "07a6d9bd468385582bf79b427e60685c07fba297bf838b5f6428cf3113a14ecf",
+      "asset_name": "kshift-0.1.0-server-macos-arm64.tar.gz",
+      "asset_size_bytes": 4311930,
+      "asset_sha256": "1b51edc0e8ee8b09ebff563ece37b04b9c8e24b45745185b799a0f9643b47a7a",
+      "fragment_sha256": "e74780663d0179f5b2d135c28959cae425f642bd88777659337393bc42e5d43c"
+    },
+    "macos": {
+      "artifact_name": "release-fragment-macos",
+      "artifact_zip_sha256": "4b3a8beaefe873142741ca6572a2eaaa16d529e4ed72cf84344f40c10ab48168",
+      "assets": [
+        {
+          "name": "kshift-0.1.0-macos-arm64.dmg",
+          "size_bytes": 6266611,
+          "sha256": "6afbfcf6da007e569019056f19e0afd6bcca6b9e4a299edd35e3278ed5f93192"
+        },
+        {
+          "name": "kshift-0.1.0-macos-arm64.zip",
+          "size_bytes": 5443494,
+          "sha256": "90a83dd915acb812ba72ad0e116dda294051625a782c2f3d0e15e5c2b910b254"
+        }
+      ],
+      "fragment_sha256": "b256e26b7a48ecae18fae353a732594bb8f7d1ef8fca6b0b445e59108b3c4418"
+    },
+    "ios": {
+      "artifact_name": "release-fragment-ios",
+      "artifact_zip_sha256": "caf6656a0996ed9d304f9d9c6ee3406a95ca42012335f8be05dbb0165c3e1390",
+      "asset_name": "kshift-0.1.0-ios-arm64.ipa",
+      "asset_size_bytes": 3961349,
+      "asset_sha256": "da2f4f63f0e01c6a8a30485bb6dd8cdc49abd851b572969532d28185b2cff7e1",
+      "fragment_sha256": "eabf249c69a65b7e601c62a327482787b828a643658e2e7fff4a364294f3e55e"
+    }
+  },
+  "attestations": {
+    "source": {
+      "verified": true,
+      "signer_workflow": ".github/workflows/release-candidates.yml"
+    },
+    "server": {
+      "verified": true,
+      "signer_workflow": ".github/workflows/release-platform-server.yml"
+    },
+    "macos": {
+      "verified": true,
+      "signer_workflow": ".github/workflows/release-platform-macos.yml"
+    },
+    "ios": {
+      "verified": true,
+      "signer_workflow": ".github/workflows/release-platform-ios.yml"
+    }
+  },
+  "releases_created": 0,
+  "tags_created": 0,
+  "signing_status": "unsigned-preview",
+  "covered": [
+    "macOS build",
+    "iOS device build",
+    "server build",
+    "source archive",
+    "all-platform source identity",
+    "GitHub artifact attestations"
+  ],
+  "uncovered": [
+    "Stable signing",
+    "notarization",
+    "TestFlight",
+    "clean-host install",
+    "upgrade",
+    "rollback",
+    "device install",
+    "final accessibility/performance gates"
+  ]
+}

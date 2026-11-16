@@ -27,5 +27,6 @@ description: "提供 R4/R5 基座的验收、运维、发布和回滚入口。"
 | [evidence/2026-11-16-network-capacity.md](evidence/2026-11-16-network-capacity.md) | 100 个持久 gRPC 客户端和 64 个并发事件流证据 |
 | [evidence/2026-11-16-release-candidate.md](evidence/2026-11-16-release-candidate.md) | Preview server/source candidate 和 attestation 证据 |
 | [evidence/2026-11-16-draft-promote.md](evidence/2026-11-16-draft-promote.md) | Preview Draft、byte verification 和 same-Draft Promote 证据 |
+| [evidence/2026-11-16-platform-candidates.md](evidence/2026-11-16-platform-candidates.md) | Server、macOS、iOS 和 source 同源 Preview candidate 证据 |
 | [evidence/2026-11-14-launchd-restart.md](evidence/2026-11-14-launchd-restart.md) | Kshift server LaunchAgent 重启证据 |
 | [evidence/2026-11-14-preview-lifecycle.md](evidence/2026-11-14-preview-lifecycle.md) | iOS Simulator 和 macOS preview lifecycle 证据 |
