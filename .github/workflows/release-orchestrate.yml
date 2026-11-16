@@ -267,6 +267,7 @@ jobs:
           manifest="$release_dir/release-manifest.json"
           test "$(jq -r '.release_status' "$manifest")" = draft
           approved_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          release_url="https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
           jq \
             --arg approved_by "$GITHUB_ACTOR" \
             --arg approved_at "$approved_at" \
@@ -281,7 +282,8 @@ jobs:
             --arg approved_by "$GITHUB_ACTOR" \
             --arg approved_at "$approved_at" \
             --arg run_id "$GITHUB_RUN_ID" \
-            '.manifest_sha256 = $manifest_sha256 | .promotion = {approved_by: $approved_by, approved_at: $approved_at, run_id: $run_id}' \
+            --arg release_url "$release_url" \
+            '.manifest_sha256 = $manifest_sha256 | .release_url = $release_url | .promotion = {approved_by: $approved_by, approved_at: $approved_at, run_id: $run_id}' \
             "$evidence" > "$evidence.tmp"
           mv "$evidence.tmp" "$evidence"
           node release/tools/kshift-release.mjs checksums \
