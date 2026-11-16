@@ -5,6 +5,8 @@ import PackageDescription
 let packageDirectory = URL(fileURLWithPath: #filePath)
   .deletingLastPathComponent()
   .path
+let rustProfile = ProcessInfo.processInfo.environment["KSHIFT_RUST_PROFILE"] ?? "debug"
+let rustLibraryDirectory = "\(packageDirectory)/target/\(rustProfile)"
 
 let package = Package(
   name: "Kshift",
@@ -29,7 +31,7 @@ let package = Package(
       name: "KshiftFFI",
       dependencies: ["KshiftPresentation", "CKshiftFFI"],
       linkerSettings: [
-        .unsafeFlags(["-L", "\(packageDirectory)/target/debug"]),
+        .unsafeFlags(["-L", rustLibraryDirectory]),
         .linkedLibrary("kshift_ffi"),
       ]
     ),

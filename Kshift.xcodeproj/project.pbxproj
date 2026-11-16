@@ -308,7 +308,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -euo pipefail\n\"$SRCROOT/scripts/build-ffi.sh\" ios-simulator\n";
+			shellScript = "set -euo pipefail\nif [[ \"$SDK_NAME\" == iphoneos* ]]; then\n  target=ios-device\nelse\n  target=ios-simulator\nfi\n\"$SRCROOT/scripts/build-ffi.sh\" \"$target\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
