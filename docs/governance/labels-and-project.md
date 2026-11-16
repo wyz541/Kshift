@@ -4,7 +4,7 @@ title: Kshift 标签与 Project 配置
 type: reference
 status: active
 version: "0.1"
-updated: "2026-11-14"
+updated: "2026-11-16"
 keywords:
   - 标签
   - Project
@@ -57,6 +57,7 @@ description: 记录 Kshift 的标签集合、Project 字段、Issue 迁移映射
 | `area:governance` | `6E7781` | Issue、PR、标签、Project 和协作规则 |
 | `risk:data-loss` | `B60205` | 可能删除、损坏或不可恢复地修改数据 |
 | `risk:security` | `D93F0B` | 可能影响认证、授权、机密性或安全边界 |
+| `need-info` | `FBCA04` | Issue 缺少可执行信息，等待提出者补充 |
 | `needs:design` | `F9D0C4` | 需要先完成交互或视觉设计 |
 | `needs:evidence` | `FEF2C0` | 需要补充运行、测试或人工验收证据 |
 
@@ -73,6 +74,8 @@ Project：[Kshift Project #9](https://github.com/users/wyz541/projects/9)
 | `Target` | `R0`、`R1`、`R2`、`R3`、`R4`、`R5`、`v1.0` |
 
 迁移时开放 Issue 已全部加入 Project。当前状态、优先级和 Target 只从 Project 读取。
+
+[项目工作流](../workflow.md) 的 `Ready to Dev` 映射到 Project `Status = Ready`。图中的 `need-info` 回路使用同名 GitHub label。
 
 ## 4. Issue 标签迁移记录
 
