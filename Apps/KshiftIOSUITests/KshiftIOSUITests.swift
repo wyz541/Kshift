@@ -185,6 +185,7 @@ final class KshiftIOSUITests: XCTestCase {
             app.debugDescription
         )
         let titlebarTitle = app.descendants(matching: .any)["task-detail"].firstMatch
+        let titlebar = app.descendants(matching: .any)["task-panel-titlebar"].firstMatch
         let closeButton = element(
             in: app,
             identifier: "close-task-editor",
@@ -195,8 +196,12 @@ final class KshiftIOSUITests: XCTestCase {
             identifier: "task-editor-layout-mode",
             labelContains: "任务编辑模式"
         )
+        XCTAssertTrue(titlebar.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(closeButton.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(layoutControl.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertGreaterThanOrEqual(titlebar.frame.height, 48)
+        XCTAssertLessThanOrEqual(titlebar.frame.height, 56)
+        XCTAssertEqual(titlebarTitle.frame.midX, titlebar.frame.midX, accuracy: 2)
         XCTAssertLessThan(closeButton.frame.midX, titlebarTitle.frame.midX)
         XCTAssertGreaterThan(layoutControl.frame.midX, titlebarTitle.frame.midX)
         XCTAssertTrue(app.textFields["task-title"].firstMatch.waitForExistence(timeout: 5))

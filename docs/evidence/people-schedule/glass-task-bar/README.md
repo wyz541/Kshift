@@ -17,7 +17,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 触发原因
 
-用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。最新视觉反馈指出 filter popover 的 internal content 使用过长 switch rows，不能快速 scan 和 batch select conditions，并指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。
+用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。后续视觉反馈指出 filter popover 的 internal content 使用过长 switch rows，不能快速 scan 和 batch select conditions，并指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。最新视觉反馈指出 task panel 的 internal custom titlebar 仍未发生可见的结构变化。
 
 ## 修复内容
 
@@ -71,7 +71,10 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Task bars show a delayed hover preview panel。
 - Hover preview contains task metadata and rendered Markdown details。
 - Task details and task editor use one editable `800pt × 720pt` panel。
-- Panel titlebar uses classic macOS structure：`52pt` material bar, centered `13pt` title, leading hover-only close action and trailing small `简约` / `详情` control。
+- Panel titlebar uses classic macOS window structure：`52pt` system-material bar, centered `13pt` title, leading red traffic-light close control and trailing neutral small `简约` / `详情` control。
+- Close control uses a `28pt` macOS hit target。A `12pt` red disc remains visible at rest。The xmark appears only on pointer hover。
+- Titlebar blank space uses `WindowDragGesture` on macOS。iOS compiles the same titlebar without the macOS-only drag gesture。
+- A full-width `0.5pt` separator separates the titlebar from panel content。
 - Panel backdrop uses translucent material with restrained accent context。
 - Core fields use grouped native Liquid Glass surfaces inside `GlassEffectContainer`。Individual fields use flat fills。
 - `简约` mode contains task name, Markdown workspace, priority/status strips, assignee/date/duration fields and tags。
@@ -88,7 +91,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。The schedule utility group shows sort、filter 和 settings。The filter action opens `FilterPopover`。The sort menu shows all four options directly at the first level and marks the current option。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task detail panel uses a classic macOS titlebar with centered title, leading close and trailing mode control。The content uses a translucent Liquid Glass backdrop, grouped native glass surfaces, a fixed translucent footer and aligned priority/status strips。Accent color is limited to selected controls, Save and low-opacity context。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。The schedule utility group shows sort、filter 和 settings。The filter action opens `FilterPopover`。The sort menu shows all four options directly at the first level and marks the current option。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task detail titlebar now uses a visible red window-close light, a centered title, a neutral trailing mode control and a draggable chrome surface。The hover evidence shows the xmark that appears on the close control。The content uses a translucent Liquid Glass backdrop, grouped native glass surfaces, a fixed translucent footer and aligned priority/status strips。Accent color is limited to selected controls, Save and low-opacity context。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -107,8 +110,9 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-schedule-filter-2026-11-16.png`](./macos-schedule-filter-2026-11-16.png) | macOS 27.0.1；Light Mode | Schedule utility group with sort, filter and settings actions | `1b9bb7a12ae80379b088cfe25f6e256f5d53972793c87eb8e3f3af3f8fe2c69d` |
 | [`macos-filter-popover-compact-2026-11-16.png`](./macos-filter-popover-compact-2026-11-16.png) | macOS 27.0.1；Light Mode；`300pt × 580pt` popover | Compact chip-based filter content with fixed header, footer and complete sort grid | `24ee439cbf34132002e40a89b6205bddebb47ece312cad0fb09c0fe140ebf8e6` |
 | [`macos-schedule-sort-menu-direct-2026-11-16.png`](./macos-schedule-sort-menu-direct-2026-11-16.png) | macOS 27.0.1；Light Mode | First-level sort menu with direct options and current-item checkmark | `6952cd5713431793677f2c2f0cf78893bf601b14d4b4357b9107d9aefa585325` |
-| [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `简约` mode | `99a924541746d848c90a23356840d57e840d9d7cdd545f36250be0d1c055a13f` |
-| [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `详情` mode | `e4b5abdfa2fbef4bc5cc6f66d7c719d73a0704228a5fab24f2d5520a0a05c910` |
+| [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Dark Mode | macOS-window titlebar with red close light and Liquid Glass task detail `简约` mode | `0d1b7516852c463f98a853502add059da50bd7f93e39fdbf4d1f32dc93031733` |
+| [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Dark Mode | macOS-window titlebar with red close light and Liquid Glass task detail `详情` mode | `cbbb4254d173de62387ca73acce12fa09225271721a7e5e4ddc3bee7ade22a03` |
+| [`macos-task-panel-titlebar-hover-2026-11-16.png`](./macos-task-panel-titlebar-hover-2026-11-16.png) | macOS 27.0.1；Dark Mode；Pointer hover | Red close light with hover xmark and neutral trailing mode control | `2d1989917b44c9541dce97d8568c209627cc7ee34b8fca61254e8496543d87c5` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
@@ -124,11 +128,12 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | Schedule-filter interaction check | 通过；filter icon opens `FilterPopover`；compact layout keeps one filter action |
 | Filter-popover content visual check | 通过；`300pt × 580pt`；fixed header/footer；complete chip grids；no clipping or dead space |
 | Schedule-sort menu check | 通过；first-level options；current-item checkmark updates after selection |
-| Task-detail panel visual check | 通过；`简约` and `详情` modes；header/body/footer remain visible |
+| Task-detail panel visual check | 通过；`简约` and `详情` modes；red close light；centered title；neutral mode control；header/body/footer remain visible |
+| Task-titlebar hover check | 通过；the xmark appears on the red close light only while the pointer is over the control |
 | Task-detail history check | 通过；history popover opens |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |
-| `testTaskDetailPanelShowsReferenceModesAndActions` | 通过 |
+| `testTaskDetailPanelShowsReferenceModesAndActions` | 通过；titlebar existence；`52pt` height；centered title；close/mode control order |
 | `testTaskMarkdownEditorWritesAndPreviewsBlocks` | 通过 |
 | `testAccessibilityAudit` | 通过 |
 | `testPeopleScheduleAccessibilityAudit` | 通过 |

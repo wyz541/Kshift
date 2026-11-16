@@ -360,25 +360,25 @@ struct TaskEditorView: View {
         .labelsHidden()
         .controlSize(.small)
         .frame(width: 144)
+        .tint(.gray)
         .accessibilityLabel("任务编辑模式")
         .accessibilityIdentifier("task-editor-layout-mode")
     }
 
     private var classicTitlebar: some View {
         ZStack {
+            titlebarDragSurface
+
             Text(titleText)
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
                 .frame(maxWidth: 280)
+                .allowsHitTesting(false)
                 .accessibilityIdentifier("task-detail")
 
             HStack(spacing: 12) {
-                ClassicTitlebarButton(
-                    systemImage: "xmark",
-                    label: "关闭",
-                    action: dismiss.callAsFunction
-                )
+                ClassicTitlebarCloseButton(action: dismiss.callAsFunction)
                 .accessibilityIdentifier("close-task-editor")
 
                 Spacer(minLength: 0)
@@ -386,7 +386,7 @@ struct TaskEditorView: View {
                 sheetLayoutControl
             }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 14)
         .frame(height: 52)
         .background(.bar)
         .overlay(alignment: .bottom) {
@@ -394,6 +394,19 @@ struct TaskEditorView: View {
                 .fill(.separator.opacity(0.75))
                 .frame(height: 0.5)
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("任务详情标题栏")
+        .accessibilityIdentifier("task-panel-titlebar")
+    }
+
+    private var titlebarDragSurface: some View {
+#if canImport(AppKit)
+        Color.clear
+            .contentShape(Rectangle())
+            .gesture(WindowDragGesture())
+#else
+        Color.clear
+#endif
     }
 
     private var compactSheetContent: some View {
@@ -1118,9 +1131,7 @@ private struct MarkdownFormattingToolbar: View {
     }
 }
 
-private struct ClassicTitlebarButton: View {
-    let systemImage: String
-    let label: String
+private struct ClassicTitlebarCloseButton: View {
     let action: () -> Void
 
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -1130,26 +1141,32 @@ private struct ClassicTitlebarButton: View {
         horizontalSizeClass == .compact ? 44 : 28
     }
 
-    private var visualSize: CGFloat {
-        horizontalSizeClass == .compact ? 32 : 24
-    }
-
     var body: some View {
         Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.primary)
-                .frame(width: visualSize, height: visualSize)
-                .background(
-                    isHovered ? Color.primary.opacity(0.08) : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
-                )
-                .frame(width: targetSize, height: targetSize)
-                .contentShape(Rectangle())
+            ZStack {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 12, height: 12)
+
+                if isHovered {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 7, weight: .bold))
+                        .foregroundStyle(.black.opacity(0.62))
+                        .transition(.opacity)
+                }
+            }
+            .frame(width: targetSize, height: targetSize)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .onHover { isHovered = $0 }
-        .accessibilityLabel(label)
+        .help("关闭")
+        .onHover { hovered in
+            withAnimation(.easeOut(duration: 0.1)) {
+                isHovered = hovered
+            }
+        }
+        .accessibilityLabel("关闭")
+        .accessibilityHint("关闭任务详情面板")
     }
 }
 
