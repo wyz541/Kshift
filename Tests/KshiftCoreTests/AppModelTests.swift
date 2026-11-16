@@ -36,6 +36,19 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.tasks.contains(where: { $0.projectID == Fixture.focus.id }))
     }
 
+    func testSelectProjectIgnoresUnknownIdentifier() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        let originalProjectID = model.selectedProjectID
+        let originalSnapshotID = model.snapshot?.project.id
+
+        await model.selectProject("board")
+
+        XCTAssertEqual(model.selectedProjectID, originalProjectID)
+        XCTAssertEqual(model.snapshot?.project.id, originalSnapshotID)
+        XCTAssertNil(model.errorMessage)
+    }
+
     func testSelectProjectLoadsSnapshotWhenSelectionWasAlreadyUpdated() async {
         let (model, _) = makeModel()
         await model.bootstrap()

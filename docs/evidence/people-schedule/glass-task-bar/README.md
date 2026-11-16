@@ -52,6 +52,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Blank day cell click 使用 clicked person 和 clicked date 创建 local `TaskDraft`。
 - Blank day cell click 打开 responsive `TaskEditorView` popover。Popover default size 为 560pt × 580pt。
 - Toolbar、planner floating action、board column action、calendar action and macOS menu 的 new-task actions use the same anchored popover。Existing-task editing keeps the regular sheet。
+- Sidebar planning-view selection uses typed selection and cannot overwrite the selected project ID。
 - Regular PeopleSchedule 隐藏 duplicated global date navigation row。
 - Single schedule toolbar 包含 date picker、period control、density、sort、clear selection 和 settings。
 - Sidebar footer 使用 gear button，并打开 `KshiftAppSettingsView`。
@@ -90,7 +91,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 | 检查 | 结果 |
 | --- | --- |
-| `make swift-test` | 通过；47 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
+| `make swift-test` | 通过；48 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
 | macOS Debug build | 通过 |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |

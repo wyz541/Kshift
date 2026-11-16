@@ -421,6 +421,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func selectProject(_ projectID: String) async {
+        guard projects.contains(where: { $0.id == projectID }) else { return }
         guard projectID != snapshot?.project.id || snapshot == nil else { return }
         persistCurrentPreferences()
         isLoading = true

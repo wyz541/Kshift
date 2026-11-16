@@ -155,6 +155,7 @@ flowchart TB
 - `UI-PPL-024`：Task detail 和 task editor 必须使用 shared Markdown renderer。Task editor 必须使用 single Markdown workspace，并通过 `源码` / `预览` mode switch 切换显示。New task 默认使用 `源码` mode。Existing task with content 默认使用 `预览` mode。Preview 必须支持 heading、paragraph、bullet list、numbered list、blockquote、divider 和 fenced code block。Inline Markdown 必须保留。Task detail 必须 render Markdown detail，不得显示 raw Markdown source。
 - `UI-PPL-025`：Regular task detail 和 task editor sheet 的 minimum width 必须为 `680pt`。Schedule task editor popover 的 width 必须为 `560pt`。Task editor 必须使用 content sections、single Markdown workspace 和 aligned metadata columns。Status 与 priority 控件必须使用 equal-width columns。Tag editor 必须使用 removable tag chips 和 inline add input。
 - `UI-PPL-026`：Toolbar、planner floating action、board column action、calendar action and macOS menu 的 new-task action 必须打开 `TaskEditorView` popover。禁止 new-task action 使用 sheet。Popover 必须 anchor 到 initiating control；menu shortcut 可以 anchor 到 toolbar New Task button。Existing-task editing 可以继续使用 sheet。
+- `UI-PPL-027`：Sidebar 的 project selection 和 planning-view selection 必须使用 typed selection。Click planning-view row 不得写入 `selectedProjectID`。`selectProject` 必须 reject identifiers that are absent from the loaded project list。
 
 ## 8. 关联合同
 
