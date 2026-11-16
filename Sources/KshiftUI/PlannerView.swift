@@ -321,10 +321,15 @@ struct PlannerUtilityControls: View {
     var body: some View {
         HStack(spacing: 8) {
             Menu {
-                Picker("排序", selection: $model.sortOption) {
-                    ForEach(TaskSortOption.allCases) { option in
-                        Text(option.title).tag(option)
-                    }
+                ForEach(TaskSortOption.allCases) { option in
+                    Toggle(option.title, isOn: Binding(
+                        get: { model.sortOption == option },
+                        set: { isSelected in
+                            if isSelected {
+                                model.sortOption = option
+                            }
+                        }
+                    ))
                 }
             } label: {
                 Image(systemName: "arrow.up.arrow.down")

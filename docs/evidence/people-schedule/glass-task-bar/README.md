@@ -58,6 +58,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Regular PeopleSchedule 隐藏 duplicated global date navigation row。
 - Single schedule toolbar 包含 date picker、period control、density、sort、filter 和 settings。
 - Schedule filter action 打开 `FilterPopover`，不再占用 clear-selection slot。
+- Schedule sort menu 直接显示 `手动顺序`、`优先级`、`标题` 和 `最近更新`。菜单不得包含 nested `排序 >` submenu。
 - Sidebar footer 使用 gear button，并打开 `KshiftAppSettingsView`。
 - Settings surface 包含 schedule layout、system accessibility shortcut 和 about information。
 - PeopleSchedule 不显示 legacy Plan Depth entry。
@@ -80,7 +81,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。The schedule utility group shows sort、filter 和 settings。The filter action opens `FilterPopover`。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task editor uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。The schedule utility group shows sort、filter 和 settings。The filter action opens `FilterPopover`。The sort menu shows all four options directly at the first level and marks the current option。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task editor uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -97,6 +98,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-person-header-min-width-2026-11-16.png`](./macos-person-header-min-width-2026-11-16.png) | macOS 27.0.1；Light Mode；`168pt` people column；Compact density | Person header with separated name/disclosure and role/metrics rows | `f9af5d1b879a31b6d96fc5a0597a2c85f984793cd32364816296bff0313184b9` |
 | [`macos-window-toolbar-native-glass-2026-11-16.png`](./macos-window-toolbar-native-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Native Liquid Glass toolbar group with flat actions and one accent New Task action | `0a22e7064f5cbe8330fd1687764883beccef27e7c598a6b39d693446bf1f1d62` |
 | [`macos-schedule-filter-2026-11-16.png`](./macos-schedule-filter-2026-11-16.png) | macOS 27.0.1；Light Mode | Schedule utility group with sort, filter and settings actions | `1b9bb7a12ae80379b088cfe25f6e256f5d53972793c87eb8e3f3af3f8fe2c69d` |
+| [`macos-schedule-sort-menu-direct-2026-11-16.png`](./macos-schedule-sort-menu-direct-2026-11-16.png) | macOS 27.0.1；Light Mode | First-level sort menu with direct options and current-item checkmark | `6952cd5713431793677f2c2f0cf78893bf601b14d4b4357b9107d9aefa585325` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
@@ -110,6 +112,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | Person-header density check | 通过；`168pt` width with compact and standard and comfortable density |
 | Window-toolbar manual visual check | 通过；single native glass surface；flat filter/refresh/audit actions；accent New Task |
 | Schedule-filter interaction check | 通过；filter icon opens `FilterPopover`；compact layout keeps one filter action |
+| Schedule-sort menu check | 通过；first-level options；current-item checkmark updates after selection |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |
 | `testTaskMarkdownEditorWritesAndPreviewsBlocks` | 通过 |

@@ -87,6 +87,17 @@ final class KshiftIOSUITests: XCTestCase {
         month.tap()
         week.tap()
 
+        let sortMenu = app.buttons["sort-menu"].firstMatch
+        XCTAssertTrue(sortMenu.waitForExistence(timeout: 5), app.debugDescription)
+        sortMenu.tap()
+        for title in ["手动顺序", "优先级", "标题", "最近更新"] {
+            XCTAssertTrue(
+                app.descendants(matching: .any)[title].firstMatch.waitForExistence(timeout: 3),
+                "Missing first-level sort option: \(title)"
+            )
+        }
+        app.descendants(matching: .any)["手动顺序"].firstMatch.tap()
+
         let person = app.descendants(matching: .any)["schedule-person-person-mia"].firstMatch
         XCTAssertTrue(person.waitForExistence(timeout: 5))
         person.tap()
