@@ -14,6 +14,8 @@ ADR 只用于历史追溯。ADR 不在权威顺序中。下层文档不得覆盖
 
 - [Active Spec 索引](docs/specs/index.md)
 - [工程治理 Spec](docs/specs/governance.md)
+- [项目工作流说明](docs/workflow.md)
+- [可编辑工作流图](docs/workflow.drawio)
 - [Issue 与 PR 关系](docs/governance/issue-relations.md)
 - [标签与 Project](docs/governance/labels-and-project.md)
 - [Issue Forms](.github/ISSUE_TEMPLATE)
@@ -36,6 +38,8 @@ Feature 必须使用原生 sub-issues。Feature 至少有 1 个交付子 Issue�
 Research 必须写决策问题、来源 Discussion、Owner、Decision owner 和预期输出。直接创建的 Research Issue 在来源处写“无”。
 
 ## 4. 工作流
+
+使用 [项目工作流说明](docs/workflow.md) 和 [workflow.drawio](docs/workflow.drawio) 查找下一步。两份文件冲突时，以 [KS-GOV](docs/specs/governance.md) 为准。修改工作流图或说明时，必须在同一个 PR 同步修改另一份文件。
 
 1. 从 `main` 创建短生命周期分支。
 2. 在 Discussion 或 Issue 中形成问题。
