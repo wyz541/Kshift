@@ -227,7 +227,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          jq -r '.assets[].name' "$RUNNER_TEMP/verify/release-manifest.json" | while read -r name; do
+          jq -r '.assets[] | select(.role == "application" or .role == "server-bundle" or .role == "source") | .name' \
+            "$RUNNER_TEMP/verify/release-manifest.json" | while read -r name; do
             test -f "$RUNNER_TEMP/verify/$name"
             gh attestation verify "$RUNNER_TEMP/verify/$name" --repo "$GITHUB_REPOSITORY"
           done
