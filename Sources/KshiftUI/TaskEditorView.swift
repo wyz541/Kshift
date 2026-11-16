@@ -358,7 +358,8 @@ struct TaskEditorView: View {
         }
         .pickerStyle(.segmented)
         .labelsHidden()
-        .frame(width: 164)
+        .controlSize(.small)
+        .frame(width: 144)
         .accessibilityLabel("任务编辑模式")
         .accessibilityIdentifier("task-editor-layout-mode")
     }
@@ -366,19 +367,18 @@ struct TaskEditorView: View {
     private var classicTitlebar: some View {
         ZStack {
             Text(titleText)
-                .font(.headline.weight(.semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .frame(maxWidth: 280)
                 .accessibilityIdentifier("task-detail")
 
             HStack(spacing: 12) {
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                        .frame(width: 30, height: 30)
-                }
-                .buttonStyle(KshiftCompactGlassButtonStyle())
-                .accessibilityLabel("关闭")
+                ClassicTitlebarButton(
+                    systemImage: "xmark",
+                    label: "关闭",
+                    action: dismiss.callAsFunction
+                )
                 .accessibilityIdentifier("close-task-editor")
 
                 Spacer(minLength: 0)
@@ -386,12 +386,12 @@ struct TaskEditorView: View {
                 sheetLayoutControl
             }
         }
-        .padding(.horizontal, 16)
-        .frame(height: 56)
-        .background(.ultraThinMaterial)
+        .padding(.horizontal, 12)
+        .frame(height: 52)
+        .background(.bar)
         .overlay(alignment: .bottom) {
             Rectangle()
-                .fill(.separator.opacity(0.7))
+                .fill(.separator.opacity(0.75))
                 .frame(height: 0.5)
         }
     }
@@ -1115,6 +1115,41 @@ private struct MarkdownFormattingToolbar: View {
             text += "\n"
         }
         text += value
+    }
+}
+
+private struct ClassicTitlebarButton: View {
+    let systemImage: String
+    let label: String
+    let action: () -> Void
+
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var isHovered = false
+
+    private var targetSize: CGFloat {
+        horizontalSizeClass == .compact ? 44 : 28
+    }
+
+    private var visualSize: CGFloat {
+        horizontalSizeClass == .compact ? 32 : 24
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.primary)
+                .frame(width: visualSize, height: visualSize)
+                .background(
+                    isHovered ? Color.primary.opacity(0.08) : Color.clear,
+                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                )
+                .frame(width: targetSize, height: targetSize)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .accessibilityLabel(label)
     }
 }
 

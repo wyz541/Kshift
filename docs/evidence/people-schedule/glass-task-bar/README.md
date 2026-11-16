@@ -67,7 +67,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Task bars show a delayed hover preview panel。
 - Hover preview contains task metadata and rendered Markdown details。
 - Task details and task editor use one editable `800pt × 720pt` panel。
-- Panel titlebar uses classic macOS structure：`56pt` material bar, centered title, leading close action and trailing `简约` / `详情` control。
+- Panel titlebar uses classic macOS structure：`52pt` material bar, centered `13pt` title, leading hover-only close action and trailing small `简约` / `详情` control。
 - Panel backdrop uses translucent material with restrained accent context。
 - Core fields use grouped native Liquid Glass surfaces inside `GlassEffectContainer`。Individual fields use flat fills。
 - `简约` mode contains task name, Markdown workspace, priority/status strips, assignee/date/duration fields and tags。
@@ -102,8 +102,8 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-window-toolbar-native-glass-2026-11-16.png`](./macos-window-toolbar-native-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Native Liquid Glass toolbar group with flat actions and one accent New Task action | `0a22e7064f5cbe8330fd1687764883beccef27e7c598a6b39d693446bf1f1d62` |
 | [`macos-schedule-filter-2026-11-16.png`](./macos-schedule-filter-2026-11-16.png) | macOS 27.0.1；Light Mode | Schedule utility group with sort, filter and settings actions | `1b9bb7a12ae80379b088cfe25f6e256f5d53972793c87eb8e3f3af3f8fe2c69d` |
 | [`macos-schedule-sort-menu-direct-2026-11-16.png`](./macos-schedule-sort-menu-direct-2026-11-16.png) | macOS 27.0.1；Light Mode | First-level sort menu with direct options and current-item checkmark | `6952cd5713431793677f2c2f0cf78893bf601b14d4b4357b9107d9aefa585325` |
-| [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `简约` mode | `3fdeaa4069b338c40b08e00ece50cc7d3bc71871204d286783ff7864f5107efc` |
-| [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `详情` mode | `af2389ad07b988051a15433bc1ecc5225fd3681ead2a28d8e494a28201fabcba` |
+| [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `简约` mode | `99a924541746d848c90a23356840d57e840d9d7cdd545f36250be0d1c055a13f` |
+| [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Light Mode | Classic-titlebar Liquid Glass task detail `详情` mode | `e4b5abdfa2fbef4bc5cc6f66d7c719d73a0704228a5fab24f2d5520a0a05c910` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 

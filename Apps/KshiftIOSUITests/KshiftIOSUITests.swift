@@ -184,6 +184,21 @@ final class KshiftIOSUITests: XCTestCase {
                 .waitForExistence(timeout: 8),
             app.debugDescription
         )
+        let titlebarTitle = app.descendants(matching: .any)["task-detail"].firstMatch
+        let closeButton = element(
+            in: app,
+            identifier: "close-task-editor",
+            labelContains: "关闭"
+        )
+        let layoutControl = element(
+            in: app,
+            identifier: "task-editor-layout-mode",
+            labelContains: "任务编辑模式"
+        )
+        XCTAssertTrue(closeButton.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(layoutControl.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertLessThan(closeButton.frame.midX, titlebarTitle.frame.midX)
+        XCTAssertGreaterThan(layoutControl.frame.midX, titlebarTitle.frame.midX)
         XCTAssertTrue(app.textFields["task-title"].firstMatch.waitForExistence(timeout: 5))
         XCTAssertTrue(
             element(in: app, identifier: "task-history-button", labelContains: "历史")
