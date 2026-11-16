@@ -171,7 +171,6 @@ final class KshiftIOSUITests: XCTestCase {
             element(in: app, identifier: "filter-button", labelContains: "筛选任务"),
             element(in: app, identifier: "refresh-button", labelContains: "刷新共享快照"),
             element(in: app, identifier: "sort-menu", labelContains: "排序"),
-            element(in: app, identifier: "clear-selection", labelContains: "清除选择"),
         ]
 
         for action in actions {

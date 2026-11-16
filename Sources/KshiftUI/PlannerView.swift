@@ -225,7 +225,7 @@ struct PlannerView: View {
             filterButton
             refreshButton
             Spacer()
-            PlannerUtilityControls(model: model)
+            PlannerUtilityControls(model: model, showsFilter: false)
         }
     }
 
@@ -315,6 +315,8 @@ struct PlannerView: View {
 
 struct PlannerUtilityControls: View {
     @ObservedObject var model: AppModel
+    var showsFilter: Bool = true
+    @State private var isShowingFilters = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -333,17 +335,23 @@ struct PlannerUtilityControls: View {
             .accessibilityLabel("排序")
             .accessibilityIdentifier("sort-menu")
 
-            Button {
-                model.clearSelection()
-            } label: {
-                Image(systemName: "xmark.circle")
-                    .frame(width: 30, height: 30)
+            if showsFilter {
+                Button {
+                    isShowingFilters.toggle()
+                } label: {
+                    Image(systemName: model.filter.isActive
+                        ? "line.3.horizontal.decrease.circle.fill"
+                        : "line.3.horizontal.decrease.circle")
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .help("筛选任务")
+                .accessibilityLabel("筛选任务")
+                .accessibilityIdentifier("filter-button")
+                .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
+                    FilterPopover(model: model)
+                }
             }
-            .buttonStyle(KshiftCompactGlassButtonStyle())
-            .disabled(model.selectedTaskIDs.isEmpty)
-            .help("清除任务选择")
-            .accessibilityLabel("清除选择")
-            .accessibilityIdentifier("clear-selection")
         }
     }
 }
