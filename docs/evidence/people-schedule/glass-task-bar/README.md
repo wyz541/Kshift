@@ -91,7 +91,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 | 检查 | 结果 |
 | --- | --- |
-| `make swift-test` | 通过；48 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
+| `make swift-test` | 通过；49 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
 | macOS Debug build | 通过 |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |

@@ -407,7 +407,9 @@ public final class AppModel: ObservableObject {
         do {
             let loadedProjects = try await client.projects()
             projects = loadedProjects
-            if selectFirst || selectedProjectID == nil {
+            if selectFirst
+                || selectedProjectID == nil
+                || !loadedProjects.contains(where: { $0.id == selectedProjectID }) {
                 selectedProjectID = loadedProjects.first?.id
             }
             if let selectedProjectID {
@@ -443,9 +445,12 @@ public final class AppModel: ObservableObject {
     }
 
     public func refresh() async {
-        guard let projectID = selectedProjectID ?? projects.first?.id else {
+        guard let projectID = validSelectedProjectID() else {
             await reloadProjects(selectFirst: true)
             return
+        }
+        if projectID != selectedProjectID {
+            selectedProjectID = projectID
         }
         isLoading = true
         defer { isLoading = false }
@@ -460,7 +465,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func newTaskDraft(assigneeIDs: [String], date: Date? = nil) -> TaskDraft? {
-        guard let projectID = selectedProjectID else { return nil }
+        guard let projectID = selectedProject?.id else { return nil }
         let targetDate = KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar)
         let position = selectedDateTasks
             .filter { task in
@@ -791,8 +796,16 @@ public final class AppModel: ObservableObject {
         _ = await platform.openExternalURL(url)
     }
 
+    private func validSelectedProjectID() -> String? {
+        if let selectedProjectID,
+           projects.contains(where: { $0.id == selectedProjectID }) {
+            return selectedProjectID
+        }
+        return snapshot?.project.id ?? projects.first?.id
+    }
+
     private func send(_ command: TaskCommand) async -> CommandResponse? {
-        guard let projectID = selectedProjectID, let revision = snapshot?.project.revision else {
+        guard let projectID = snapshot?.project.id, let revision = snapshot?.project.revision else {
             errorMessage = "项目尚未加载。"
             return nil
         }

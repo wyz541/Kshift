@@ -49,6 +49,20 @@ final class AppModelTests: XCTestCase {
         XCTAssertNil(model.errorMessage)
     }
 
+    func testStaleUnknownProjectSelectionSelfHeals() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        model.selectedProjectID = "board"
+
+        let draft = model.newTaskDraft(assigneeIDs: [], date: Date(timeIntervalSince1970: 0))
+        XCTAssertEqual(draft?.projectID, Fixture.focus.id)
+
+        await model.refresh()
+        XCTAssertEqual(model.selectedProjectID, Fixture.focus.id)
+        XCTAssertEqual(model.snapshot?.project.id, Fixture.focus.id)
+        XCTAssertNil(model.errorMessage)
+    }
+
     func testSelectProjectLoadsSnapshotWhenSelectionWasAlreadyUpdated() async {
         let (model, _) = makeModel()
         await model.bootstrap()
