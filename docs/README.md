@@ -30,7 +30,7 @@ description: 提供 Kshift Active Spec、决策过程、合同和历史材料的
 | 6 | [KS-UI](specs/ui.md) | 查看平台、共享 UI、Liquid Glass 和无障碍规则 |
 | 7 | [KS-RELEASE](specs/release.md) | 查看质量门禁、Release 和回滚规则 |
 | 8 | [KS-GOV](specs/governance.md) | 查看当前工程治理规则 |
-| 9 | [Project Workflow](workflow.md) | 查看从 Intake 到 Close 的视觉流程和文字说明 |
+| 9 | [Project Workflow](workflow.md) | 查看项目工作流权威图和文字镜像 |
 | 10 | [Traceability](spec/traceability.md) | 从 Discussion 追踪到 Active Spec |
 | 11 | [Contracts](contracts/README.md) | 实现协议和 Release 规则 |
 | 12 | [Issue Relations](governance/issue-relations.md) | 查询原生事项关系和执行审计 |

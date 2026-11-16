@@ -18,7 +18,7 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 
 # KS-GOV Kshift 工程治理规范
 
-> 结论：Issue 保存决策过程。Active Spec 保存当前规则。Project `Status` 是唯一状态源。Worktree 只保存活跃交付状态。
+> 结论：Issue 保存决策过程。`docs/workflow.drawio` 保存项目工作流的当前权威规则。`KS-GOV` 只补充图中未定义的事项。Project `Status` 是交付状态源。Worktree 只保存活跃交付状态。
 
 ## 1. 文档控制
 
@@ -33,7 +33,7 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 ## 2. 规范规则
 
 - `KS-GOV-001`：Discussion 用于形成问题。Issue 用于形成决策和交付。Active Spec 用于保存当前规则。
-- `KS-GOV-002`：Active Spec 是项目规则的唯一当前入口。实现 Issue 和 PR 只链接 Spec，不复制完整规则。
+- `KS-GOV-002`：Active Spec 是项目规则入口。`KS-GOV-031` 定义工作流权威例外。实现 Issue 和 PR 只链接入口，不复制完整规则。
 - `KS-GOV-003`：新决策不再创建 ADR。Issue 保存选项、证据、结论、影响和回滚。
 - `KS-GOV-004`：Issue 类型使用 `type:` 标签。每个开放 Issue 恰有一个类型标签。
 - `KS-GOV-005`：领域使用 `area:` 标签。每个开放 Issue 至少有一个领域标签。
@@ -62,7 +62,7 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 - `KS-GOV-028`：清理前必须取得 `@wyz541` 的明确批准。批准记录包含固定路径、branch、Issue、证据目标、检查结果、批准人和日期。
 - `KS-GOV-029`：Worktree 审计只读取本地 Git 状态，不联网，不提供删除参数。审计输出按固定顺序排序。
 - `KS-GOV-030`：Worktree 不是归档位置。证据先迁移到 `docs/evidence` 或登记的项目证据目录。生成物不进入证据目录。
-- `KS-GOV-031`：项目工作流的可编辑视觉来源是 `docs/workflow.drawio`。文字说明是 `docs/workflow.md`。两份文件必须在同一个 PR 同步修改。冲突时以本 Spec 为准。
+- `KS-GOV-031`：`docs/workflow.drawio` 第 3 页是项目工作流的权威来源，定义阶段、状态、分支、回退、角色、产物和门禁。`docs/workflow.md` 是必须同步的文字镜像。工作流内容冲突时，以 draw.io 第 3 页为准。该页未定义的事项由本 Spec 补充。两份文件必须在同一个 PR 同步修改。仓库文件是唯一 authority；本地 Windows path 不是 authority。
 
 ## 3. 决策流程
 
