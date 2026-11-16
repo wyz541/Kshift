@@ -2,6 +2,8 @@
 
 use std::{
     collections::{BTreeMap, HashMap},
+    net::TcpListener,
+    path::PathBuf,
     process::Command,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -13,12 +15,18 @@ use std::{
 use chrono::Utc;
 use contract::{v1, KshiftService};
 use futures_util::{future::join_all, StreamExt};
-use kshift_server::{config::ApiLimits, service::KshiftApi};
+use kshift_server::{
+    auth::TokenAuthenticator,
+    config::{ApiLimits, ApiTimeouts, DatabaseConfig, ServerConfig},
+    notifications::NotificationHub,
+    server,
+    service::KshiftApi,
+};
 use serde_json::json;
 use sqlx::PgPool;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
-use tonic::Code;
+use tonic::{transport::Channel, Code};
 use uuid::Uuid;
 
 mod common;
@@ -29,6 +37,9 @@ const EDITORS: usize = 40;
 const WRITE_TRANSACTIONS: usize = 16;
 const SNAPSHOT_BURST: usize = 200;
 const LOAD_DB_CONNECTIONS: u32 = 20;
+const PERSISTENT_NETWORK_CLIENTS: usize = 100;
+const NETWORK_EVENT_STREAMS: usize = 64;
+const NETWORK_STREAM_WRITE_INTERVAL_SECS: u64 = 30;
 const RSS_GROWTH_LIMIT_KB: u64 = 128 * 1024;
 const RSS_PEAK_LIMIT_KB: u64 = 256 * 1024;
 
@@ -53,6 +64,15 @@ struct EventMetrics {
     delays_ms: Vec<f64>,
 }
 
+#[derive(Default)]
+struct NetworkEventMetrics {
+    received: u64,
+    gaps: u64,
+    stream_errors: u64,
+    unexpected_closes: u64,
+    delays_ms: Vec<f64>,
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 16)]
 async fn two_times_target_concurrency_holds() {
     let Some(db) = TestDatabase::create_with_max_connections(LOAD_DB_CONNECTIONS).await else {
@@ -60,6 +80,11 @@ async fn two_times_target_concurrency_holds() {
     };
     let duration_secs = env_u64("KSHIFT_LOAD_DURATION_SECS", 1).max(1);
     let wave_interval_ms = env_u64("KSHIFT_LOAD_WAVE_INTERVAL_MS", 1_000).max(1);
+    let network_write_interval_secs = env_u64(
+        "KSHIFT_NETWORK_STREAM_WRITE_INTERVAL_SECS",
+        NETWORK_STREAM_WRITE_INTERVAL_SECS,
+    )
+    .max(1);
 
     let admin_id = Uuid::new_v4();
     db.seed_user(admin_id, "Load Admin", true).await;
@@ -72,18 +97,23 @@ async fn two_times_target_concurrency_holds() {
         tokens.insert(user_id, format!("editor-token-{index}"));
         editors.push(user_id);
     }
+    let mut stream_users = Vec::new();
+    for index in 0..NETWORK_EVENT_STREAMS {
+        let user_id = Uuid::new_v4();
+        db.seed_user(user_id, &format!("Stream Viewer {index}"), false)
+            .await;
+        tokens.insert(user_id, format!("stream-token-{index}"));
+        stream_users.push(user_id);
+    }
 
     let token_map = tokens.clone();
-    let api = TestApi::create_with_limits(
-        db.pool.clone(),
-        tokens,
-        ApiLimits {
-            unary_rpc: SNAPSHOT_BURST,
-            write_transactions: WRITE_TRANSACTIONS,
-            event_streams: 64,
-            streams_per_user: 1,
-        },
-    );
+    let limits = ApiLimits {
+        unary_rpc: SNAPSHOT_BURST,
+        write_transactions: WRITE_TRANSACTIONS,
+        event_streams: NETWORK_EVENT_STREAMS,
+        streams_per_user: 1,
+    };
+    let api = TestApi::create_with_limits(db.pool.clone(), tokens, limits.clone());
     let admin_token = api.token(admin_id).to_owned();
     let mut projects = Vec::new();
     for (index, editor_id) in editors.iter().enumerate() {
@@ -110,6 +140,91 @@ async fn two_times_target_concurrency_holds() {
             .expect("editor should be added");
         projects.push(project_id);
     }
+
+    let network_project_id = Uuid::new_v4();
+    api.api
+        .execute_command(request(
+            create_project(network_project_id, Uuid::new_v4(), "Network Stream Load"),
+            &admin_token,
+        ))
+        .await
+        .expect("network stream project should be created");
+    let mut network_revision = 1_u64;
+    for user_id in &stream_users {
+        network_revision = response_revision(
+            &api.api
+                .execute_command(request(
+                    add_member(
+                        network_project_id,
+                        Uuid::new_v4(),
+                        *user_id,
+                        v1::ProjectRole::Viewer,
+                        network_revision,
+                    ),
+                    &admin_token,
+                ))
+                .await
+                .expect("stream viewer should be added")
+                .into_inner(),
+        );
+    }
+
+    let (network_endpoint, network_shutdown, network_server_task) =
+        start_network_server(db.pool.clone(), token_map.clone(), limits).await;
+    let channels = connect_network_clients(&network_endpoint).await;
+    let network_start_health_failures = check_network_channels(&channels).await;
+    assert_eq!(
+        network_start_health_failures, 0,
+        "all 100 persistent network clients must be healthy before the load run"
+    );
+
+    let mut network_streams = Vec::with_capacity(NETWORK_EVENT_STREAMS);
+    for (index, channel) in channels.iter().take(NETWORK_EVENT_STREAMS).enumerate() {
+        let token = api.token(stream_users[index]).to_owned();
+        let mut client = contract::KshiftServiceClient::new(channel.clone());
+        let stream = client
+            .watch_project_changes(request(
+                v1::WatchProjectChangesRequest {
+                    project_id: network_project_id.to_string(),
+                    since_revision: network_revision,
+                },
+                &token,
+            ))
+            .await
+            .expect("network event stream should open")
+            .into_inner();
+        network_streams.push(stream);
+    }
+
+    let network_stop = CancellationToken::new();
+    let network_stream_counts = (0..NETWORK_EVENT_STREAMS)
+        .map(|_| Arc::new(AtomicU64::new(0)))
+        .collect::<Vec<_>>();
+    let mut network_stream_tasks = Vec::with_capacity(NETWORK_EVENT_STREAMS);
+    for (stream, count) in network_streams
+        .into_iter()
+        .zip(network_stream_counts.iter().cloned())
+    {
+        network_stream_tasks.push(tokio::spawn(collect_network_stream_metrics(
+            stream,
+            network_revision,
+            network_stop.clone(),
+            count,
+        )));
+    }
+
+    let mut network_writer =
+        contract::KshiftServiceClient::new(channels[NETWORK_EVENT_STREAMS].clone());
+    network_revision = write_network_event(
+        &mut network_writer,
+        &admin_token,
+        network_project_id,
+        network_revision,
+        "Network stream initial event",
+    )
+    .await;
+    let mut network_events_written = 1_u64;
+    let mut next_network_write = Instant::now() + Duration::from_secs(network_write_interval_secs);
 
     let (snapshot_success, snapshot_failures, mut rpc_failure_codes) =
         run_snapshot_burst(&api.api, &token_map, &editors, &projects, SNAPSHOT_BURST).await;
@@ -245,6 +360,19 @@ async fn two_times_target_concurrency_holds() {
     let mut rpc_failures = snapshot_failures;
 
     while waves == 0 || started.elapsed() < Duration::from_secs(duration_secs) {
+        if Instant::now() >= next_network_write {
+            network_revision = write_network_event(
+                &mut network_writer,
+                &admin_token,
+                network_project_id,
+                network_revision,
+                "Network stream sustained event",
+            )
+            .await;
+            network_events_written += 1;
+            next_network_write += Duration::from_secs(network_write_interval_secs);
+        }
+
         if waves > 0 && waves % 60 == 0 {
             let (success, failures, failure_codes) =
                 run_snapshot_burst(&api.api, &token_map, &editors, &projects, SNAPSHOT_BURST).await;
@@ -343,10 +471,35 @@ async fn two_times_target_concurrency_holds() {
     {
         tokio::time::sleep(Duration::from_millis(100)).await;
     }
+
+    let network_wait_started = Instant::now();
+    while network_stream_counts
+        .iter()
+        .any(|count| count.load(Ordering::Relaxed) < network_events_written)
+        && network_wait_started.elapsed() < Duration::from_secs(15)
+    {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+    }
+    let network_end_health_failures = check_network_channels(&channels).await;
     event_stop.cancel();
     let event_metrics = event_task.await.expect("event consumer should join");
+    network_stop.cancel();
+    let mut network_metrics = NetworkEventMetrics::default();
+    for task in network_stream_tasks {
+        let metrics = task.await.expect("network stream consumer should join");
+        network_metrics.received += metrics.received;
+        network_metrics.gaps += metrics.gaps;
+        network_metrics.stream_errors += metrics.stream_errors;
+        network_metrics.unexpected_closes += metrics.unexpected_closes;
+        network_metrics.delays_ms.extend(metrics.delays_ms);
+    }
     sampler_stop.cancel();
     let process_metrics = sampler.await.expect("metrics sampler should join");
+    network_shutdown.cancel();
+    network_server_task
+        .await
+        .expect("network server task should join")
+        .expect("network server should stop cleanly");
 
     assert_eq!(
         sustained_unexpected, 0,
@@ -372,6 +525,27 @@ async fn two_times_target_concurrency_holds() {
     assert_eq!(
         rpc_failures, 0,
         "all snapshot RPC bursts should complete without failures"
+    );
+    assert_eq!(
+        network_end_health_failures, 0,
+        "all 100 persistent network clients must stay healthy through the load run"
+    );
+    assert_eq!(
+        network_metrics.stream_errors, 0,
+        "all 64 network event streams must stay error-free for the full run"
+    );
+    assert_eq!(
+        network_metrics.unexpected_closes, 0,
+        "all 64 network event streams must stay open until the test stops them"
+    );
+    assert_eq!(
+        network_metrics.gaps, 0,
+        "all network event streams must receive contiguous revisions"
+    );
+    let expected_network_deliveries = network_events_written * NETWORK_EVENT_STREAMS as u64;
+    assert_eq!(
+        network_metrics.received, expected_network_deliveries,
+        "every network event must be delivered once to every stream"
     );
     let rss_growth_kb = process_metrics
         .rss_kb_end
@@ -412,11 +586,24 @@ async fn two_times_target_concurrency_holds() {
     command_latencies_ms.sort_by(f64::total_cmp);
     let mut event_delays_ms = event_metrics.delays_ms.clone();
     event_delays_ms.sort_by(f64::total_cmp);
+    let mut network_event_delays_ms = network_metrics.delays_ms.clone();
+    network_event_delays_ms.sort_by(f64::total_cmp);
+    let network_stream_min_events = network_stream_counts
+        .iter()
+        .map(|count| count.load(Ordering::Relaxed))
+        .min()
+        .unwrap_or(0);
+    let network_stream_max_events = network_stream_counts
+        .iter()
+        .map(|count| count.load(Ordering::Relaxed))
+        .max()
+        .unwrap_or(0);
     let report = json!({
         "status": "passed",
         "configured_duration_secs": duration_secs,
         "elapsed_secs": started.elapsed().as_secs_f64(),
         "wave_interval_ms": wave_interval_ms,
+        "network_stream_write_interval_secs": network_write_interval_secs,
         "waves": waves,
         "editors": EDITORS,
         "projects": projects.len(),
@@ -443,7 +630,24 @@ async fn two_times_target_concurrency_holds() {
         "command_latency_ms_p50": percentile(&command_latencies_ms, 0.50),
         "command_latency_ms_p95": percentile(&command_latencies_ms, 0.95),
         "command_latency_ms_max": command_latencies_ms.last().copied().unwrap_or(0.0),
-        "event_streams": 1,
+        "service_api_event_streams": 1,
+        "persistent_network_clients": PERSISTENT_NETWORK_CLIENTS,
+        "network_start_health_failures": network_start_health_failures,
+        "network_end_health_failures": network_end_health_failures,
+        "persistent_network_event_streams": NETWORK_EVENT_STREAMS,
+        "network_event_writes": network_events_written,
+        "network_expected_event_deliveries": expected_network_deliveries,
+        "network_received_event_deliveries": network_metrics.received,
+        "network_stream_min_events": network_stream_min_events,
+        "network_stream_max_events": network_stream_max_events,
+        "network_event_gaps": network_metrics.gaps,
+        "network_event_stream_errors": network_metrics.stream_errors,
+        "network_event_stream_unexpected_closes": network_metrics.unexpected_closes,
+        "network_event_reconnect_count": 0,
+        "network_event_delay_ms_p50": percentile(&network_event_delays_ms, 0.50),
+        "network_event_delay_ms_p95": percentile(&network_event_delays_ms, 0.95),
+        "network_event_delay_ms_max": network_event_delays_ms.last().copied().unwrap_or(0.0),
+        "event_streams": NETWORK_EVENT_STREAMS,
         "events_expected": event_project_writes,
         "events_received": event_metrics.count,
         "event_gaps": event_metrics.gap_count,
@@ -472,8 +676,8 @@ async fn two_times_target_concurrency_holds() {
         "database_lock_waiters_peak": process_metrics.database_lock_waiters_peak,
         "covered_boundaries": {
             "service_api_load": true,
-            "persistent_network_clients": false,
-            "max_event_streams": false
+            "persistent_network_clients": true,
+            "max_event_streams": true
         }
     });
     if let Ok(path) = std::env::var("KSHIFT_LOAD_REPORT") {
@@ -481,6 +685,197 @@ async fn two_times_target_concurrency_holds() {
     }
     println!("{report}");
     db.cleanup().await;
+}
+
+async fn start_network_server(
+    pool: PgPool,
+    token_map: HashMap<Uuid, String>,
+    limits: ApiLimits,
+) -> (
+    String,
+    CancellationToken,
+    tokio::task::JoinHandle<anyhow::Result<()>>,
+) {
+    let port = TcpListener::bind("127.0.0.1:0")
+        .expect("ephemeral network load listener should bind")
+        .local_addr()
+        .expect("ephemeral network load listener should have an address")
+        .port();
+    let address = format!("127.0.0.1:{port}");
+    let authenticator = TokenAuthenticator::from_entries(
+        token_map
+            .iter()
+            .map(|(user_id, token)| (token.clone(), *user_id)),
+    )
+    .expect("network load authenticator should build");
+    let config = ServerConfig {
+        bind_address: address.clone(),
+        database: DatabaseConfig {
+            url: "postgres://redacted@127.0.0.1/unused".to_owned(),
+            min_connections: 1,
+            max_connections: LOAD_DB_CONNECTIONS,
+            acquire_timeout: Duration::from_secs(5),
+            statement_timeout: Duration::from_secs(15),
+            lock_timeout: Duration::from_secs(5),
+            idle_in_transaction_timeout: Duration::from_secs(30),
+        },
+        auth_file: PathBuf::from("/unused"),
+        tls: None,
+        allow_insecure: true,
+        limits,
+        timeouts: ApiTimeouts {
+            unary_request: Duration::from_secs(15),
+            write_transaction: Duration::from_secs(10),
+        },
+        heartbeat_interval: Duration::from_secs(1),
+        event_batch_size: 128,
+        event_channel_capacity: 64,
+        notification_channel_capacity: 256,
+        retention_days: 7,
+        log_filter: "kshift_server=warn".to_owned(),
+    };
+    let shutdown = CancellationToken::new();
+    let task = tokio::spawn(server::serve(
+        config,
+        pool,
+        authenticator,
+        NotificationHub::new(256),
+        shutdown.clone(),
+    ));
+    (format!("http://{address}"), shutdown, task)
+}
+
+async fn connect_network_clients(endpoint: &str) -> Vec<Channel> {
+    let mut channels = Vec::with_capacity(PERSISTENT_NETWORK_CLIENTS);
+    for _ in 0..PERSISTENT_NETWORK_CLIENTS {
+        let mut last_error = None;
+        let mut connected = None;
+        for _ in 0..100 {
+            match tonic::transport::Endpoint::from_shared(endpoint.to_owned())
+                .expect("network load endpoint should parse")
+                .connect()
+                .await
+            {
+                Ok(channel) => {
+                    connected = Some(channel);
+                    break;
+                }
+                Err(error) => {
+                    last_error = Some(error);
+                    tokio::time::sleep(Duration::from_millis(50)).await;
+                }
+            }
+        }
+        channels.push(connected.unwrap_or_else(|| {
+            panic!("persistent network client did not connect: {last_error:?}")
+        }));
+    }
+    channels
+}
+
+async fn check_network_channels(channels: &[Channel]) -> u64 {
+    let checks = channels.iter().cloned().map(|channel| async move {
+        let mut health = tonic_health::pb::health_client::HealthClient::new(channel);
+        health
+            .check(tonic_health::pb::HealthCheckRequest {
+                service: String::new(),
+            })
+            .await
+            .map(|response| {
+                response.into_inner().status
+                    != tonic_health::pb::health_check_response::ServingStatus::Serving as i32
+            })
+            .unwrap_or(true)
+    });
+    join_all(checks)
+        .await
+        .into_iter()
+        .filter(|failed| *failed)
+        .count() as u64
+}
+
+async fn write_network_event(
+    client: &mut contract::KshiftServiceClient<Channel>,
+    token: &str,
+    project_id: Uuid,
+    expected_revision: u64,
+    title: &str,
+) -> u64 {
+    let response = client
+        .execute_command(request(
+            create_task(
+                project_id,
+                Uuid::new_v4(),
+                Uuid::new_v4(),
+                title,
+                "",
+                expected_revision,
+            ),
+            token,
+        ))
+        .await
+        .expect("network event write should succeed")
+        .into_inner();
+    let revision = response_revision(&response);
+    assert_eq!(
+        revision,
+        expected_revision + 1,
+        "network event write must advance one revision"
+    );
+    revision
+}
+
+async fn collect_network_stream_metrics(
+    mut stream: tonic::Streaming<v1::WatchProjectChangesResponse>,
+    initial_revision: u64,
+    stop: CancellationToken,
+    count: Arc<AtomicU64>,
+) -> NetworkEventMetrics {
+    let mut metrics = NetworkEventMetrics::default();
+    let mut last_revision = initial_revision;
+    loop {
+        tokio::select! {
+            _ = stop.cancelled() => break,
+            item = stream.next() => {
+                match item {
+                    Some(Ok(response)) => {
+                        let Some(v1::watch_project_changes_response::Payload::Event(event)) = response.payload else {
+                            continue;
+                        };
+                        if event.revision != last_revision + 1 {
+                            metrics.gaps += 1;
+                        }
+                        last_revision = event.revision;
+                        metrics.received += 1;
+                        count.fetch_add(1, Ordering::Relaxed);
+                        if let Some(committed_at) = event.committed_at {
+                            if let Some(committed_at) = chrono::DateTime::<Utc>::from_timestamp(
+                                committed_at.seconds,
+                                committed_at.nanos as u32,
+                            ) {
+                                metrics.delays_ms.push(
+                                    (Utc::now() - committed_at)
+                                        .num_milliseconds()
+                                        .max(0) as f64,
+                                );
+                            }
+                        }
+                    }
+                    Some(Err(_)) => {
+                        metrics.stream_errors += 1;
+                        break;
+                    }
+                    None => {
+                        if !stop.is_cancelled() {
+                            metrics.unexpected_closes += 1;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    metrics
 }
 
 #[derive(Default)]

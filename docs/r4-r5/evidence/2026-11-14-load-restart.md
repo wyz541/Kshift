@@ -137,8 +137,8 @@ cargo test --locked -p kshift-server --test restart_integration
 
 ## 覆盖边界
 
-- 测试在 service API 层运行。测试没有建立 100 个持久网络客户端。
-- 测试保持 1 个事件流。测试没有同时保持 64 个事件流。
+- 测试在 service API 层运行。网络容量证据见 [2026-11-16-network-capacity.md](2026-11-16-network-capacity.md)。
+- 本次历史测试保持 1 个事件流。后续证据同时保持 64 个网络事件流。
 - CPU 和 RSS 来自测试进程。测试进程包含 load generator 和 API service。
 - 测试没有测量已安装 release server 的 CPU 和 RSS。
 - 当前结果不替代系统 LaunchDaemon、签名分发或 Stable Release 验收。
