@@ -1,0 +1,117 @@
+<mxfile host="app.diagrams.net" modified="2026-11-16T12:00:00.000Z" agent="Codex" version="24.7.17">
+  <diagram id="kshift-project-workflow" name="Kshift Project Workflow">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1000" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Kshift Project Workflow" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=28;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="60" y="30" width="520" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Visual route only. KS-GOV is normative." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=14;fontColor=#4B5563;" vertex="1" parent="1">
+          <mxGeometry x="62" y="72" width="520" height="28" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-delivery" value="DELIVERY" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#EFF6FF;strokeColor=#BFDBFE;verticalAlign=top;align=left;spacingLeft=18;spacingTop=12;fontSize=14;fontStyle=1;fontColor=#1D4ED8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="120" width="1520" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-close" value="RELEASE AND CLOSE" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;verticalAlign=top;align=left;spacingLeft=18;spacingTop=12;fontSize=14;fontStyle=1;fontColor=#334155;" vertex="1" parent="1">
+          <mxGeometry x="40" y="390" width="1520" height="250" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-rules" value="SYNC RULE" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFBEB;strokeColor=#FDE68A;verticalAlign=top;align=left;spacingLeft=18;spacingTop=12;fontSize=14;fontStyle=1;fontColor=#92400E;" vertex="1" parent="1">
+          <mxGeometry x="40" y="660" width="1520" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="START" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontStyle=1;fontColor=#166534;" vertex="1" parent="1">
+          <mxGeometry x="80" y="245" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="wf01" value="WF-01&#xa;Intake&#xa;&#xa;Issue owner&#xa;Type + area + Project" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="240" y="225" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf02" value="WF-02&#xa;Decide&#xa;&#xa;Decision owner&#xa;Evidence + impact" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="460" y="225" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf03" value="WF-03&#xa;Prepare&#xa;&#xa;Implementer&#xa;Spec + Worktree + branch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="680" y="225" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf04" value="WF-04&#xa;Deliver&#xa;&#xa;Implementer&#xa;Code + docs + evidence" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="910" y="225" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf05" value="WF-05&#xa;Review&#xa;&#xa;Reviewer&#xa;Trace + evidence + risk" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DBEAFE;strokeColor=#2563EB;fontColor=#1E3A8A;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1140" y="225" width="180" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf06" value="WF-06&#xa;Merge&#xa;&#xa;Maintainer&#xa;PR merged to main" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#EDE9FE;strokeColor=#7C3AED;fontColor=#4C1D95;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="225" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="worktree" value="&lt;b&gt;Worktree delivery?&lt;/b&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#D97706;fontColor=#92400E;" vertex="1" parent="1">
+          <mxGeometry x="1360" y="470" width="170" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf07" value="WF-07&#xa;Cleanup&#xa;&#xa;Implementer&#xa;Evidence + audit + approval" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FED7AA;strokeColor=#EA580C;fontColor=#9A3412;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="1120" y="470" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="wf08" value="WF-08&#xa;Close&#xa;&#xa;Issue owner&#xa;Acceptance record" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontColor=#166534;fontStyle=1;arcSize=12;spacing=10;" vertex="1" parent="1">
+          <mxGeometry x="860" y="470" width="190" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="END" style="ellipse;whiteSpace=wrap;html=1;fillColor=#DCFCE7;strokeColor=#16A34A;fontStyle=1;fontColor=#166534;" vertex="1" parent="1">
+          <mxGeometry x="690" y="495" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="rule-doc" value="docs/workflow.md&#xa;Text mirror" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontColor=#92400E;fontStyle=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="260" y="720" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rule-link" value="Same PR" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontSize=14;fontStyle=1;fontColor=#92400E;" vertex="1" parent="1">
+          <mxGeometry x="500" y="735" width="120" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="rule-drawio" value="docs/workflow.drawio&#xa;Editable source" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FEF3C7;strokeColor=#F59E0B;fontColor=#92400E;fontStyle=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="630" y="720" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="rule-authority" value="KS-GOV resolves conflicts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E5E7EB;strokeColor=#6B7280;fontColor=#374151;fontStyle=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="940" y="720" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e01" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="start" target="wf01">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e02" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf01" target="wf02">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e03" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf02" target="wf03">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e04" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf03" target="wf04">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e05" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf04" target="wf05">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e06" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf05" target="wf06">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e07" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf06" target="worktree">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e08" value="yes" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;labelBackgroundColor=#FEF3C7;" edge="1" parent="1" source="worktree" target="wf07">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e09" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf07" target="wf08">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" value="no" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;labelBackgroundColor=#FEF3C7;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="worktree" target="wf08">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1330" y="520" />
+              <mxPoint x="955" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;strokeWidth=2;" edge="1" parent="1" source="wf08" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#D97706;strokeWidth=2;dashed=1;" edge="1" parent="1" source="rule-doc" target="rule-drawio">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#D97706;strokeWidth=2;dashed=1;" edge="1" parent="1" source="rule-drawio" target="rule-authority">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="Blue: delivery step   Purple: merge   Orange: cleanup   Green: intake or close" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#6B7280;" vertex="1" parent="1">
+          <mxGeometry x="60" y="860" width="680" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
