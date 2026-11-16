@@ -6,6 +6,7 @@
 
 - Issue: `Closes #N` or `Part of #N`
 - Active Spec: [Active Spec 索引](https://github.com/wyz541/Kshift/blob/main/docs/specs/index.md)
+- Project Workflow: [Workflow](https://github.com/wyz541/Kshift/blob/main/docs/workflow.md) and [workflow.drawio](https://github.com/wyz541/Kshift/blob/main/docs/workflow.drawio)
 - Decision Issue:
 - Contract:
 

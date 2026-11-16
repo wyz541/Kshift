@@ -3,7 +3,7 @@ slug: /specs/governance
 title: KS-GOV Kshift 工程治理规范
 type: standard
 status: active
-updated: "2026-11-14"
+updated: "2026-11-16"
 owner: "@wyz541"
 keywords:
   - 工程治理
@@ -11,6 +11,7 @@ keywords:
   - PR
   - Project
   - Spec
+  - Workflow
   - Worktree
 description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree 和本地构建规则。
 ---
@@ -61,6 +62,7 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 - `KS-GOV-028`：清理前必须取得 `@wyz541` 的明确批准。批准记录包含固定路径、branch、Issue、证据目标、检查结果、批准人和日期。
 - `KS-GOV-029`：Worktree 审计只读取本地 Git 状态，不联网，不提供删除参数。审计输出按固定顺序排序。
 - `KS-GOV-030`：Worktree 不是归档位置。证据先迁移到 `docs/evidence` 或登记的项目证据目录。生成物不进入证据目录。
+- `KS-GOV-031`：项目工作流的可编辑视觉来源是 `docs/workflow.drawio`。文字说明是 `docs/workflow.md`。两份文件必须在同一个 PR 同步修改。冲突时以本 Spec 为准。
 
 ## 3. 决策流程
 
@@ -107,6 +109,8 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 
 详细程序见以下文档。详细文档不得覆盖本 Spec。
 
+- [项目工作流说明](../workflow.md)
+- [可编辑工作流图](../workflow.drawio)
 - [Issue 与 PR 关系规则](../governance/issue-relations.md)
 - [标签与 Project 配置](../governance/labels-and-project.md)
 
@@ -241,6 +245,7 @@ python3 scripts/audit_worktrees.py --repo . --expected-task-worktrees <N>
 - Issue 关系审计：`python3 scripts/audit_issue_relations.py`
 - Worktree 审计：`python3 scripts/audit_worktrees.py --repo .`
 - 文档检查：`./scripts/check-r0.sh`
+- 项目工作流：[文字说明](../workflow.md) 和 [workflow.drawio](../workflow.drawio)
 - Issue Forms：`.github/ISSUE_TEMPLATE/`
 - PR template：`.github/pull_request_template.md`
 - 标签和 Project：[标签与 Project 配置](../governance/labels-and-project.md)
