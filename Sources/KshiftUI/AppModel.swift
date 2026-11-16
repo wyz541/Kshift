@@ -573,7 +573,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func presentEdit(_ task: TaskItem) {
-        editorDraft = draft(from: task)
+        editorDraft = editDraft(for: task)
     }
 
     public func presentDetails(_ task: TaskItem) {
@@ -842,7 +842,7 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    private func draft(from task: TaskItem) -> TaskDraft {
+    func editDraft(for task: TaskItem) -> TaskDraft {
         TaskDraft(
             projectID: task.projectID,
             taskID: task.id,

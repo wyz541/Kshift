@@ -173,6 +173,48 @@ final class KshiftIOSUITests: XCTestCase {
         completed.tap()
     }
 
+    func testTaskDetailPanelShowsReferenceModesAndActions() throws {
+        let app = launchPlanner()
+        let task = app.descendants(matching: .any)["task-task-launch-brief"].firstMatch
+        XCTAssertTrue(task.waitForExistence(timeout: 8), app.debugDescription)
+        task.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+
+        XCTAssertTrue(
+            app.descendants(matching: .any)["task-detail"].firstMatch
+                .waitForExistence(timeout: 8),
+            app.debugDescription
+        )
+        XCTAssertTrue(app.textFields["task-title"].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            element(in: app, identifier: "task-history-button", labelContains: "历史")
+                .waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(
+            element(in: app, identifier: "duplicate-task", labelContains: "复制")
+                .waitForExistence(timeout: 5)
+        )
+        XCTAssertTrue(
+            element(in: app, identifier: "delete-task", labelContains: "删除")
+                .waitForExistence(timeout: 5)
+        )
+
+        let detailMode = app.descendants(matching: .any)["详情"].firstMatch
+        XCTAssertTrue(detailMode.waitForExistence(timeout: 5), app.debugDescription)
+        detailMode.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)
+                .matching(NSPredicate(format: "label CONTAINS %@", "Markdown 显示模式"))
+                .firstMatch
+                .waitForExistence(timeout: 5),
+            app.debugDescription
+        )
+
+        let compactMode = app.descendants(matching: .any)["简约"].firstMatch
+        XCTAssertTrue(compactMode.waitForExistence(timeout: 5), app.debugDescription)
+        compactMode.tap()
+        XCTAssertTrue(app.textFields["task-title"].firstMatch.waitForExistence(timeout: 5))
+    }
+
     func testCoreActionsMeetMinimumTouchTargets() throws {
         let app = launchPlanner()
 

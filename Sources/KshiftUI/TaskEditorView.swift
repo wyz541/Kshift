@@ -6,6 +6,27 @@ enum TaskEditorPresentation {
     case popover
 }
 
+private enum TaskEditorLayoutMode: String, CaseIterable, Identifiable {
+    case compact
+    case detail
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .compact: "简约"
+        case .detail: "详情"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .compact: "核心字段"
+        case .detail: "专注描述"
+        }
+    }
+}
+
 struct TaskEditorView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -15,6 +36,9 @@ struct TaskEditorView: View {
     @State private var tagInput = ""
     @State private var validationMessage: String?
     @State private var isSaving = false
+    @State private var layoutMode: TaskEditorLayoutMode = .compact
+    @State private var isShowingHistory = false
+    @State private var isDuplicating = false
     private let presentation: TaskEditorPresentation
 
     init(
@@ -313,6 +337,460 @@ struct TaskEditorView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private var sheetHeader: some View {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(draft.isNew ? "新建任务" : "修改任务")
+                    .font(.title2.weight(.bold))
+                    .accessibilityIdentifier("task-detail")
+                Text(layoutMode.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 20)
+
+            Picker("编辑模式", selection: $layoutMode) {
+                ForEach(TaskEditorLayoutMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 184)
+            .accessibilityLabel("任务编辑模式")
+            .accessibilityIdentifier("task-editor-layout-mode")
+
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.title3.weight(.medium))
+                    .frame(width: 32, height: 32)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("关闭")
+            .accessibilityIdentifier("close-task-editor")
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+        .padding(.bottom, 14)
+    }
+
+    private var compactSheetContent: some View {
+        ScrollView {
+            compactSheetFields
+                .frame(maxWidth: 760, alignment: .leading)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 18)
+        }
+    }
+
+    private var compactSheetFields: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            fieldGroup("任务名称") {
+                titleField
+            }
+
+            descriptionWorkspace(paneHeight: markdownPaneHeight)
+
+            HStack(alignment: .top, spacing: 16) {
+                priorityStrip
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                statusStrip
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            compactMetadataFields
+
+            fieldGroup("标签") {
+                TaskTagEditor(tags: $draft.tags, input: $tagInput)
+            }
+
+            editorStatusMessages
+
+            if draft.taskID != nil, let recentHistoryText {
+                fieldGroup("最近历史") {
+                    Text(recentHistoryText)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .accessibilityIdentifier("task-detail-history-summary")
+                }
+            }
+        }
+    }
+
+    private func descriptionWorkspace(paneHeight: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Text("描述")
+                    .font(.subheadline.weight(.semibold))
+
+                Spacer()
+
+                Picker("Markdown 显示模式", selection: $markdownMode) {
+                    ForEach(MarkdownViewMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 148)
+                .accessibilityLabel("Markdown 显示模式")
+                .accessibilityIdentifier("markdown-mode")
+            }
+
+            MarkdownFormattingToolbar(text: $draft.notes, mode: $markdownMode)
+
+            MarkdownEditorView(
+                text: $draft.notes,
+                mode: markdownMode,
+                paneHeight: paneHeight
+            )
+        }
+        .padding(12)
+        .background(
+            .primary.opacity(0.025),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(.separator, lineWidth: 1)
+                .allowsHitTesting(false)
+        }
+    }
+
+    private var priorityStrip: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("优先级")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 4) {
+                ForEach(orderedPriorities, id: \.self) { priority in
+                    let isSelected = draft.priority == priority
+                    Button {
+                        draft.priority = priority
+                    } label: {
+                        Text(priority.code)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(isSelected ? selectedPriorityForeground : priority.tint)
+                            .frame(maxWidth: .infinity, minHeight: metadataControlHeight)
+                            .background(
+                                isSelected ? priority.tint : Color.primary.opacity(0.045),
+                                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(priority.code) \(priority.title)")
+                    .accessibilityValue(isSelected ? "已选择" : "未选择")
+                }
+            }
+            .padding(3)
+            .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+    }
+
+    private var statusStrip: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("状态")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 4) {
+                ForEach(TaskStatus.allCases) { status in
+                    let isSelected = draft.status == status
+                    Button {
+                        draft.status = status
+                    } label: {
+                        Text(status.title)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(isSelected ? Color.white : status.tint)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, minHeight: metadataControlHeight)
+                            .background(
+                                isSelected ? status.tint : Color.primary.opacity(0.045),
+                                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(status.title)
+                    .accessibilityValue(isSelected ? "已选择" : "未选择")
+                }
+            }
+            .padding(3)
+            .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    private var compactMetadataFields: some View {
+        if isCompactWidth {
+            VStack(spacing: 14) {
+                assigneeField
+                HStack(alignment: .top, spacing: 14) {
+                    startDateField
+                    dueDateField
+                }
+                durationField
+            }
+        } else {
+            HStack(alignment: .top, spacing: 12) {
+                assigneeField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                startDateField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                dueDateField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                durationField
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var durationField: some View {
+        fieldGroup("工时（天）") {
+            TextField(
+                "工时",
+                value: Binding(
+                    get: { durationDays },
+                    set: { updateDurationDays($0) }
+                ),
+                format: .number
+            )
+            .textFieldStyle(.plain)
+            .font(.callout.weight(.medium))
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, minHeight: metadataControlHeight, alignment: .leading)
+            .background(
+                .primary.opacity(0.045),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 1)
+            }
+            .accessibilityLabel("工时天数")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var detailSheetContent: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            descriptionWorkspace(paneHeight: isCompactWidth ? 340 : 380)
+            editorStatusMessages
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder
+    private var editorStatusMessages: some View {
+        if draft.taskID != nil {
+            Label(
+                "编辑基于任务版本 \(draft.expectedVersion)",
+                systemImage: "lock.shield"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+
+        if let validationMessage {
+            Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
+                .font(.callout)
+                .foregroundStyle(.red)
+                .accessibilityIdentifier("task-validation")
+        }
+
+        if let conflict = model.conflict {
+            ConflictInlineView(model: model, notice: conflict, dismiss: dismiss.callAsFunction)
+        }
+    }
+
+    private var sheetFooter: some View {
+        HStack(spacing: 8) {
+            if currentTask != nil {
+                Button {
+                    isShowingHistory = true
+                } label: {
+                    Label("历史", systemImage: "clock.arrow.circlepath")
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("task-history-button")
+
+                Button {
+                    duplicateTask()
+                } label: {
+                    if isDuplicating {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Label("复制", systemImage: "square.on.square")
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(isSaving || isDuplicating)
+                .accessibilityIdentifier("duplicate-task")
+
+                Button(role: .destructive) {
+                    deleteCurrentTask()
+                } label: {
+                    Label("删除", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+                .disabled(isSaving || isDuplicating)
+                .accessibilityIdentifier("delete-task")
+            }
+
+            Spacer()
+
+            Button("取消") { dismiss() }
+                .buttonStyle(.bordered)
+                .disabled(isSaving)
+                .accessibilityIdentifier("cancel-task-editor")
+
+            Button {
+                save()
+            } label: {
+                if isSaving {
+                    ProgressView().controlSize(.small)
+                } else {
+                    Text("保存")
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(isSaving || draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("save-task")
+        }
+        .controlSize(.large)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(.bar)
+    }
+
+    private var taskHistoryPopover: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("任务历史")
+                    .font(.headline.weight(.semibold))
+                Spacer()
+                Button("关闭") { isShowingHistory = false }
+                    .buttonStyle(.bordered)
+            }
+
+            Divider()
+
+            if let currentTask, !currentTask.history.isEmpty {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(currentTask.history.reversed())) { entry in
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(entry.summary)
+                                    .font(.callout.weight(.medium))
+                                Text("\(model.actorName(for: entry.actorID)) · revision \(entry.revision)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(model.displayTimestamp(entry.occurredAt))
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.tertiary)
+                            }
+                            .padding(.vertical, 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityIdentifier("task-history-\(entry.id)")
+
+                            if entry.id != currentTask.history.first?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                }
+            } else {
+                Text("暂无历史记录")
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(16)
+        .frame(minWidth: 380, maxWidth: 380, minHeight: 220, maxHeight: 420)
+    }
+
+    private var currentTask: TaskItem? {
+        model.task(withID: draft.taskID)
+    }
+
+    private var recentHistoryText: String? {
+        guard let entry = currentTask?.history.last else { return nil }
+        return "\(entry.summary) · \(model.actorName(for: entry.actorID))"
+    }
+
+    private var metadataControlHeight: CGFloat {
+        isCompactWidth ? 44 : 34
+    }
+
+    private var orderedPriorities: [TaskPriority] {
+        [.urgent, .high, .medium, .low]
+    }
+
+    private var selectedPriorityForeground: Color {
+        draft.priority == .high ? .black : .white
+    }
+
+    private var durationDays: Int {
+        let start = draft.startDate ?? draft.dueDate
+        return max(
+            KshiftDate.daysBetween(
+                from: start,
+                through: draft.dueDate,
+                calendar: model.projectCalendar
+            ) + 1,
+            1
+        )
+    }
+
+    private func updateDurationDays(_ value: Int) {
+        let nextValue = max(value, 1)
+        let start = draft.startDate ?? draft.dueDate
+        draft.startDate = start
+        draft.dueDate = KshiftDate.addingDays(
+            nextValue - 1,
+            to: start,
+            calendar: model.projectCalendar
+        )
+    }
+
+    private func deleteCurrentTask() {
+        guard let currentTask else { return }
+        model.requestDelete(currentTask)
+        dismiss()
+    }
+
+    private func duplicateTask() {
+        guard draft.taskID != nil else { return }
+        let copy = TaskDraft(
+            projectID: draft.projectID,
+            title: "\(draft.title) 副本",
+            notes: draft.notes,
+            status: draft.status,
+            priority: draft.priority,
+            assigneeIDs: draft.assigneeIDs,
+            startDate: draft.startDate,
+            dueDate: draft.dueDate,
+            tags: draft.tags,
+            position: draft.position
+        )
+        isDuplicating = true
+        Swift.Task {
+            let saved = await model.saveTask(copy)
+            isDuplicating = false
+            if saved {
+                dismiss()
+            }
+        }
+    }
+
     private var isCompactWidth: Bool {
         horizontalSizeClass == .compact
     }
@@ -340,30 +818,29 @@ struct TaskEditorView: View {
     }
 
     private var sheetBody: some View {
-        NavigationStack {
-            ScrollView {
-                editorFields
-                    .frame(maxWidth: 680, alignment: .leading)
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
-            .background(.background)
-            .navigationTitle(draft.isNew ? "新建任务" : "编辑任务")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") { dismiss() }
-                        .buttonStyle(KshiftCompactGlassButtonStyle())
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    saveButton
+        VStack(spacing: 0) {
+            sheetHeader
+            Divider()
+
+            Group {
+                if layoutMode == .compact {
+                    compactSheetContent
+                } else {
+                    detailSheetContent
                 }
             }
-            .interactiveDismissDisabled(isSaving)
-            .frame(
-                minWidth: isCompactWidth ? nil : 680,
-                idealWidth: isCompactWidth ? nil : 720,
-                minHeight: isCompactWidth ? nil : 640,
-                idealHeight: isCompactWidth ? nil : 720
-            )
+
+            Divider()
+            sheetFooter
+        }
+        .frame(
+            width: isCompactWidth ? nil : 800,
+            height: isCompactWidth ? nil : 720
+        )
+        .background(.background)
+        .interactiveDismissDisabled(isSaving)
+        .popover(isPresented: $isShowingHistory, arrowEdge: .bottom) {
+            taskHistoryPopover
         }
     }
 
@@ -486,6 +963,93 @@ struct TaskEditorView: View {
         } else {
             draft.assigneeIDs.append(id)
         }
+    }
+}
+
+private struct MarkdownFormattingToolbar: View {
+    @Binding var text: String
+    @Binding var mode: MarkdownViewMode
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    formatButton("粗体", symbol: "bold") {
+                        insert("**", suffix: "**")
+                    }
+                    formatButton("斜体", symbol: "italic") {
+                        insert("*", suffix: "*")
+                    }
+                    formatButton("下划线", symbol: "underline") {
+                        insert("<u>", suffix: "</u>")
+                    }
+                    formatButton("删除线", symbol: "strikethrough") {
+                        insert("~~", suffix: "~~")
+                    }
+                    formatButton("行内代码", symbol: "chevron.left.forwardslash.chevron.right") {
+                        insert("`", suffix: "`")
+                    }
+                    formatButton("标题", symbol: "textformat.size.larger") {
+                        insertBlock("## 标题")
+                    }
+                    formatButton("无序列表", symbol: "list.bullet") {
+                        insertBlock("- 项目")
+                    }
+                    formatButton("有序列表", symbol: "list.number") {
+                        insertBlock("1. 项目")
+                    }
+                    formatButton("引用", symbol: "quote.opening") {
+                        insertBlock("> 引用")
+                    }
+                    formatButton("链接", symbol: "link") {
+                        insert("[标题](https://)")
+                    }
+                    formatButton("图片", symbol: "photo") {
+                        insertBlock("![图片](https://)")
+                    }
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            Text("\(text.count) 字符")
+                .font(.caption2.monospacedDigit())
+                .foregroundStyle(.tertiary)
+                .fixedSize()
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+    }
+
+    private func formatButton(
+        _ title: String,
+        symbol: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.callout.weight(.medium))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .help(title)
+        .accessibilityLabel(title)
+    }
+
+    private func insert(_ prefix: String, suffix: String = "") {
+        mode = .source
+        text += "\(prefix)文本\(suffix)"
+    }
+
+    private func insertBlock(_ value: String) {
+        mode = .source
+        if !text.isEmpty, !text.hasSuffix("\n") {
+            text += "\n"
+        }
+        text += value
     }
 }
 
