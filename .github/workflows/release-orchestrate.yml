@@ -81,7 +81,7 @@ jobs:
             echo 'source_commit must be 40 lowercase hexadecimal characters' >&2
             exit 1
           fi
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "release or draft already exists: $TAG" >&2
             exit 1
           fi
@@ -178,8 +178,9 @@ jobs:
             --prerelease \
             --title "Kshift $TAG" \
             --notes-file "$release_dir/release-notes.md" \
-            --target "$SOURCE_COMMIT"
-          url="$(gh release view "$TAG" --json url --jq .url)"
+            --target "$SOURCE_COMMIT" \
+            --repo "$GITHUB_REPOSITORY"
+          url="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json url --jq .url)"
           node release/tools/kshift-release.mjs evidence \
             --manifest "$release_dir/release-manifest.json" \
             --output "$release_dir/release-evidence.json" \
@@ -189,7 +190,8 @@ jobs:
           node release/tools/kshift-release.mjs checksums \
             --dir "$release_dir" \
             --output "$release_dir/SHA256SUMS"
-          gh release upload "$TAG" "$release_dir/release-evidence.json" "$release_dir/SHA256SUMS"
+          gh release upload "$TAG" "$release_dir/release-evidence.json" "$release_dir/SHA256SUMS" \
+            --repo "$GITHUB_REPOSITORY"
           echo "draft=$url" >> "$GITHUB_STEP_SUMMARY"
 
   verify-draft:
@@ -214,7 +216,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/verify"
-          gh release download "$TAG" --dir "$RUNNER_TEMP/verify" --clobber
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$RUNNER_TEMP/verify" --clobber
           (cd "$RUNNER_TEMP/verify" && sha256sum -c SHA256SUMS)
           node release/tools/kshift-release.mjs validate \
             --manifest "$RUNNER_TEMP/verify/release-manifest.json" \
@@ -234,7 +236,7 @@ jobs:
           done
       - name: Confirm release is still a draft
         shell: bash
-        run: test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+        run: test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
 
   promote:
     name: promote-same-draft
@@ -256,10 +258,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = true
+          test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = true
           release_dir="$RUNNER_TEMP/promote"
           mkdir -p "$release_dir"
-          gh release download "$TAG" --dir "$release_dir" --clobber
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir "$release_dir" --clobber
           (cd "$release_dir" && sha256sum -c SHA256SUMS)
           manifest="$release_dir/release-manifest.json"
           test "$(jq -r '.release_status' "$manifest")" = draft
@@ -285,16 +287,17 @@ jobs:
             --dir "$release_dir" \
             --output "$release_dir/SHA256SUMS"
           (cd "$release_dir" && sha256sum -c SHA256SUMS)
-          gh release upload "$TAG" "$manifest" "$evidence" "$release_dir/SHA256SUMS" --clobber
-          test "$(gh release download "$TAG" --pattern release-manifest.json --dir "$RUNNER_TEMP/promote-check" --clobber >/dev/null 2>&1; jq -r '.release_status' "$RUNNER_TEMP/promote-check/release-manifest.json")" = promoted
+          gh release upload "$TAG" "$manifest" "$evidence" "$release_dir/SHA256SUMS" \
+            --repo "$GITHUB_REPOSITORY" --clobber
+          test "$(gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern release-manifest.json --dir "$RUNNER_TEMP/promote-check" --clobber >/dev/null 2>&1; jq -r '.release_status' "$RUNNER_TEMP/promote-check/release-manifest.json")" = promoted
       - name: Promote the same draft
         shell: bash
         run: |
           set -euo pipefail
           if [[ "$CHANNEL" == "stable" || "$CHANNEL" == "hotfix" ]]; then
-            gh release edit "$TAG" --draft=false --prerelease=false
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=false
           else
-            gh release edit "$TAG" --draft=false --prerelease=true
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease=true
           fi
-          test "$(gh release view "$TAG" --json isDraft --jq .isDraft)" = false
+          test "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)" = false
           echo "promoted=$TAG" >> "$GITHUB_STEP_SUMMARY"
