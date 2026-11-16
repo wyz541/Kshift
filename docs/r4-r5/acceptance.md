@@ -25,7 +25,7 @@ description: "记录 Issue #9 的已实现范围、未运行门禁和阻断项�
 | Draft 验证后只 Promote 同一 Draft | 通过 preview 演练 | Draft `v0.1.0-preview.1` 通过 bytes、manifest 和 attestation 验证；Promote 只编辑同一个 Draft；server/source hash 未变化 |
 | macOS/iOS 安装、升级和回滚证据 | 部分通过 | macOS/iOS unsigned Preview candidate 构建通过；Simulator 和 bundle preview lifecycle 通过；签名、干净机器和物理设备未验收 |
 | Manifest、SHA-256、SBOM、provenance、attestation 可验证 | 部分通过 | Preview candidate、Draft 和 Promote 后的 manifest、SHA-256、SBOM 和 server/source attestation 已验证；Stable 资产尚未验证 |
-| 禁止覆盖标签或同名 Stable 资产 | 流程已实现 | prepare 拒绝已有 Release，promote 不上传资产；GitHub 保护规则尚未配置 |
+| 禁止覆盖标签或同名 Stable 资产 | 部分通过 | `v*` ruleset 阻止 update 和 deletion；immutable releases 已启用；同名 Stable 资产上传尚未执行 |
 
 ## 当前阻断项
 

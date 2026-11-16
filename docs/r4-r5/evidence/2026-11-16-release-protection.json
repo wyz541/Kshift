@@ -1,0 +1,47 @@
+{
+  "status": "passed",
+  "repository": "wyz541/Kshift",
+  "environment": {
+    "id": 27471742908,
+    "name": "release",
+    "required_reviewer": "wyz541",
+    "prevent_self_review": false,
+    "can_admins_bypass": true,
+    "deployment_branch": "main",
+    "branch_policy_id": 66969019
+  },
+  "tag_ruleset": {
+    "id": 27386079,
+    "name": "Protect version tags",
+    "target": "tag",
+    "enforcement": "active",
+    "include": [
+      "refs/tags/v*"
+    ],
+    "rules": [
+      "deletion",
+      "update"
+    ],
+    "bypass_actors": [],
+    "current_user_can_bypass": "never"
+  },
+  "tag_protection_test": {
+    "temporary_tag": "v0.1.0-protection-test",
+    "update_status": 422,
+    "update_message": "Cannot update this protected ref.",
+    "delete_status": 422,
+    "delete_message": "Cannot delete this tag",
+    "cleanup_completed": true,
+    "final_tag_status": 404,
+    "ruleset_restored_active": true
+  },
+  "immutable_releases": {
+    "enabled": true,
+    "enforced_by_owner": false
+  },
+  "limitations": [
+    "prevent_self_review is false",
+    "repository admins can bypass the environment",
+    "Stable asset overwrite remains covered by workflow checks and immutable releases"
+  ]
+}

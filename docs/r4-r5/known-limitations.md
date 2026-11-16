@@ -25,6 +25,7 @@ description: "列出 R4/R5 基座尚未完成的产品和发布能力。"
 - 当前没有开发机之外的加密备份存储。
 - 当前没有执行月度恢复演练。
 - 远端 preview server、macOS、iOS 和 source candidate、Draft、same-Draft Promote 和 attestation 已通过；Stable signing 和 Stable workflows 尚未执行。
-- GitHub `release` environment、标签保护和 immutable releases 尚未配置。
+- `release` environment 有 required reviewer，但 `prevent_self_review=false`，且 repository admin 可以 bypass。独立 release manager approval 尚未强制。
+- `v*` tag update/deletion 和 immutable releases 已启用。Stable 同名资产上传仍未执行。
 - `kshift_admin` 只提供固定管理视图，不提供在线 schema 编辑。
 - SQL 备份方案提供 4 小时 RPO 和 4 小时 RTO，不提供高可用承诺。
