@@ -171,6 +171,7 @@ jobs:
           release_dir="$RUNNER_TEMP/release"
           gh release create "$TAG" \
             "$release_dir"/kshift-* \
+            "$release_dir"/*.fragment.json \
             "$release_dir/release-manifest.json" \
             "$release_dir/release-notes.md" \
             "$release_dir/sbom.spdx.json" \
