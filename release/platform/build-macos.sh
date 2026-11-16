@@ -40,6 +40,8 @@ xcodebuild \
   -configuration Release \
   -derivedDataPath "$build_root/DerivedData" \
   -destination 'platform=macOS' \
+  ARCHS=arm64 \
+  ONLY_ACTIVE_ARCH=YES \
   "${signing_args[@]}" \
   build
 

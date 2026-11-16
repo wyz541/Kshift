@@ -33,6 +33,8 @@ if [[ "$channel" == 'preview' ]]; then
     -configuration Release \
     -sdk iphoneos \
     -derivedDataPath "$build_root/DerivedData" \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=YES \
     CODE_SIGNING_REQUIRED=NO \
     CODE_SIGNING_ALLOWED=NO \
     build
@@ -59,6 +61,8 @@ else
     -configuration Release \
     -destination 'generic/platform=iOS' \
     -archivePath "$archive" \
+    ARCHS=arm64 \
+    ONLY_ACTIVE_ARCH=YES \
     DEVELOPMENT_TEAM="$team" \
     CODE_SIGN_STYLE=Automatic \
     -allowProvisioningUpdates \
