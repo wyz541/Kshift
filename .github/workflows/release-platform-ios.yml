@@ -124,7 +124,7 @@ jobs:
               generated_at: $generated,
               signing: {
                 status: $status,
-                identity: ($status == "signed" ? "configured-distribution-identity" : null),
+                identity: (if $status == "signed" then "configured-distribution-identity" else null end),
                 notarization: $notarization
               },
               provenance: {
