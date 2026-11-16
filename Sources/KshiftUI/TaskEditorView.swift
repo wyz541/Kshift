@@ -339,54 +339,61 @@ struct TaskEditorView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var sheetHeader: some View {
-        HStack(alignment: .top, spacing: 16) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(draft.isNew ? "新建任务" : "修改任务")
-                    .font(.title2.weight(.bold))
-                    .accessibilityIdentifier("task-detail")
-                Text(layoutMode.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 20)
-
-            Picker("编辑模式", selection: Binding(
-                get: { layoutMode },
-                set: { nextMode in
-                    if reduceMotion {
+    private var sheetLayoutControl: some View {
+        Picker("编辑模式", selection: Binding(
+            get: { layoutMode },
+            set: { nextMode in
+                if reduceMotion {
+                    layoutMode = nextMode
+                } else {
+                    withAnimation(.snappy(duration: 0.24)) {
                         layoutMode = nextMode
-                    } else {
-                        withAnimation(.snappy(duration: 0.24)) {
-                            layoutMode = nextMode
-                        }
                     }
                 }
-            )) {
-                ForEach(TaskEditorLayoutMode.allCases) { mode in
-                    Text(mode.title).tag(mode)
-                }
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .frame(width: 184)
-            .accessibilityLabel("任务编辑模式")
-            .accessibilityIdentifier("task-editor-layout-mode")
-
-            Button {
-                dismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .frame(width: 30, height: 30)
+        )) {
+            ForEach(TaskEditorLayoutMode.allCases) { mode in
+                Text(mode.title).tag(mode)
             }
-            .buttonStyle(KshiftCompactGlassButtonStyle())
-            .accessibilityLabel("关闭")
-            .accessibilityIdentifier("close-task-editor")
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 20)
-        .padding(.bottom, 14)
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .frame(width: 164)
+        .accessibilityLabel("任务编辑模式")
+        .accessibilityIdentifier("task-editor-layout-mode")
+    }
+
+    private var classicTitlebar: some View {
+        ZStack {
+            Text(titleText)
+                .font(.headline.weight(.semibold))
+                .foregroundStyle(.primary)
+                .accessibilityIdentifier("task-detail")
+
+            HStack(spacing: 12) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .accessibilityLabel("关闭")
+                .accessibilityIdentifier("close-task-editor")
+
+                Spacer(minLength: 0)
+
+                sheetLayoutControl
+            }
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 56)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(.separator.opacity(0.7))
+                .frame(height: 0.5)
+        }
     }
 
     private var compactSheetContent: some View {
@@ -842,8 +849,7 @@ struct TaskEditorView: View {
 
     private var sheetBody: some View {
         VStack(spacing: 0) {
-            sheetHeader
-            Divider()
+            classicTitlebar
 
             Group {
                 if layoutMode == .compact {
@@ -869,6 +875,10 @@ struct TaskEditorView: View {
         .popover(isPresented: $isShowingHistory, arrowEdge: .bottom) {
             taskHistoryPopover
         }
+    }
+
+    private var titleText: String {
+        draft.isNew ? "新建任务" : "修改任务"
     }
 
     @ViewBuilder
