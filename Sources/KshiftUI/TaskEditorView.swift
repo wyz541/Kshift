@@ -31,6 +31,8 @@ struct TaskEditorView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draft: TaskDraft
     @State private var markdownMode: MarkdownViewMode
     @State private var tagInput = ""
@@ -350,7 +352,18 @@ struct TaskEditorView: View {
 
             Spacer(minLength: 20)
 
-            Picker("编辑模式", selection: $layoutMode) {
+            Picker("编辑模式", selection: Binding(
+                get: { layoutMode },
+                set: { nextMode in
+                    if reduceMotion {
+                        layoutMode = nextMode
+                    } else {
+                        withAnimation(.snappy(duration: 0.24)) {
+                            layoutMode = nextMode
+                        }
+                    }
+                }
+            )) {
                 ForEach(TaskEditorLayoutMode.allCases) { mode in
                     Text(mode.title).tag(mode)
                 }
@@ -365,10 +378,9 @@ struct TaskEditorView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.title3.weight(.medium))
-                    .frame(width: 32, height: 32)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("关闭")
             .accessibilityIdentifier("close-task-editor")
         }
@@ -379,11 +391,13 @@ struct TaskEditorView: View {
 
     private var compactSheetContent: some View {
         ScrollView {
-            compactSheetFields
-                .frame(maxWidth: 760, alignment: .leading)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 18)
+            GlassEffectContainer(spacing: 14) {
+                compactSheetFields
+                    .frame(maxWidth: 760, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 18)
+            }
         }
     }
 
@@ -392,6 +406,8 @@ struct TaskEditorView: View {
             fieldGroup("任务名称") {
                 titleField
             }
+            .padding(14)
+            .kshiftGlassCard(tint: Color.accentColor.opacity(0.022))
 
             descriptionWorkspace(paneHeight: markdownPaneHeight)
 
@@ -401,12 +417,18 @@ struct TaskEditorView: View {
                 statusStrip
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding(14)
+            .kshiftGlassCard()
 
             compactMetadataFields
+                .padding(14)
+                .kshiftGlassCard(tint: Color.blue.opacity(0.015))
 
             fieldGroup("标签") {
                 TaskTagEditor(tags: $draft.tags, input: $tagInput)
             }
+            .padding(14)
+            .kshiftGlassCard(tint: Color.orange.opacity(0.015))
 
             editorStatusMessages
 
@@ -418,6 +440,8 @@ struct TaskEditorView: View {
                         .lineLimit(2)
                         .accessibilityIdentifier("task-detail-history-summary")
                 }
+                .padding(14)
+                .kshiftGlassCard()
             }
         }
     }
@@ -451,15 +475,7 @@ struct TaskEditorView: View {
             )
         }
         .padding(12)
-        .background(
-            .primary.opacity(0.025),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.separator, lineWidth: 1)
-                .allowsHitTesting(false)
-        }
+        .kshiftGlassCard(tint: Color.accentColor.opacity(0.025))
     }
 
     private var priorityStrip: some View {
@@ -578,14 +594,16 @@ struct TaskEditorView: View {
     }
 
     private var detailSheetContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            descriptionWorkspace(paneHeight: isCompactWidth ? 340 : 380)
-            editorStatusMessages
-            Spacer(minLength: 0)
+        GlassEffectContainer(spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                descriptionWorkspace(paneHeight: isCompactWidth ? 340 : 380)
+                editorStatusMessages
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 24)
+            .padding(.vertical, 18)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 18)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     @ViewBuilder
@@ -669,7 +687,12 @@ struct TaskEditorView: View {
         .controlSize(.large)
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-        .background(.bar)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(.separator.opacity(0.7))
+                .frame(height: 0.5)
+        }
     }
 
     private var taskHistoryPopover: some View {
@@ -829,6 +852,7 @@ struct TaskEditorView: View {
                     detailSheetContent
                 }
             }
+            .animation(reduceMotion ? nil : .snappy(duration: 0.24), value: layoutMode)
 
             Divider()
             sheetFooter
@@ -837,11 +861,42 @@ struct TaskEditorView: View {
             width: isCompactWidth ? nil : 800,
             height: isCompactWidth ? nil : 720
         )
-        .background(.background)
+        .background {
+            sheetBackdrop
+        }
+        .presentationBackground(.clear)
         .interactiveDismissDisabled(isSaving)
         .popover(isPresented: $isShowingHistory, arrowEdge: .bottom) {
             taskHistoryPopover
         }
+    }
+
+    @ViewBuilder
+    private var sheetBackdrop: some View {
+        ZStack {
+            if reduceTransparency {
+                Rectangle()
+                    .fill(.background)
+            } else {
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+
+                RadialGradient(
+                    colors: [Color.accentColor.opacity(0.11), .clear],
+                    center: .topTrailing,
+                    startRadius: 20,
+                    endRadius: 480
+                )
+
+                RadialGradient(
+                    colors: [Color.orange.opacity(0.05), .clear],
+                    center: .bottomLeading,
+                    startRadius: 20,
+                    endRadius: 420
+                )
+            }
+        }
+        .ignoresSafeArea()
     }
 
     private var popoverBody: some View {
