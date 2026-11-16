@@ -45,8 +45,10 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Toolbar visual height 为 34pt。Outer hit target 为 44pt。
 - Schedule toolbar 的 vertical padding 为 4pt，minimum height 为 52pt。
 - Toolbar buttons 不使用 accent-tinted `.buttonStyle(.glass)`。
-- Window primaryAction toolbar 对 filter、refresh 和 audit 使用 neutral `KshiftCompactGlassButtonStyle`。
-- New Task 使用 `KshiftCompactAccentGlassButtonStyle`。Accent glass opacity 为 `0.18` in Light Mode and `0.30` in Dark Mode。
+- Window primaryAction toolbar 使用 native toolbar group 提供的唯一 Liquid Glass surface。
+- Filter、refresh 和 audit 使用 native borderless toolbar buttons。它们不得添加局部 `.glassEffect`。
+- New Task 使用 native toolbar interaction 和 accent foreground。它不得添加局部 accent glass。
+- Window toolbar 禁止 double glass、double border 和 custom 44pt hit frame。
 - Window toolbar 只保留 one accent action。
 - macOS work area 使用 `AppKitScrollWheelRouter`。Vertical wheel 驱动 vertical scroll view。Shift + wheel 驱动 horizontal timeline。
 - Blank day cell click 使用 clicked person 和 clicked date 创建 local `TaskDraft`。
@@ -77,7 +79,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 视觉证据
 
-截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。Toolbar buttons 使用紧凑 neutral glass，不再出现 high-height accent-tinted blocks。Window toolbar 只保留 New Task as one pale-accent primary action。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task editor uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
+截图使用固定日期 `2026-11-15` 和 Demo 数据。截图显示 P0、P1、P2 任务条在 Light Mode 和 Dark Mode 中保留优先级颜色、玻璃高光和单行紧凑布局。任务条保留统一的日期间距，不贴边绘制；单日标题完整显示或被 tail truncation 裁切；状态符号使用白芯高对比徽章，完成状态为绿色。In-content toolbar buttons 使用紧凑 neutral glass。Window toolbar 使用一个 native Liquid Glass group；filter、refresh 和 audit 为 flat borderless icons；New Task 为 accent-blue plus。Regular PeopleSchedule uses one date and period navigation row。The sidebar gear button opens the application settings surface。PeopleSchedule no longer exposes the legacy Plan Depth entry。Task bars show rendered Markdown hover previews。Shift + wheel moved the month timeline horizontally。Blank day cell click opened and saved a responsive task popover。All New Task actions now use anchored popovers。The task editor uses compact section cards and a single switchable Markdown workspace。Status and priority columns are aligned。Tags use compact removable chips。The person-header evidence uses the `168pt` minimum width and shows separate role and metric bounds without overlap。
 
 | 文件 | 环境 | 内容 | SHA-256 |
 | --- | --- | --- | --- |
@@ -92,6 +94,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-markdown-source-2026-11-15.png`](./macos-markdown-source-2026-11-15.png) | macOS 27.0.1；Light Mode | Markdown source mode with the same single task workspace | `34a983e69c73f904e9f05a24b564a5825d06d16b3d7887eddf79b3d73daab858` |
 | [`macos-task-detail-liquid-glass-2026-11-16.png`](./macos-task-detail-liquid-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Liquid Glass task detail with summary, content, activity cards and glass toolbar actions | `6b3e480ebd323dbb7abd8ec1949d5e32ed15d0fa005806e7d9d4a97f37baf241` |
 | [`macos-person-header-min-width-2026-11-16.png`](./macos-person-header-min-width-2026-11-16.png) | macOS 27.0.1；Light Mode；`168pt` people column；Compact density | Person header with separated name/disclosure and role/metrics rows | `f9af5d1b879a31b6d96fc5a0597a2c85f984793cd32364816296bff0313184b9` |
+| [`macos-window-toolbar-native-glass-2026-11-16.png`](./macos-window-toolbar-native-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Native Liquid Glass toolbar group with flat actions and one accent New Task action | `0a22e7064f5cbe8330fd1687764883beccef27e7c598a6b39d693446bf1f1d62` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
@@ -103,6 +106,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | macOS Debug build | 通过 |
 | Person-header manual visual check | 通过；`168pt` and `196pt` and `320pt` widths；compact density |
 | Person-header density check | 通过；`168pt` width with compact and standard and comfortable density |
+| Window-toolbar manual visual check | 通过；single native glass surface；flat filter/refresh/audit actions；accent New Task |
 | iOS Debug build | 通过 |
 | `testCreateTaskThroughSharedPlanner` | 通过 |
 | `testTaskMarkdownEditorWritesAndPreviewsBlocks` | 通过 |
@@ -125,5 +129,6 @@ SwiftUI 无障碍审计将 `今天`、`未分配` 和 `无负责人 · 1 项任�
 - Increase Contrast 和 Reduce Transparency 截图尚未生成。
 - macOS 和 iOS 人工拖拽录屏尚未生成。
 - 50 人、30 日、每人 20 项任务的渲染性能尚未用 Instruments 测量。
+- 2026-11-16 的 generic iOS `testAccessibilityAudit` rerun 仍报告 board card raw Markdown note 的 Dynamic Type clipped diagnostic。该 diagnostic 位于 `TaskCard` 文本，不在本次 Window toolbar 变更范围。本次 toolbar-focused accessibility checks 通过。
 
 本文件中的“通过”只表示自动检查结果。用户明确确认视觉验收通过前，Issue #42 保持打开。
