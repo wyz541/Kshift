@@ -1,7 +1,14 @@
 import XCTest
 @testable import KshiftUI
 
+@MainActor
 final class MarkdownEditorTests: XCTestCase {
+    func testSourcePlaceholderHidesWhenEditorIsFocusedOrHasText() {
+        XCTAssertTrue(MarkdownEditorView.shouldShowPlaceholder(for: "", isFocused: false))
+        XCTAssertFalse(MarkdownEditorView.shouldShowPlaceholder(for: "", isFocused: true))
+        XCTAssertFalse(MarkdownEditorView.shouldShowPlaceholder(for: "Description", isFocused: false))
+    }
+
     func testMarkdownBlockParserPreservesDocumentStructure() {
         let blocks = MarkdownBlockParser.parse(
             """

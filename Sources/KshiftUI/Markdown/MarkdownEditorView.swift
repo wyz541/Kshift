@@ -18,6 +18,7 @@ struct MarkdownEditorView: View {
     @Binding var text: String
     let mode: MarkdownViewMode
     var paneHeight: CGFloat = 220
+    @FocusState private var isSourceFocused: Bool
 
     var body: some View {
         Group {
@@ -41,18 +42,24 @@ struct MarkdownEditorView: View {
             .padding(8)
             .scrollContentBackground(.hidden)
             .writingToolsBehavior(.disabled)
+            .focused($isSourceFocused)
             .overlay(alignment: .topLeading) {
-                if text.isEmpty {
+                if Self.shouldShowPlaceholder(for: text, isFocused: isSourceFocused) {
                     Text("输入 Markdown")
                         .font(.system(.body, design: .monospaced))
                         .foregroundStyle(.tertiary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 16)
                         .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
             .accessibilityLabel("Markdown 源码")
             .accessibilityIdentifier("markdown-editor")
+    }
+
+    static func shouldShowPlaceholder(for text: String, isFocused: Bool) -> Bool {
+        text.isEmpty && !isFocused
     }
 
     private var previewPane: some View {
