@@ -24,5 +24,14 @@ KSHIFT_LOAD_REPORT="$report" \
 TEST_DATABASE_URL="$TEST_DATABASE_URL" \
   "$cargo_bin" test --locked -p kshift-server --test load_integration -- --nocapture
 
-jq -e '.status == "passed"' "$report" >/dev/null
+jq -e '
+  .status == "passed"
+  and .persistent_network_clients >= 100
+  and .persistent_network_event_streams >= 64
+  and .network_end_health_failures == 0
+  and .network_event_stream_errors == 0
+  and .network_event_stream_unexpected_closes == 0
+  and .network_event_gaps == 0
+  and .network_received_event_deliveries == .network_expected_event_deliveries
+' "$report" >/dev/null
 printf 'load_report=%s\n' "$report"
