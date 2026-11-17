@@ -63,6 +63,60 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(renderedHeading.waitForExistence(timeout: 5), app.debugDescription)
     }
 
+    func testEditTaskUsesAnchoredPopover() throws {
+        let app = launchPlanner()
+        let task = app.descendants(matching: .any)["task-task-launch-brief"].firstMatch
+        XCTAssertTrue(task.waitForExistence(timeout: 8), app.debugDescription)
+
+        let actions = task.buttons["任务操作"].firstMatch
+        XCTAssertTrue(actions.waitForExistence(timeout: 5), app.debugDescription)
+        actions.tap()
+
+        let edit = app.buttons["编辑"].firstMatch
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), app.debugDescription)
+        edit.tap()
+
+        let editor = app.descendants(matching: .any)["task-editor-popover"].firstMatch
+        let titleField = app.descendants(matching: .any)["task-title"].firstMatch
+        XCTAssertTrue(editor.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(titleField.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.descendants(matching: .any)["task-detail"].firstMatch.exists)
+
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Edit task popover - iOS"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+
+        let cancel = app.buttons["取消"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5))
+        cancel.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 5), app.debugDescription)
+    }
+
+    func testTableRowEditUsesAnchoredPopover() throws {
+        let app = launchPlanner()
+        let table = app.buttons["表格"].firstMatch
+        XCTAssertTrue(table.waitForExistence(timeout: 8), app.debugDescription)
+        table.tap()
+
+        let row = app.descendants(matching: .any)["table-task-task-launch-brief"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 8), app.debugDescription)
+        row.press(forDuration: 1.0)
+
+        let edit = app.buttons["编辑"].firstMatch
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), app.debugDescription)
+        edit.tap()
+
+        let editor = app.descendants(matching: .any)["task-editor-popover"].firstMatch
+        XCTAssertTrue(editor.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertFalse(app.descendants(matching: .any)["task-detail"].firstMatch.exists)
+
+        let cancel = app.buttons["取消"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5), app.debugDescription)
+        cancel.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 5), app.debugDescription)
+    }
+
     func testPeopleScheduleIsDefaultViewAndCoreControlsWork() throws {
         let app = launchPlannerWithDefaultView()
 

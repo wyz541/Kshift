@@ -3,7 +3,7 @@ slug: /evidence
 title: R2 证据
 type: report
 status: review
-updated: "2026-11-14"
+updated: "2026-11-17"
 keywords:
   - R2
   - 截图
@@ -82,3 +82,9 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | Kshift v1 构建与人工验收 | [acceptance-v1](acceptance-v1/README.md) |
 
 v1 验收当前为失败。阻断项见验收报告。
+
+## Task editor Popover
+
+| 项目 | 入口 |
+| --- | --- |
+| Task editor Popover 证据 | [task-editor-popover](task-editor-popover/README.md) |

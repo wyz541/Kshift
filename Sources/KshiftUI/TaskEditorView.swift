@@ -957,6 +957,7 @@ struct TaskEditorView: View {
         )
         .background(.background)
         .interactiveDismissDisabled(isSaving)
+        .accessibilityIdentifier("task-editor-popover")
     }
 
     private var saveButton: some View {
@@ -1232,5 +1233,36 @@ private struct ConflictInlineView: View {
         .background(.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("conflict-inline")
+    }
+}
+
+struct TaskEditorPopoverModifier: ViewModifier {
+    @ObservedObject var model: AppModel
+    @Binding var draft: TaskDraft?
+    let arrowEdge: Edge
+
+    func body(content: Content) -> some View {
+        content.popover(
+            item: $draft,
+            attachmentAnchor: .rect(.bounds),
+            arrowEdge: arrowEdge
+        ) { draft in
+            TaskEditorView(
+                model: model,
+                initialDraft: draft,
+                presentation: .popover
+            )
+            .presentationCompactAdaptation(.popover)
+        }
+    }
+}
+
+extension View {
+    func taskEditorPopover(
+        model: AppModel,
+        draft: Binding<TaskDraft?>,
+        arrowEdge: Edge = .top
+    ) -> some View {
+        modifier(TaskEditorPopoverModifier(model: model, draft: draft, arrowEdge: arrowEdge))
     }
 }

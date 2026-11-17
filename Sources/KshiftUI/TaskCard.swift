@@ -8,6 +8,7 @@ struct TaskCard: View {
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorScheme) private var colorScheme
+    @State private var editDraft: TaskDraft?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -58,7 +59,7 @@ struct TaskCard: View {
                 Spacer()
                 Menu {
                     Button {
-                        model.presentEdit(task)
+                        editDraft = model.editDraft(for: task)
                     } label: {
                         Label("编辑", systemImage: "pencil")
                     }
@@ -98,7 +99,7 @@ struct TaskCard: View {
         }
         .draggable(task.id)
         .contextMenu {
-            Button("编辑") { model.presentEdit(task) }
+            Button("编辑") { editDraft = model.editDraft(for: task) }
             Button(task.status == .done ? "标记为待处理" : "标记为已完成") {
                 Swift.Task { await model.toggleDone(task) }
             }
@@ -110,6 +111,7 @@ struct TaskCard: View {
         .accessibilityValue("负责人 \(assigneeNames)，版本 \(task.version)")
         .accessibilityHint("打开任务详情")
         .accessibilityIdentifier("task-\(task.id)")
+        .taskEditorPopover(model: model, draft: $editDraft)
     }
 
     private var completionTint: Color {

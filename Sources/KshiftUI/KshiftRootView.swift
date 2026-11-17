@@ -83,9 +83,6 @@ public struct KshiftRootView: View {
                 )
             }
         }
-        .sheet(item: editDraftBinding) { draft in
-            TaskEditorView(model: model, initialDraft: draft)
-        }
         .sheet(item: Binding(
             get: { model.task(withID: model.detailTaskID) },
             set: { if $0 == nil { model.detailTaskID = nil } }
@@ -163,20 +160,6 @@ public struct KshiftRootView: View {
         Binding(
             get: {
                 guard let draft = model.editorDraft, draft.isNew else { return nil }
-                return draft
-            },
-            set: { draft in
-                if draft == nil {
-                    model.editorDraft = nil
-                }
-            }
-        )
-    }
-
-    private var editDraftBinding: Binding<TaskDraft?> {
-        Binding(
-            get: {
-                guard let draft = model.editorDraft, !draft.isNew else { return nil }
                 return draft
             },
             set: { draft in
