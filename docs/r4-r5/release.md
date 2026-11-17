@@ -29,13 +29,13 @@ description: "定义 Candidate、Draft、Promote 和 GitHub 设置。"
 
 ## GitHub 设置
 
-1. 保护 `v*` 标签。
-2. 只允许 release automation 和 release manager 创建标签。
-3. 创建 `release` environment。
-4. 为 `release` environment 设置 required reviewers。
+1. Active tag ruleset `Protect version tags` 覆盖 `refs/tags/v*`，并阻止 update 和 deletion。
+2. `release` environment 的 required reviewer 是 `@wyz541`。
+3. Deployment branch policy 只允许 `main`。
+4. `prevent_self_review=false`，repository admin 可以 bypass。独立审批仍需单独配置。
 5. 平台 workflow 使用 `contents: read`。
 6. 只有 orchestrator 的 Draft/Promote job 使用 `contents: write`。
-7. 开启 immutable releases。
+7. Immutable releases 已启用。
 8. 禁止移动标签或替换 Stable 资产。
 
 ## Candidate

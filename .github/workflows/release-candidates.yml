@@ -87,6 +87,10 @@ jobs:
   server:
     name: server
     needs: candidate
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     uses: ./.github/workflows/release-platform-server.yml
     with:
       version: ${{ needs.candidate.outputs.version }}
@@ -99,6 +103,10 @@ jobs:
     name: macos
     needs: candidate
     if: ${{ inputs.build_macos }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     uses: ./.github/workflows/release-platform-macos.yml
     with:
       version: ${{ needs.candidate.outputs.version }}
@@ -111,6 +119,10 @@ jobs:
     name: ios
     needs: candidate
     if: ${{ inputs.build_ios }}
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     uses: ./.github/workflows/release-platform-ios.yml
     with:
       version: ${{ needs.candidate.outputs.version }}

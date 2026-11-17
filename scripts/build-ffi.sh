@@ -12,6 +12,8 @@ if [[ -z "${CARGO_HOME:-}" ]]; then
 fi
 if [[ -n "${CARGO:-}" ]]; then
   cargo_bin="$CARGO"
+elif command -v cargo >/dev/null 2>&1; then
+  cargo_bin="$(command -v cargo)"
 else
   toolchain_bin="$HOME/.rustup/toolchains/stable-aarch64-apple-darwin/bin"
   cargo_bin="$toolchain_bin/cargo"

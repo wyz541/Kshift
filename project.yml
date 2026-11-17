@@ -64,7 +64,12 @@ targets:
         basedOnDependencyAnalysis: false
         script: |
           set -euo pipefail
-          "$SRCROOT/scripts/build-ffi.sh" ios-simulator
+          if [[ "$SDK_NAME" == iphoneos* ]]; then
+            target=ios-device
+          else
+            target=ios-simulator
+          fi
+          "$SRCROOT/scripts/build-ffi.sh" "$target"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.wyz541.kshift.ios

@@ -43,7 +43,7 @@ if [[ -r "$env_file" ]]; then
   source "$env_file"
   set +a
 fi
-exec "$home/bin/kshift-server"
+exec "$home/bin/kshift-server" serve
 RUNNER
 chmod 0755 "$staging/bin/kshift-server-run"
 cat > "$staging/bin/kshift-ops-run" <<'RUNNER'

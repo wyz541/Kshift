@@ -25,6 +25,10 @@ pub struct TestDatabase {
 
 impl TestDatabase {
     pub async fn create() -> Option<Self> {
+        Self::create_with_max_connections(8).await
+    }
+
+    pub async fn create_with_max_connections(max_connections: u32) -> Option<Self> {
         let admin_url = match std::env::var("TEST_DATABASE_URL") {
             Ok(value) => value,
             Err(_) => {
@@ -47,7 +51,7 @@ impl TestDatabase {
         let config = DatabaseConfig {
             url: test_options.to_url_lossy().to_string(),
             min_connections: 1,
-            max_connections: 8,
+            max_connections,
             acquire_timeout: Duration::from_secs(5),
             statement_timeout: Duration::from_secs(15),
             lock_timeout: Duration::from_secs(5),

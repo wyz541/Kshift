@@ -39,8 +39,9 @@ xcodebuild \
   -scheme "$scheme" \
   -configuration Release \
   -derivedDataPath "$build_root/DerivedData" \
-  -destination 'platform=macOS,arch=arm64' \
+  -destination 'platform=macOS' \
   ARCHS=arm64 \
+  ONLY_ACTIVE_ARCH=YES \
   "${signing_args[@]}" \
   build
 

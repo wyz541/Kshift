@@ -296,6 +296,7 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 | --- | --- |
 | Active Spec 索引 | [Specs](docs/specs/index.md) |
 | 工程治理规范 | [KS-GOV](docs/specs/governance.md) |
+| 项目工作流权威 | [workflow.drawio](docs/workflow.drawio) 和 [文字镜像](docs/workflow.md) |
 | 产品、领域、架构、运维、UI 和 Release 规范 | [Active Specs](docs/specs/index.md) |
 | Discussion 到 Spec 的映射 | [Traceability](docs/spec/traceability.md) |
 | 决策过程 | [Research Issues](https://github.com/wyz541/Kshift/issues?q=is%3Aissue+label%3Atype%3Aresearch) |
