@@ -159,7 +159,6 @@ struct TaskEditorView: View {
                 .strokeBorder(.separator, lineWidth: 1)
                 .allowsHitTesting(false)
         }
-        .taskEditorGlassControl(tint: Color.accentColor.opacity(0.07), cornerRadius: 12)
         .accessibilityLabel("任务标题")
         .accessibilityIdentifier("task-title")
     }
@@ -347,7 +346,6 @@ struct TaskEditorView: View {
         .controlSize(.small)
         .frame(width: 144)
         .tint(.gray)
-        .taskEditorGlassControl(tint: Color.accentColor.opacity(0.05), cornerRadius: 10)
         .accessibilityLabel("任务编辑模式")
         .accessibilityIdentifier("task-editor-layout-mode")
     }
@@ -512,7 +510,6 @@ struct TaskEditorView: View {
                 }
             }
             .padding(3)
-            .taskEditorGlassControl(tint: Color.primary.opacity(0.025), cornerRadius: 10)
         }
     }
 
@@ -544,7 +541,6 @@ struct TaskEditorView: View {
                 }
             }
             .padding(3)
-            .taskEditorGlassControl(tint: Color.primary.opacity(0.025), cornerRadius: 10)
         }
     }
 
@@ -595,7 +591,6 @@ struct TaskEditorView: View {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(.separator, lineWidth: 1)
             }
-            .taskEditorGlassControl(tint: Color.blue.opacity(0.06), cornerRadius: 10)
             .accessibilityLabel("工时天数")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -1039,50 +1034,6 @@ struct TaskEditorView: View {
     }
 }
 
-private extension View {
-    func taskEditorGlassControl(tint: Color? = nil, cornerRadius: CGFloat) -> some View {
-        modifier(TaskEditorGlassControlModifier(tint: tint, cornerRadius: cornerRadius))
-    }
-}
-
-private struct TaskEditorGlassControlModifier: ViewModifier {
-    let tint: Color?
-    let cornerRadius: CGFloat
-
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-
-        if reduceTransparency || forceReduceTransparency {
-            content
-                .background(.background, in: shape)
-                .overlay {
-                    shape.strokeBorder(.separator, lineWidth: contrast == .increased ? 2 : 1)
-                }
-        } else if let tint {
-            content
-                .glassEffect(.regular.tint(tint).interactive(), in: shape)
-                .overlay {
-                    if contrast == .increased {
-                        shape.strokeBorder(.primary, lineWidth: 2)
-                    }
-                }
-        } else {
-            content
-                .glassEffect(.regular.interactive(), in: shape)
-                .overlay {
-                    if contrast == .increased {
-                        shape.strokeBorder(.primary, lineWidth: 2)
-                    }
-                }
-        }
-    }
-}
-
 private struct MarkdownFormattingToolbar: View {
     @Binding var text: String
     @Binding var mode: MarkdownViewMode
@@ -1136,7 +1087,10 @@ private struct MarkdownFormattingToolbar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .taskEditorGlassControl(tint: Color.accentColor.opacity(0.06), cornerRadius: 12)
+        .background(
+            .primary.opacity(0.035),
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+        )
     }
 
     private func formatButton(
@@ -1243,7 +1197,6 @@ private struct TaskMetadataControlLabel: View {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .strokeBorder(tint.opacity(0.16), lineWidth: 1)
         }
-        .taskEditorGlassControl(tint: tint.opacity(0.07), cornerRadius: 10)
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }

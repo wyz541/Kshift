@@ -17,7 +17,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 ## 触发原因
 
-用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。后续视觉反馈指出 filter popover 的 internal content 使用过长 switch rows，不能快速 scan 和 batch select conditions，并指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。最新视觉反馈指出 task panel 的 internal custom titlebar 仍未发生可见的结构变化。
+用户要求任务条使用 SwiftUI Liquid Glass，不使用纯黑背景。Desktop 和 Mobile 必须用红、黄、蓝分别表达 P0、P1 和 P2。任务条必须扁平、紧凑、单行，并增加工作区可见任务数量。第二轮视觉反馈指出三个问题：任务条未统一左对齐、标题溢出胶囊、状态符号不清晰。后续视觉反馈指出 toolbar buttons 过高且 glass 颜色过深。Window primaryAction toolbar 也出现 multiple deep accent-tinted actions。后续视觉反馈指出 filter popover 的 internal content 使用过长 switch rows，不能快速 scan 和 batch select conditions，并指出 person header 的 role subtitle、task metrics 和 disclosure control 在窄人员列中碰撞。后续视觉反馈指出 task panel 的 internal custom titlebar 未发生可见的结构变化。最新视觉审计发现 task editor 在 group-level glass cards 内再次叠加 glass controls，形成 double glass 和过重的蓝色表面。
 
 ## 修复内容
 
@@ -77,6 +77,8 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - A full-width `0.5pt` separator separates the titlebar from panel content。
 - Panel backdrop uses translucent material with restrained accent context。
 - Core fields use grouped native Liquid Glass surfaces inside `GlassEffectContainer`。Individual fields use flat fills。
+- The title field、Markdown toolbar、priority/status strips、schedule metadata controls and titlebar segmented control do not attach a second `.glassEffect`。
+- This keeps one native glass surface per grouped card and preserves text contrast。
 - `简约` mode contains task name, Markdown workspace, priority/status strips, assignee/date/duration fields and tags。
 - `详情` mode uses a large focused Markdown workspace。
 - Markdown toolbar provides bold, italic, underline, strike, inline code, heading, lists, quote, link and image insert actions。
@@ -114,6 +116,9 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Dark Mode | macOS-window titlebar with red close light and Liquid Glass task detail `简约` mode | `0d1b7516852c463f98a853502add059da50bd7f93e39fdbf4d1f32dc93031733` |
 | [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Dark Mode | macOS-window titlebar with red close light and Liquid Glass task detail `详情` mode | `cbbb4254d173de62387ca73acce12fa09225271721a7e5e4ddc3bee7ade22a03` |
 | [`macos-task-panel-titlebar-hover-2026-11-16.png`](./macos-task-panel-titlebar-hover-2026-11-16.png) | macOS 27.0.1；Dark Mode；Pointer hover | Red close light with hover xmark and neutral trailing mode control | `2d1989917b44c9541dce97d8568c209627cc7ee34b8fca61254e8496543d87c5` |
+| [`macos-task-panel-compact-2026-11-17.png`](./macos-task-panel-compact-2026-11-17.png) | macOS 27.0.1；Light Mode | Single-surface Liquid Glass task editor `简约` mode with flat inner controls | `432ed521fefff30e678ad3b0021f2eadde6b600bb6a91e72338ebab675b97843` |
+| [`macos-task-panel-metadata-2026-11-17.png`](./macos-task-panel-metadata-2026-11-17.png) | macOS 27.0.1；Light Mode；Scrolled | Flat schedule metadata controls and tag editor inside group-level glass cards | `2c7132d7ec784778aa8286bf1c229f388d608554a99f3a08f79c9357ad8a39e8` |
+| [`macos-task-panel-detail-2026-11-17.png`](./macos-task-panel-detail-2026-11-17.png) | macOS 27.0.1；Light Mode | Single-surface Liquid Glass task editor `详情` mode | `4180ee2975e521e1edc091a4fce9e4ad78462b3fde88202361f32ae56086a0c0` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
@@ -121,7 +126,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 
 | 检查 | 结果 |
 | --- | --- |
-| `make swift-test` | 通过；49 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
+| `make swift-test` | 通过；50 core tests + 5 adapter tests，2 项 live 测试跳过，0 项失败 |
 | macOS Debug build | 通过 |
 | Person-header manual visual check | 通过；`168pt` and `196pt` and `320pt` widths；compact density |
 | Person-header density check | 通过；`168pt` width with compact and standard and comfortable density |
@@ -130,6 +135,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | Filter-popover content visual check | 通过；`300pt × 580pt`；fixed header/footer；complete chip grids；no clipping or dead space |
 | Schedule-sort menu check | 通过；first-level options；current-item checkmark updates after selection |
 | Task-detail panel visual check | 通过；`简约` and `详情` modes；red close light；centered title；neutral mode control；header/body/footer remain visible |
+| Task-editor nested-glass check | 通过；group-level glass only；title field、Markdown toolbar、priority/status strips and metadata controls use flat fills |
 | Task-titlebar hover check | 通过；the xmark appears on the red close light only while the pointer is over the control |
 | Task-detail history check | 通过；history popover opens |
 | iOS Debug build | 通过 |
