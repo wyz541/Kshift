@@ -54,7 +54,7 @@ description: "定义 Candidate、Draft、Promote 和 GitHub 设置。"
 2. 传入 candidate run id、source commit、版本和标签。
 3. 传入实际 PostgreSQL 18 minor 版本。
 4. 下载所有 fragment。
-5. 生成 SBOM 和 release notes。
+5. 使用 `release_notes_commit` 读取 `release/notes/<tag>.md`。该参数为空时使用 source commit。随后生成 SBOM。
 6. 从迁移文件计算 schema 版本和 digest。
 7. 合并并通过 schema v1 合同校验。
 8. 校验资产字节。

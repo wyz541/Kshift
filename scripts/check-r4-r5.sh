@@ -11,6 +11,13 @@ python3 scripts/check_docs.py
 PYTHONPATH=ops python3 -m unittest discover -s ops/tests -p 'test_*.py' -v
 node --test release/test/release.test.mjs
 
+for note in release/notes/v*.md; do
+  [[ -s "$note" ]] || {
+    echo "release note is empty: $note" >&2
+    exit 1
+  }
+done
+
 for script in deploy/*.sh release/platform/*.sh scripts/test-server-launchd-restart.sh; do
   zsh -n "$script"
 done
