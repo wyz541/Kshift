@@ -219,7 +219,23 @@ public actor DemoKshiftClient: KshiftClientProtocol {
             calendar: projectCalendar
         )
         let focusTasks = [
-            task(id: "task-launch-brief", projectID: focus.id, title: "Ship brief", priority: .high, date: today, startsOn: today, tags: ["launch"]),
+            task(
+                id: "task-launch-brief",
+                projectID: focus.id,
+                title: "Ship brief",
+                priority: .high,
+                date: today,
+                startsOn: today,
+                notes: """
+                ## 发布准备
+
+                - 确认舞台与音响
+                - 完成最终彩排
+
+                **负责人：** Mia
+                """,
+                tags: ["launch"]
+            ),
             task(id: "task-voiceover", projectID: focus.id, title: "VoiceOver", status: .blocked, assigneeIDs: ["person-noah"], date: today, startsOn: today, position: 2_048, tags: ["review"]),
             task(id: "task-done", projectID: focus.id, title: "Done item", status: .done, date: today, position: 3_072, tags: ["launch"]),
             task(id: "task-tomorrow", projectID: focus.id, title: "Tomorrow", assigneeIDs: [], date: tomorrow),
@@ -248,13 +264,14 @@ public actor DemoKshiftClient: KshiftClientProtocol {
         date: String,
         startsOn: String? = nil,
         position: Int64 = 1_024,
+        notes: String = "",
         tags: [String] = []
     ) -> TaskItem {
         TaskItem(
             id: id,
             projectID: projectID,
             title: title,
-            notes: "",
+            notes: notes,
             status: status,
             priority: priority,
             assigneeIDs: assigneeIDs,

@@ -35,7 +35,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("筛选", systemImage: model.filter.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 }
-                .buttonStyle(.glass)
+                .labelStyle(.iconOnly)
                 .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
                     FilterPopover(model: model)
                 }
@@ -46,7 +46,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("刷新", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.glass)
+                .labelStyle(.iconOnly)
                 .help("刷新共享快照")
 
                 Button {
@@ -54,7 +54,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("审计", systemImage: "clock.arrow.circlepath")
                 }
-                .buttonStyle(.glass)
+                .labelStyle(.iconOnly)
                 .help("查看项目审计")
                 .accessibilityIdentifier("project-audit")
 
@@ -63,15 +63,27 @@ public struct KshiftRootView: View {
                     model.presentNewTask(assigneeIDs: [])
                 } label: {
                     Label("新建任务", systemImage: "plus")
+                        .foregroundStyle(Color.accentColor)
                 }
-                .buttonStyle(.glassProminent)
-                .keyboardShortcut("n", modifiers: .command)
+                .labelStyle(.iconOnly)
+                .tint(Color.accentColor)
+                .popover(
+                    item: newTaskDraftBinding,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .top
+                ) { draft in
+                    TaskEditorView(
+                        model: model,
+                        initialDraft: draft,
+                        presentation: .popover
+                    )
+                }
                 .accessibilityIdentifier(
                     dynamicTypeSize.isAccessibilitySize ? "add-task" : "toolbar-add-task"
                 )
             }
         }
-        .sheet(item: $model.editorDraft) { draft in
+        .sheet(item: editDraftBinding) { draft in
             TaskEditorView(model: model, initialDraft: draft)
         }
         .sheet(item: Binding(
@@ -145,6 +157,34 @@ public struct KshiftRootView: View {
                 Swift.Task { await model.refresh() }
             }
         }
+    }
+
+    private var newTaskDraftBinding: Binding<TaskDraft?> {
+        Binding(
+            get: {
+                guard let draft = model.editorDraft, draft.isNew else { return nil }
+                return draft
+            },
+            set: { draft in
+                if draft == nil {
+                    model.editorDraft = nil
+                }
+            }
+        )
+    }
+
+    private var editDraftBinding: Binding<TaskDraft?> {
+        Binding(
+            get: {
+                guard let draft = model.editorDraft, !draft.isNew else { return nil }
+                return draft
+            },
+            set: { draft in
+                if draft == nil {
+                    model.editorDraft = nil
+                }
+            }
+        )
     }
 
     private var planDepthBoundary: any KshiftPlanDepthBoundary {

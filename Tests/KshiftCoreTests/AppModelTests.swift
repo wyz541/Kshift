@@ -36,6 +36,33 @@ final class AppModelTests: XCTestCase {
         XCTAssertFalse(model.tasks.contains(where: { $0.projectID == Fixture.focus.id }))
     }
 
+    func testSelectProjectIgnoresUnknownIdentifier() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        let originalProjectID = model.selectedProjectID
+        let originalSnapshotID = model.snapshot?.project.id
+
+        await model.selectProject("board")
+
+        XCTAssertEqual(model.selectedProjectID, originalProjectID)
+        XCTAssertEqual(model.snapshot?.project.id, originalSnapshotID)
+        XCTAssertNil(model.errorMessage)
+    }
+
+    func testStaleUnknownProjectSelectionSelfHeals() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        model.selectedProjectID = "board"
+
+        let draft = model.newTaskDraft(assigneeIDs: [], date: Date(timeIntervalSince1970: 0))
+        XCTAssertEqual(draft?.projectID, Fixture.focus.id)
+
+        await model.refresh()
+        XCTAssertEqual(model.selectedProjectID, Fixture.focus.id)
+        XCTAssertEqual(model.snapshot?.project.id, Fixture.focus.id)
+        XCTAssertNil(model.errorMessage)
+    }
+
     func testSelectProjectLoadsSnapshotWhenSelectionWasAlreadyUpdated() async {
         let (model, _) = makeModel()
         await model.bootstrap()
@@ -60,6 +87,25 @@ final class AppModelTests: XCTestCase {
         XCTAssertEqual(model.selectedDateTasks.map(\.id), ["task-2"])
         model.filter.statuses = [.todo]
         XCTAssertTrue(model.selectedDateTasks.isEmpty)
+    }
+
+    func testNewTaskDraftUsesClickedAssigneeAndDateWithoutPresentingSheet() async {
+        let (model, _) = makeModel()
+        await model.bootstrap()
+        let clickedDate = KshiftDate.date(
+            from: "2026-11-16",
+            calendar: model.projectCalendar
+        ) ?? .now
+
+        let draft = model.newTaskDraft(
+            assigneeIDs: ["person-noah"],
+            date: clickedDate
+        )
+
+        XCTAssertEqual(draft?.assigneeIDs, ["person-noah"])
+        XCTAssertEqual(draft?.startDate, clickedDate)
+        XCTAssertEqual(draft?.dueDate, clickedDate)
+        XCTAssertNil(model.editorDraft)
     }
 
     func testCreateCommandUsesCurrentRevision() async {

@@ -3,7 +3,7 @@ slug: /specs/ui
 title: KS-UI Kshift 界面与无障碍规范
 type: standard
 status: active
-updated: "2026-11-14"
+updated: "2026-11-15"
 owner: "@wyz541"
 keywords:
   - SwiftUI
@@ -70,12 +70,13 @@ flowchart TB
 
 ## 4.1 R3 计划深度 UI
 
-- `UI-R3-001`：`KshiftRootView` 必须提供可见的计划深度入口。
+- `UI-R3-001`：PlannerView 必须在 view mode 不是 PeopleSchedule 时提供 visible Plan Depth entry。PeopleSchedule 不得显示 legacy Plan Depth entry。
 - `UI-R3-002`：macOS 和 iOS 必须使用同一个 `KshiftPlanDepthFeatureView`。
 - `UI-R3-003`：看板任务卡必须使用 Apple 原生 Liquid Glass。
 - `UI-R3-004`：甘特、历史和报告必须使用稳定内容底板。
 - `UI-R3-005`：报告打印和图片导出不得重新读取 live project state。
 - `UI-R3-006`：R3 页面必须通过对比度、动态字号、触控区域、文字裁切和元素描述审计。
+- `UI-R3-007`：Plan Depth sheet 必须提供 explicit Close action，accessibility identifier 为 `close-plan-depth`。Regular horizontal-size presentation 必须有 `860pt` minimum width 和 `700pt` minimum height。
 
 ## 5. Liquid Glass 边界
 
@@ -87,7 +88,10 @@ flowchart TB
 | Sheet、Popover、菜单 | 系统原生 Liquid Glass | 固定透明度和高光仿制 |
 | 主要操作按钮 | `.buttonStyle(.glassProminent)` | 自绘模糊背景 |
 | 次要操作和浮动操作 | `.buttonStyle(.glass)` 或原生 `.glassEffect(...)` | 每控件单独创建容器 |
-| 可拖拽、可选择、可执行命令的任务卡片 | `Glass.regular` 外表面 | 玻璃直接承载低对比文字 |
+| 看板中可拖拽、可选择、可执行命令的任务卡片 | `Glass.regular` 外表面 | 玻璃直接承载低对比文字 |
+| 人员排期任务条 | SwiftUI `Button` + `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))` 和明亮优先级徽章 | `.buttonStyle(.glass)` 作为最终任务条、自绘玻璃、渐变、模糊和阴影 |
+| 人员排期工具栏按钮 | `KshiftCompactGlassButtonStyle`、neutral glass 和 primary content | accent-tinted `.buttonStyle(.glass)`、过高的玻璃容器 |
+| 窗口 primaryAction toolbar | secondary actions 使用 `KshiftCompactGlassButtonStyle`；最多一个 primary action 使用 `KshiftCompactAccentGlassButtonStyle` | 多个 `.glassProminent` actions、deep accent-tinted clusters |
 | 同组相邻玻璃卡片 | 共用一个 `GlassEffectContainer` | 每卡片一个 container |
 | 纯展示卡片 | 标准材质或清晰内容底板 | 用玻璃作为唯一可读表面 |
 | 正文、密集表格、人员排期、长文本编辑 | 清晰内容底板 | 低对比玻璃正文 |
@@ -95,11 +99,12 @@ flowchart TB
 
 - `UI-GLS-001`：只使用 Apple 原生材质和 API。
 - `UI-GLS-002`：禁止自绘模糊、折射、噪点、渐变或高光来模拟玻璃。
-- `UI-GLS-003`：交互卡片使用 `Glass.regular`。文字和控件必须位于对比稳定的内容底板。
+- `UI-GLS-003`：看板交互卡片使用 `Glass.regular`。人员排期任务条使用 SwiftUI 原生 `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))`。禁止把 `.buttonStyle(.glass)` 用作最终任务条。禁止自绘玻璃效果。文字和控件必须保持稳定对比度。
 - `UI-GLS-004`：纯展示和密集内容默认使用标准材质。玻璃可以只作为外层容器。
 - `UI-GLS-005`：同屏玻璃 effect 和 container 必须有性能上限。
 - `UI-GLS-006`：超过实测预算时，优先保留导航和当前操作卡片。
 - `UI-GLS-007`：使用系统语义色和 tint。禁止用玻璃透明度承载状态含义。
+- `UI-GLS-008`：Window primaryAction toolbar 必须使用 one-level hierarchy。Secondary actions 使用 neutral `KshiftCompactGlassButtonStyle`。At most one primary action 使用 `KshiftCompactAccentGlassButtonStyle`。Visual height 必须为 34pt。Outer hit target 不得小于 44pt。Accent glass opacity 不得高于 `0.18` in Light Mode and `0.30` in Dark Mode。禁止 multiple `.glassProminent` actions。
 
 ## 6. 无障碍与性能
 
@@ -129,15 +134,37 @@ flowchart TB
 - `UI-PPL-003`：人员行必须显示头像、姓名、角色、任务数、进行中数量、P0 数量和折叠按钮。
 - `UI-PPL-004`：人员列默认宽度为 `196pt`。日期列宽度必须限制在 `96pt` 至 `360pt`。
 - `UI-PPL-005`：密度必须包含紧凑、标准和宽松。默认密度为紧凑。
-- `UI-PPL-006`：任务胶囊只显示状态图标和标题。优先级背景固定为 P0 红、P1 黄、P2 蓝、P3 灰。
-- `UI-PPL-007`：已完成任务必须降低透明度。状态按钮必须支持悬停或点击展开。
+- `UI-PPL-006`：任务条必须使用 SwiftUI `Button`、`.buttonStyle(.plain)` 和原生 `.glassEffect(.regular.tint(...).interactive(), in: Capsule(style: .continuous))`。Light Mode 的 tint opacity 必须为 `0.28`。Dark Mode 的 tint opacity 必须为 `0.45`。任务条使用 36pt 视觉高度和单行标题。日期 slice 的水平 inset 必须为 8pt。标题宽度必须按任务条剩余宽度计算，使用 tail truncation，并 clip 到胶囊边界。紧凑、标准和宽松密度的任务行间距分别为 40pt、48pt 和 56pt。禁止把 `.buttonStyle(.glass)` 用作最终任务条。禁止纯黑背景、自绘玻璃、渐变、模糊和阴影。P0 徽章使用 `#D92D3A`，P1 徽章使用 `#FFC400`，P2 徽章使用 `#0066FF`，P3 徽章使用 `#5F6368`。结构和标题必须保持 WCAG AA 对比度。
+- `UI-PPL-007`：已完成任务使用完成状态图标表达。禁止降低整条任务条的文本对比度。状态控件使用原生菜单显示状态文字和图标。悬停不得自动打开状态菜单。
 - `UI-PPL-008`：任务泳道必须避免重叠。任务排序先使用优先级，再使用状态权重。
 - `UI-PPL-009`：横向裁切任务必须把标题吸附到视口可见边缘。完整可见任务必须把标题放回任务起点。
 - `UI-PPL-010`：每条泳道最多显示一个路标。路标不得覆盖可见任务。跨周期定位必须先切换周期。
-- `UI-PPL-011`：任务可以拖到其他人员或其他日期。任务边缘可以调整开始日期或截止日期。
+- `UI-PPL-011`：常规时间轴中的任务可以拖到其他人员或其他日期。任务边缘可以调整开始日期或截止日期。紧凑列表中的任务可以拖到其他人员分组；日期通过任务编辑器修改。
 - `UI-PPL-012`：人员排期必须支持标题、说明和标签搜索，以及负责人、状态、优先级和标签筛选。
 - `UI-PPL-013`：项目偏好必须保存当前日期、横向位置、人员列宽度、日期列宽度、显示密度、折叠状态和视图选择。
 - `UI-PPL-014`：人员排期必须提供网格语义、图标按钮标签、键盘焦点、悬停预览和 Reduce Motion 行为。
+- `UI-PPL-015`：`compact` 水平尺寸类必须使用按人员分组的纵向任务列表。任务条必须使用 UI-PPL-006 的全宽原生染色玻璃、`Capsule(style: .continuous)` 和单行标题。常规水平尺寸类继续使用人员×日期时间轴。
+- `UI-PPL-016`：人员排期模式不得显示重复的 `SummaryStrip`。任务数量显示在排期工具栏和人员分组标题中。
+- `UI-PPL-017`：任务状态徽章必须使用 26pt 外框、3pt 状态语义色环、白色中性内盘和 `13pt` heavy 状态符号。`todo` 使用 `circle.dashed` 和 `#8E8E93`/`#4B4B50`。`inProgress` 使用 `clock.fill` 和 `#0A84FF`/`#0057C8`。`blocked` 使用 `exclamationmark.octagon.fill` 和 `#FF453A`/`#A61B1B`。`done` 使用 `checkmark` 和 `#30D158`/`#0F7A3D`。优先级继续由 task bar tint 表达。状态菜单保持 44pt 触控区域。
+- `UI-PPL-018`：Planner toolbar 和 PeopleSchedule toolbar 的 action buttons 必须使用 `KshiftCompactGlassButtonStyle`。Visual height 必须为 34pt。Outer hit target 不得小于 44pt。Content 必须使用 primary color。Glass 必须使用 neutral `.glassEffect(.regular.interactive())`。禁止 accent-tinted `.buttonStyle(.glass)` 和 oversized glass container。Schedule toolbar 的 vertical padding 必须为 4pt，minimum height 必须为 52pt。
+- `UI-PPL-019`：macOS work area 必须将 vertical wheel route 到 nearest vertical scroll view。Shift + wheel 必须 route 到 nearest horizontal scroll view。Wheel routing 必须保留 precise scrolling deltas。Event handling 必须位于 `KshiftAppKitAdapter`。
+- `UI-PPL-020`：Click blank schedule day cell 必须使用 clicked person 和 clicked date 创建 local `TaskDraft`。交互必须打开 `TaskEditorView` 的 `popover` presentation。Popover default size 必须为 560pt × 580pt。Popup layout 必须使用 responsive assignee row 和 two-date row。该交互不得设置 root `editorDraft` 或复用 sheet presentation。
+- `UI-PPL-021`：Regular horizontal-size PeopleSchedule 必须隐藏 PlannerView 的 global date navigation row。Schedule toolbar 必须是唯一 date 和 period navigation source。Schedule toolbar 必须包含 date picker、period control、density、sort、filter 和 settings。The filter action 必须打开 `FilterPopover`，不得复用 clear-selection behavior。Compact horizontal-size class 必须保留 view picker 和 compact action bar，并不得显示 duplicate filter action。
+- `UI-PPL-022`：Sidebar footer 的 trailing action 必须是 settings gear button。该按钮必须打开 `KshiftAppSettingsView`。Settings surface 必须包含 schedule layout controls、system accessibility shortcut 和 about information。禁止将 system accessibility settings 作为 footer button 的直接 action。Button accessibility identifier 必须为 `settings-button`。
+- `UI-PPL-023`：Task bar 必须在 pointer hover 450ms 后显示 adjacent preview panel。Preview panel 必须显示 title、status、priority、assignee、date、tags 和 rendered Markdown detail。Preview panel 必须是 read-only，并使用 accessibility identifier `task-preview-<task-id>`。
+- `UI-PPL-024`：Task detail 和 task editor 必须使用 shared Markdown workspace，并通过 `源码` / `预览` mode switch 切换显示。Existing task detail 必须打开 editable `TaskEditorView` sheet。New task 默认使用 `源码` mode。Existing task with content 默认使用 `预览` mode。Preview 必须支持 heading、paragraph、bullet list、numbered list、blockquote、divider 和 fenced code block。Inline Markdown 必须保留。`详情` mode 必须提供 large editing surface。
+- `UI-PPL-025`：Regular task detail 和 task editor sheet 必须为 `800pt × 720pt`。Titlebar 必须使用 classic macOS window structure：`52pt` system-material bar、centered `13pt` semibold `修改任务` or `新建任务` title、leading red traffic-light close control、draggable chrome surface、trailing neutral small `简约` / `详情` segmented control and bottom separator。Close control 必须使用 `28pt` macOS hit target，并只在 hover 时显示 xmark glyph。`简约` mode 必须显示 task name、Markdown workspace、equal-width priority/status strips、assignee/start/due/duration fields and tag editor。`详情` mode 必须聚焦 Markdown workspace。Schedule task editor popover width 保持 `560pt`。
+- `UI-PPL-026`：Toolbar、planner floating action、board column action、calendar action and macOS menu 的 new-task action 必须打开 `TaskEditorView` popover。禁止 new-task action 使用 sheet。Popover 必须 anchor 到 initiating control；menu shortcut 可以 anchor 到 toolbar New Task button。Existing-task editing 可以继续使用 sheet。
+- `UI-PPL-027`：Sidebar 的 project selection 和 planning-view selection 必须使用 typed selection。Click planning-view row 不得写入 `selectedProjectID`。`selectProject` 必须 reject identifiers that are absent from the loaded project list。
+- `UI-PPL-028`：Task detail panel 必须使用 single translucent material backdrop 和 group-level native Liquid Glass surfaces。Task-name、description、priority/status、schedule metadata and tags must group into a small number of `GlassEffectContainer` surfaces。Controls inside these surfaces must use flat fills。Title field、Markdown formatting toolbar、priority/status strips、schedule metadata controls and titlebar segmented control 不得再次应用 `.glassEffect`。禁止为每个 field 单独叠加 glass effect。Footer 必须固定在 panel bottom 并使用 translucent material。
+- `UI-PPL-029`：PeopleSchedule person header 不得使用 overlay 绘制 task metrics。Name 与 disclosure 必须位于首行；role 与 metrics 必须位于次行。Name 和 role 必须在 metrics 之前 tail truncate。Expanded header 必须显示 task count；in-progress 和 P0 metrics 只在 count 大于 0 时显示。Header 在 `168pt` 最小人员列宽下不得发生 text 与 metric overlap。
+- `UI-PPL-030`：macOS Window toolbar 的 primary actions 不得添加局部 `.glassEffect`。系统 toolbar group 必须提供唯一 Liquid Glass surface。Filter、refresh 和 audit 必须使用原生 borderless toolbar buttons。New Task 必须使用 accent tint 和原生 button interaction。禁止 double glass、double border 和 custom 44pt toolbar hit frame。
+- `UI-PPL-031`：Schedule sort menu 不得使用 nested `Picker` submenu。`手动顺序`、`优先级`、`标题` 和 `最近更新` 必须直接显示在 first-level menu。Current option 必须显示 native checkmark。Option selection 必须立即 update `sortOption`，不得保留 redundant `排序` parent item。
+- `UI-PPL-032`：Existing task detail footer 必须显示 `历史`、`复制`、`删除`、`取消` 和 `保存`。History button 必须打开 task-history popover。Copy 必须 create a duplicated task through `saveTask`。Delete 必须 use the shared project deletion confirmation。Save 必须 preserve expected task version。
+- `UI-PPL-033`：Task detail mode switching must use a short snappy transition，and must respect Reduce Motion。The close action must use native macOS traffic-light interaction。Accent tint must be restrained to selected controls, primary Save action and low-opacity ambient context。
+- `UI-PPL-034`：Task detail titlebar 不得使用 oversized leading title block or `NavigationStack` toolbar that renders actions outside the titlebar。Title 必须在 bar 中居中。Close action 必须位于 leading edge，并必须呈现为 native macOS red traffic-light control。Control frame 必须为 `28pt` macOS target；12pt red disc 必须使用 hover-only xmark。Titlebar blank surface 必须提供 window-drag interaction。Mode control 必须位于 trailing edge，使用 neutral-tinted small segmented control。Titlebar 必须使用 `52pt` system bar material and a `0.5pt` separator。
+- `UI-PPL-035`：`FilterPopover` 必须使用 `300pt × 580pt` 固定尺寸、fixed header and footer。Filter content 必须使用 compact multi-select chips，不得恢复 vertical switch rows。Assignee chips 必须使用 adaptive two-column grid。Status 和 priority chips 必须分别使用 four-column grids。Tags 必须使用 adaptive grid。Sort options 必须使用 two-column grid。Selected chips 必须使用 tint、outline、`selected` accessibility state and `已选择` accessibility value。Wide selected chips 必须同时显示 checkmark。Selected compact chips 必须保持 primary text contrast；禁止把 bright P1 yellow or neutral todo tint 用作 white-text solid fill。Header 必须显示 active-condition count and enabled reset action。Footer 必须显示 filtered-task count and prominent `完成` action。Popover 在右侧 toolbar anchor 下不得发生 clipping、overlap or dead space。
+- `UI-PPL-036`：Compact PeopleSchedule 必须隐藏 duplicated global day-navigation row，并只保留一个 schedule navigation row。Accessibility text sizes 必须把 compact person role and metrics reflow below the name。Person header 必须保持在 window bounds 内，不得发生 horizontal clipping。
 
 ## 8. 关联合同
 

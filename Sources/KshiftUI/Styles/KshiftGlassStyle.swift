@@ -125,3 +125,51 @@ public struct KshiftSecondaryGlassButton<Label: View>: View {
     .frame(minHeight: 44)
   }
 }
+
+public struct KshiftCompactGlassButtonStyle: ButtonStyle {
+  @Environment(\.isEnabled) private var isEnabled
+
+  public init() {}
+
+  public func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .foregroundStyle(.primary)
+      .padding(.horizontal, 6)
+      .frame(minWidth: 36, minHeight: 34)
+      .contentShape(shape)
+      .glassEffect(.regular.interactive(), in: shape)
+      .frame(minWidth: 44, minHeight: 44)
+      .contentShape(Rectangle())
+      .opacity(isEnabled ? 1 : 0.45)
+  }
+
+  private var shape: RoundedRectangle {
+    RoundedRectangle(cornerRadius: 10, style: .continuous)
+  }
+}
+
+public struct KshiftCompactAccentGlassButtonStyle: ButtonStyle {
+  @Environment(\.colorScheme) private var colorScheme
+  @Environment(\.isEnabled) private var isEnabled
+
+  public init() {}
+
+  public func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .foregroundStyle(Color.accentColor)
+      .padding(.horizontal, 6)
+      .frame(minWidth: 36, minHeight: 34)
+      .contentShape(shape)
+      .glassEffect(
+        .regular.tint(Color.accentColor.opacity(colorScheme == .dark ? 0.30 : 0.18)).interactive(),
+        in: shape
+      )
+      .frame(minWidth: 44, minHeight: 44)
+      .contentShape(Rectangle())
+      .opacity(isEnabled ? 1 : 0.45)
+  }
+
+  private var shape: RoundedRectangle {
+    RoundedRectangle(cornerRadius: 10, style: .continuous)
+  }
+}

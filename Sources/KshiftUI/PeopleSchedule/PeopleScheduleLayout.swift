@@ -117,6 +117,14 @@ public enum PeopleScheduleLayout {
         return max(inset, visibleLeft - taskX + inset)
     }
 
+    public static func clippedTitleWidth(
+        taskWidth: CGFloat,
+        leadingInset: CGFloat,
+        trailingInset: CGFloat = 8
+    ) -> CGFloat {
+        max(taskWidth - leadingInset - trailingInset, 0)
+    }
+
     public static func statusSortWeight(_ status: TaskStatus) -> Int {
         switch status {
         case .blocked: 0

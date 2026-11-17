@@ -1,42 +1,40 @@
 import KshiftCore
 import SwiftUI
 
+private enum SidebarSelection: Hashable {
+    case project(String)
+    case viewMode(PlannerViewMode)
+}
+
 struct SidebarView: View {
     @ObservedObject var model: AppModel
     var usesNavigationLinks = false
+    @State private var isShowingSettings = false
 
     var body: some View {
-        List(selection: Binding(
-            get: { model.selectedProjectID },
-            set: { projectID in
-                guard let projectID, projectID != model.selectedProjectID else { return }
-                Swift.Task { await model.selectProject(projectID) }
-            }
-        )) {
+        List(selection: sidebarSelectionBinding) {
             Section("项目") {
                 ForEach(model.projects) { project in
                     projectCell(project)
-                    .tag(project.id)
-                    .accessibilityIdentifier("project-\(project.id)")
-                    .accessibilityLabel("\(project.name)，项目代码 \(project.code)")
+                        .tag(SidebarSelection.project(project.id))
+                        .accessibilityIdentifier("project-\(project.id)")
+                        .accessibilityLabel("\(project.name)，项目代码 \(project.code)")
                 }
             }
 
             Section("规划视图") {
                 ForEach(PlannerViewMode.allCases) { mode in
-                    Button {
-                        model.viewMode = mode
-                    } label: {
-                        HStack {
-                            Label(mode.title, systemImage: mode.symbol)
-                            Spacer()
-                            if model.viewMode == mode {
-                                Image(systemName: "checkmark")
-                                    .foregroundStyle(.tint)
-                            }
+                    HStack {
+                        Label(mode.title, systemImage: mode.symbol)
+                        Spacer()
+                        if model.viewMode == mode {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.tint)
                         }
                     }
-                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
+                    .tag(SidebarSelection.viewMode(mode))
+                    .accessibilityIdentifier("sidebar-view-mode-\(mode.rawValue)")
                 }
             }
 
@@ -69,16 +67,40 @@ struct SidebarView: View {
                 }
                 Spacer()
                 Button {
-                    Swift.Task { await model.openAccessibilitySettings() }
+                    isShowingSettings = true
                 } label: {
-                    Image(systemName: "accessibility")
+                    Image(systemName: "gearshape.fill")
+                        .frame(width: 30, height: 30)
                 }
-                .buttonStyle(.glass)
-                .help("打开系统辅助功能设置")
-                .accessibilityLabel("打开系统辅助功能设置")
+                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .help("设置")
+                .accessibilityLabel("设置")
+                .accessibilityIdentifier("settings-button")
+                .sheet(isPresented: $isShowingSettings) {
+                    KshiftAppSettingsView(model: model)
+                }
             }
             .padding(12)
         }
+    }
+
+    private var sidebarSelectionBinding: Binding<SidebarSelection?> {
+        Binding(
+            get: {
+                guard let projectID = model.selectedProjectID else { return nil }
+                return .project(projectID)
+            },
+            set: { selection in
+                switch selection {
+                case let .project(projectID):
+                    Swift.Task { await model.selectProject(projectID) }
+                case let .viewMode(mode):
+                    model.viewMode = mode
+                case nil:
+                    break
+                }
+            }
+        )
     }
 
     @ViewBuilder

@@ -407,7 +407,9 @@ public final class AppModel: ObservableObject {
         do {
             let loadedProjects = try await client.projects()
             projects = loadedProjects
-            if selectFirst || selectedProjectID == nil {
+            if selectFirst
+                || selectedProjectID == nil
+                || !loadedProjects.contains(where: { $0.id == selectedProjectID }) {
                 selectedProjectID = loadedProjects.first?.id
             }
             if let selectedProjectID {
@@ -421,6 +423,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func selectProject(_ projectID: String) async {
+        guard projects.contains(where: { $0.id == projectID }) else { return }
         guard projectID != snapshot?.project.id || snapshot == nil else { return }
         persistCurrentPreferences()
         isLoading = true
@@ -442,9 +445,12 @@ public final class AppModel: ObservableObject {
     }
 
     public func refresh() async {
-        guard let projectID = selectedProjectID ?? projects.first?.id else {
+        guard let projectID = validSelectedProjectID() else {
             await reloadProjects(selectFirst: true)
             return
+        }
+        if projectID != selectedProjectID {
+            selectedProjectID = projectID
         }
         isLoading = true
         defer { isLoading = false }
@@ -458,8 +464,9 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
-        guard let projectID = selectedProjectID else { return }
+    public func newTaskDraft(assigneeIDs: [String], date: Date? = nil) -> TaskDraft? {
+        guard let projectID = selectedProject?.id else { return nil }
+        let targetDate = KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar)
         let position = selectedDateTasks
             .filter { task in
                 assigneeIDs.isEmpty
@@ -469,13 +476,17 @@ public final class AppModel: ObservableObject {
             .map(\.position)
             .max()
             .map { $0 + 1024 } ?? 1024
-        editorDraft = TaskDraft(
+        return TaskDraft(
             projectID: projectID,
             assigneeIDs: assigneeIDs,
-            startDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
-            dueDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
+            startDate: targetDate,
+            dueDate: targetDate,
             position: position
         )
+    }
+
+    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
+        editorDraft = newTaskDraft(assigneeIDs: assigneeIDs, date: date)
     }
 
     public func selectDate(_ date: Date) {
@@ -562,7 +573,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func presentEdit(_ task: TaskItem) {
-        editorDraft = draft(from: task)
+        editorDraft = editDraft(for: task)
     }
 
     public func presentDetails(_ task: TaskItem) {
@@ -785,8 +796,16 @@ public final class AppModel: ObservableObject {
         _ = await platform.openExternalURL(url)
     }
 
+    private func validSelectedProjectID() -> String? {
+        if let selectedProjectID,
+           projects.contains(where: { $0.id == selectedProjectID }) {
+            return selectedProjectID
+        }
+        return snapshot?.project.id ?? projects.first?.id
+    }
+
     private func send(_ command: TaskCommand) async -> CommandResponse? {
-        guard let projectID = selectedProjectID, let revision = snapshot?.project.revision else {
+        guard let projectID = snapshot?.project.id, let revision = snapshot?.project.revision else {
             errorMessage = "项目尚未加载。"
             return nil
         }
@@ -823,7 +842,7 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    private func draft(from task: TaskItem) -> TaskDraft {
+    func editDraft(for task: TaskItem) -> TaskDraft {
         TaskDraft(
             projectID: task.projectID,
             taskID: task.id,

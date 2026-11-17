@@ -130,6 +130,23 @@ final class PeopleScheduleTests: XCTestCase {
         XCTAssertEqual(slices.map(\.task.id), ["urgent", "blocked", "todo", "done"])
     }
 
+    func testClippedTitleWidthStaysInsideTaskBounds() {
+        XCTAssertEqual(
+            PeopleScheduleLayout.clippedTitleWidth(
+                taskWidth: 90,
+                leadingInset: 42
+            ),
+            40
+        )
+        XCTAssertEqual(
+            PeopleScheduleLayout.clippedTitleWidth(
+                taskWidth: 32,
+                leadingInset: 42
+            ),
+            0
+        )
+    }
+
     func testStickyTitleMovesFromTaskStartToViewportEdge() {
         let fullyVisible = PeopleScheduleLayout.stickyTitleLeading(
             taskStartIndex: 2,
