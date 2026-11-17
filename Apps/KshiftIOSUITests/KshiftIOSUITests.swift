@@ -121,6 +121,7 @@ final class KshiftIOSUITests: XCTestCase {
                 "Review window",
                 "Mia Chen",
                 "Noah Li",
+                "未分配",
                 "编辑者 · 1 项任务",
                 "编辑者 · 2 项任务",
                 "编辑者 · 3 项任务",
@@ -360,6 +361,11 @@ final class KshiftIOSUITests: XCTestCase {
             element(in: app, identifier: "filter-button", labelContains: "筛选任务")
                 .waitForExistence(timeout: 8)
         )
+        XCTAssertEqual(app.buttons.matching(identifier: "前一天").count, 0)
+
+        let mia = app.descendants(matching: .any)["schedule-person-person-mia"].firstMatch
+        XCTAssertTrue(mia.waitForExistence(timeout: 8))
+        XCTAssertLessThanOrEqual(mia.frame.maxX, app.windows.firstMatch.frame.maxX + 1)
 
         XCTAssertTrue(
             app.staticTexts["Mia Chen"].firstMatch.waitForExistence(timeout: 8)

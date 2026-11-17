@@ -175,8 +175,18 @@ struct PeopleScheduleView: View {
                 .accessibilityLabel("显示密度")
                 .accessibilityIdentifier("schedule-density")
 
-                if horizontalSizeClass == .regular {
-                    PlannerUtilityControls(model: model)
+                PlannerUtilityControls(model: model)
+
+                if horizontalSizeClass == .compact {
+                    Button {
+                        Swift.Task { await model.refresh() }
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                            .frame(width: 30, height: 30)
+                    }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .accessibilityLabel("刷新共享快照")
+                    .accessibilityIdentifier("refresh-button")
                 }
 
                 Button {
@@ -400,6 +410,7 @@ private struct CompactSchedulePersonSection: View {
     let row: PeopleScheduleRow
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Namespace private var glassNamespace
 
     private var strongTextColor: Color {
@@ -481,30 +492,7 @@ private struct CompactSchedulePersonSection: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(strongTextColor)
                         .fixedSize(horizontal: false, vertical: true)
-                    HStack(spacing: 6) {
-                        Text(
-                            "\(row.person?.role.title ?? "无负责人") · \(row.tasks.count) 项任务"
-                        )
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(strongTextColor)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .layoutPriority(1)
-
-                        Spacer(minLength: 2)
-
-                        if !collapsed {
-                            if row.inProgressCount > 0 {
-                                compactCountBadge(
-                                    row.inProgressCount,
-                                    label: "进行中"
-                                )
-                            }
-                            if row.urgentCount > 0 {
-                                compactCountBadge(row.urgentCount, label: "P0")
-                            }
-                        }
-                    }
+                    personSummary
                 }
 
                 Spacer(minLength: 4)
@@ -522,6 +510,52 @@ private struct CompactSchedulePersonSection: View {
         .accessibilityLabel(rowAccessibilityLabel)
         .accessibilityValue(collapsed ? "已折叠" : "已展开")
         .accessibilityIdentifier("schedule-person-\(row.id)")
+    }
+
+    @ViewBuilder
+    private var personSummary: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(personAndTaskCount)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(strongTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !collapsed {
+                    VStack(alignment: .leading, spacing: 2) {
+                        if row.inProgressCount > 0 {
+                            compactCountBadge(row.inProgressCount, label: "进行中")
+                        }
+                        if row.urgentCount > 0 {
+                            compactCountBadge(row.urgentCount, label: "P0")
+                        }
+                    }
+                }
+            }
+        } else {
+            HStack(spacing: 6) {
+                Text(personAndTaskCount)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(strongTextColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .layoutPriority(1)
+
+                Spacer(minLength: 2)
+
+                if !collapsed {
+                    if row.inProgressCount > 0 {
+                        compactCountBadge(row.inProgressCount, label: "进行中")
+                    }
+                    if row.urgentCount > 0 {
+                        compactCountBadge(row.urgentCount, label: "P0")
+                    }
+                }
+            }
+        }
+    }
+
+    private var personAndTaskCount: String {
+        "\(row.person?.role.title ?? "无负责人") · \(row.tasks.count) 项任务"
     }
 
     private var avatar: some View {

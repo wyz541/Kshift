@@ -176,27 +176,23 @@ struct PlannerView: View {
 
     @ViewBuilder
     private var plannerControls: some View {
-        if usesAccessibilityLayout {
+        if model.viewMode == .peopleSchedule {
+            if horizontalSizeClass == .compact {
+                viewModePicker
+            }
+        } else if usesAccessibilityLayout {
             accessibilityControls
         } else if horizontalSizeClass == .regular {
-            if model.viewMode != .peopleSchedule {
-                HStack(spacing: 10) {
-                    dateNavigation
-                    Spacer()
-                    PlannerUtilityControls(model: model)
-                }
+            HStack(spacing: 10) {
+                dateNavigation
+                Spacer()
+                PlannerUtilityControls(model: model)
             }
         } else {
             VStack(alignment: .leading, spacing: 10) {
                 dateNavigation
 
-                Picker("规划视图", selection: $model.viewMode) {
-                    ForEach(PlannerViewMode.allCases) { mode in
-                        Label(mode.title, systemImage: mode.symbol)
-                            .tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
+                viewModePicker
 
                 compactActionBar
             }
@@ -208,16 +204,20 @@ struct PlannerView: View {
             dateStepButtons
             datePickerControl
 
-            Picker("规划视图", selection: $model.viewMode) {
-                ForEach(PlannerViewMode.allCases) { mode in
-                    Label(mode.title, systemImage: mode.symbol)
-                        .tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
+            viewModePicker
 
             compactActionBar
         }
+    }
+
+    private var viewModePicker: some View {
+        Picker("规划视图", selection: $model.viewMode) {
+            ForEach(PlannerViewMode.allCases) { mode in
+                Label(mode.title, systemImage: mode.symbol)
+                    .tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var compactActionBar: some View {

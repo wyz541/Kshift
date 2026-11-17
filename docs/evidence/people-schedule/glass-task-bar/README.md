@@ -3,7 +3,7 @@ slug: /evidence/people-schedule/glass-task-bar-2026-11-15
 title: 人员排期原生染色 Liquid Glass 任务条证据（2026-11-15）
 type: report
 status: review
-updated: "2026-11-16"
+updated: "2026-11-17"
 keywords:
   - 人员排期
   - 任务条
@@ -90,6 +90,9 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 - Person header uses a name/disclosure row and a role/metrics row。The name and role tail-truncate before the metrics。
 - Expanded person header always shows the task count。In-progress and P0 metrics appear only when their count is non-zero。
 - Person header keeps separate text and metric bounds at the `168pt` minimum people-column width。
+- Compact PeopleSchedule uses one schedule navigation row。The duplicated global day-navigation row stays hidden。
+- Accessibility text sizes stack the compact person role and metrics below the name instead of clipping them horizontally。
+- Compact schedule utilities include refresh, filter, sort and settings in the horizontally scrollable schedule toolbar。
 
 ## 视觉证据
 
@@ -119,6 +122,9 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-task-panel-compact-2026-11-17.png`](./macos-task-panel-compact-2026-11-17.png) | macOS 27.0.1；Light Mode | Single-surface Liquid Glass task editor `简约` mode with flat inner controls | `432ed521fefff30e678ad3b0021f2eadde6b600bb6a91e72338ebab675b97843` |
 | [`macos-task-panel-metadata-2026-11-17.png`](./macos-task-panel-metadata-2026-11-17.png) | macOS 27.0.1；Light Mode；Scrolled | Flat schedule metadata controls and tag editor inside group-level glass cards | `2c7132d7ec784778aa8286bf1c229f388d608554a99f3a08f79c9357ad8a39e8` |
 | [`macos-task-panel-detail-2026-11-17.png`](./macos-task-panel-detail-2026-11-17.png) | macOS 27.0.1；Light Mode | Single-surface Liquid Glass task editor `详情` mode | `4180ee2975e521e1edc091a4fce9e4ad78462b3fde88202361f32ae56086a0c0` |
+| [`ios-increase-contrast-2026-11-17.png`](./ios-increase-contrast-2026-11-17.png) | iPhone 18 Pro Simulator；iOS 27.0；Increase Contrast | Compact PeopleSchedule with higher-contrast controls and card outlines | `ee4a622f14b1680b63cbd48b983c87b4521f925e20d0b32377613a3e6fc05737` |
+| [`ios-large-text-2026-11-17.png`](./ios-large-text-2026-11-17.png) | iPhone 18 Pro Simulator；iOS 27.0；Accessibility XXXL | Single schedule navigation row and vertically reflowed person metrics | `57d3af18283945e0599e2db86e172ab912a7dfa344e5c3c4021a9b550f288a59` |
+| [`ios-reduce-transparency-2026-11-17.png`](./ios-reduce-transparency-2026-11-17.png) | iPhone 18 Pro Simulator；iOS 27.0；`KSHIFT_FORCE_REDUCE_TRANSPARENCY=1` | Opaque fallback for task bars and person cards | `8ee2c53438fcd4da6caa5c29bc6b986c5a6d0b00a18591d2c569f6fff81d0c3b` |
 
 旧文件 `macos-task-bar-2026-11-14.png` 和 `ios-task-bar-2026-11-14.png` 是上一版 `.buttonStyle(.glass)` 候选。`macos-task-detail-2026-11-15.png` 是 flat card candidate。它们不表示最终视觉结论。
 
@@ -147,7 +153,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | `testPeopleScheduleStatusControlOpensNativeMenu` | 通过 |
 | `testPeopleScheduleIsDefaultViewAndCoreControlsWork` | 通过 |
 | `testFilterPopoverUsesCompactChipSelection` | 通过；chip selection、selected state、reset and Done action |
-| `testAccessibilityTextSizeKeepsCoreActionsAvailable` | 通过 |
+| `testAccessibilityTextSizeKeepsCoreActionsAvailable` | 通过；single schedule navigation row；person header remains inside the window；core actions remain available |
 | `testCoreActionsMeetMinimumTouchTargets` | 通过 |
 | `testPlanDepthFlowAndAccessibilityAudit` | 通过；native toolbar Close 的 scoped contrast/Dynamic Type false positives |
 | `./scripts/check-r0.sh` | 通过 |
@@ -159,7 +165,6 @@ SwiftUI 无障碍审计将 `今天`、`未分配` 和 `无负责人 · 1 项任�
 ## 未覆盖
 
 - 用户视觉验收尚未完成。
-- Increase Contrast 和 Reduce Transparency 截图尚未生成。
 - macOS 和 iOS 人工拖拽录屏尚未生成。
 - 50 人、30 日、每人 20 项任务的渲染性能尚未用 Instruments 测量。
 - 2026-11-16 的 generic iOS `testAccessibilityAudit` rerun 仍报告 board card raw Markdown note 的 Dynamic Type clipped diagnostic。该 diagnostic 位于 `TaskCard` 文本，不在本次 Window toolbar 变更范围。本次 toolbar-focused accessibility checks 通过。
