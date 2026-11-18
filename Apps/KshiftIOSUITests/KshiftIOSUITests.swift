@@ -4,6 +4,7 @@ import XCTest
 final class KshiftIOSUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
     }
 
     func testCreateTaskThroughSharedPlanner() throws {
@@ -353,11 +354,26 @@ final class KshiftIOSUITests: XCTestCase {
         mia.tap()
         XCTAssertEqual(mia.value as? String, "已选择")
 
+        let status = app.buttons["filter-status-in_progress"].firstMatch
+        XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
+        status.tap()
+        XCTAssertEqual(status.value as? String, "已选择")
+
+        let priority = app.buttons["filter-priority-high"].firstMatch
+        XCTAssertTrue(priority.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(priority.label.contains("P1"), app.debugDescription)
+
+        let manualSort = app.buttons["filter-sort-manual"].firstMatch
+        XCTAssertTrue(manualSort.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertEqual(manualSort.value as? String, "已选择")
+
         let reset = app.buttons["重置"].firstMatch
         XCTAssertTrue(reset.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(reset.isEnabled)
         reset.tap()
         XCTAssertEqual(mia.value as? String, "未选择")
+        XCTAssertEqual(status.value as? String, "未选择")
+        XCTAssertEqual(manualSort.value as? String, "已选择")
 
         let done = app.buttons["完成"].firstMatch
         XCTAssertTrue(done.waitForExistence(timeout: 5), app.debugDescription)
