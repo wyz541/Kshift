@@ -82,6 +82,16 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(titleField.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertFalse(app.descendants(matching: .any)["task-detail"].firstMatch.exists)
 
+        let status = app.descendants(matching: .any)["task-status"].firstMatch
+        let dueDate = app.descendants(matching: .any)["task-due-date"].firstMatch
+        let notes = app.scrollViews["markdown-preview"].firstMatch
+        XCTAssertTrue(status.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(dueDate.exists, app.debugDescription)
+        XCTAssertTrue(notes.exists, app.debugDescription)
+        XCTAssertLessThan(status.frame.minY, dueDate.frame.minY)
+        XCTAssertLessThan(dueDate.frame.minY, notes.frame.minY)
+        XCTAssertTrue(app.buttons["save-task"].firstMatch.isHittable, app.debugDescription)
+
         let screenshot = XCTAttachment(screenshot: app.screenshot())
         screenshot.name = "Edit task popover - iOS"
         screenshot.lifetime = .keepAlways
@@ -115,6 +125,37 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(cancel.waitForExistence(timeout: 5), app.debugDescription)
         cancel.tap()
         XCTAssertTrue(editor.waitForNonExistence(timeout: 5), app.debugDescription)
+    }
+
+    func testBoardTaskClickOpensAnchoredEditor() {
+        let app = launchPlanner()
+        let card = app.descendants(matching: .any)["task-task-launch-brief"].firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 8), app.debugDescription)
+
+        card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+
+        assertQuickEditorCanCancel(in: app)
+    }
+
+    func testTableTaskTitleClickOpensAnchoredEditor() {
+        let app = launchPlanner()
+        app.buttons["表格"].firstMatch.tap()
+        let title = app.buttons["table-edit-task-task-launch-brief"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 8), app.debugDescription)
+
+        title.tap()
+
+        assertQuickEditorCanCancel(in: app)
+    }
+
+    func testScheduleTaskBarClickOpensAnchoredEditor() {
+        let app = launchPlannerWithDefaultView()
+        let bar = app.buttons["schedule-task-task-launch-brief"].firstMatch
+        XCTAssertTrue(bar.waitForExistence(timeout: 8), app.debugDescription)
+
+        bar.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.5)).tap()
+
+        assertQuickEditorCanCancel(in: app)
     }
 
     func testPeopleScheduleIsDefaultViewAndCoreControlsWork() throws {
@@ -233,7 +274,7 @@ final class KshiftIOSUITests: XCTestCase {
         let app = launchPlanner()
         let task = app.descendants(matching: .any)["task-task-launch-brief"].firstMatch
         XCTAssertTrue(task.waitForExistence(timeout: 8), app.debugDescription)
-        task.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+        openTaskDetails(from: task, in: app)
 
         XCTAssertTrue(
             app.descendants(matching: .any)["task-detail"].firstMatch
@@ -471,7 +512,7 @@ final class KshiftIOSUITests: XCTestCase {
             )
             .firstMatch
         XCTAssertTrue(initialTask.waitForExistence(timeout: 15), app.debugDescription)
-        initialTask.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap()
+        openTaskDetails(from: initialTask, in: app)
 
         XCTAssertTrue(
             app.descendants(matching: .any)["task-detail"]
@@ -564,9 +605,32 @@ final class KshiftIOSUITests: XCTestCase {
         }
     }
 
+    private func assertQuickEditorCanCancel(in app: XCUIApplication) {
+        let editor = app.descendants(matching: .any)["task-editor-popover"].firstMatch
+        XCTAssertTrue(editor.waitForExistence(timeout: 8), app.debugDescription)
+        let title = app.descendants(matching: .any)["task-title"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertFalse(app.descendants(matching: .any)["task-detail"].firstMatch.exists)
+
+        let cancel = app.buttons["取消"].firstMatch
+        XCTAssertTrue(cancel.waitForExistence(timeout: 5), app.debugDescription)
+        cancel.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 5), app.debugDescription)
+    }
+
+    private func openTaskDetails(from card: XCUIElement, in app: XCUIApplication) {
+        let actions = card.buttons["任务操作"].firstMatch
+        XCTAssertTrue(actions.waitForExistence(timeout: 5), app.debugDescription)
+        actions.tap()
+        let details = app.buttons["查看历史和详情"].firstMatch
+        XCTAssertTrue(details.waitForExistence(timeout: 5), app.debugDescription)
+        details.tap()
+    }
+
     private func launchPlanner() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
+        app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
         app.launchEnvironment["KSHIFT_INITIAL_VIEW_MODE"] = "board"
         app.launch()
         XCTAssertTrue(
@@ -650,9 +714,7 @@ final class KshiftIOSUITests: XCTestCase {
     }
 
     private func taskTitleField(in app: XCUIApplication) -> XCUIElement {
-        let titleField = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "identifier == %@ OR label == %@", "task-title", "任务标题"))
-            .firstMatch
+        let titleField = app.descendants(matching: .any)["task-title"].firstMatch
         if !titleField.waitForExistence(timeout: 5) {
             firstMiaAddTask(in: app).tap()
         }

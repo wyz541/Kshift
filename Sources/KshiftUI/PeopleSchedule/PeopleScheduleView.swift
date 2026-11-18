@@ -601,6 +601,7 @@ private struct CompactScheduleTaskCapsule: View {
     let task: TaskItem
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var editDraft: TaskDraft?
 
     private var palette: SchedulePriorityPalette {
         SchedulePriorityPalette(priority: task.priority)
@@ -632,7 +633,7 @@ private struct CompactScheduleTaskCapsule: View {
     var body: some View {
         ZStack(alignment: .leading) {
             Button {
-                model.presentDetails(task)
+                editDraft = model.editDraft(for: task)
             } label: {
                 HStack(spacing: ScheduleTaskMetrics.contentSpacing) {
                     statusBadge
@@ -665,7 +666,7 @@ private struct CompactScheduleTaskCapsule: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: ScheduleTaskMetrics.visualHeight)
                 .clipShape(taskShape)
-                .allowsHitTesting(false)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
@@ -677,15 +678,19 @@ private struct CompactScheduleTaskCapsule: View {
             .frame(height: ScheduleTaskMetrics.hitHeight)
             .contentShape(Rectangle())
             .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
-            .accessibilityHint("点击可查看任务详情。")
+            .accessibilityHint("编辑任务")
             .accessibilityIdentifier("schedule-task-\(task.id)")
-            .modifier(ScheduleTaskHoverPreviewModifier(model: model, task: task))
+            .modifier(ScheduleTaskHoverPreviewModifier(model: model, task: task, isEditing: editDraft != nil))
+            .contextMenu {
+                Button("查看历史和详情") { model.presentDetails(task) }
+            }
             .draggable(task.id)
         }
         .overlay(alignment: .leading) {
             statusMenu
         }
         .contentShape(Rectangle())
+        .taskEditorPopover(model: model, draft: $editDraft)
     }
 
     private var statusMenu: some View {
@@ -1115,6 +1120,7 @@ private struct PeopleScheduleTaskCapsule: View {
     let scrollToDay: (Date, ScrollViewProxy, Bool) -> Void
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var editDraft: TaskDraft?
 
     private var taskWidth: CGFloat {
         CGFloat(slice.dayCount) * dateWidth - ScheduleTaskMetrics.horizontalInset * 2
@@ -1157,7 +1163,7 @@ private struct PeopleScheduleTaskCapsule: View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Button {
-                    model.presentDetails(task)
+                    editDraft = model.editDraft(for: task)
                 } label: {
                     ZStack(alignment: .leading) {
                         statusBadge
@@ -1192,9 +1198,13 @@ private struct PeopleScheduleTaskCapsule: View {
                 )
                 .contentShape(taskShape)
                 .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
-                .accessibilityHint("点击可查看任务详情。")
+                .accessibilityHint("编辑任务")
                 .accessibilityIdentifier("schedule-task-\(task.id)")
-                .modifier(ScheduleTaskHoverPreviewModifier(model: model, task: task))
+                .modifier(ScheduleTaskHoverPreviewModifier(model: model, task: task, isEditing: editDraft != nil))
+                .taskEditorPopover(model: model, draft: $editDraft)
+                .contextMenu {
+                    Button("查看历史和详情") { model.presentDetails(task) }
+                }
                 .draggable(task.id)
             }
             .overlay(alignment: .leading) {

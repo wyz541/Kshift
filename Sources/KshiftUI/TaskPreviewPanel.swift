@@ -1,5 +1,8 @@
 import KshiftCore
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct TaskPreviewPanel: View {
     @ObservedObject var model: AppModel
@@ -60,16 +63,39 @@ struct ScheduleTaskHoverPreviewModifier: ViewModifier {
     @ObservedObject var model: AppModel
     let task: TaskItem
 
+    let isEditing: Bool
+
     @State private var isHovering = false
     @State private var isPresenting = false
     @State private var delayedPresentation: Task<Void, Never>?
 
+    @ViewBuilder
     func body(content: Content) -> some View {
+        #if os(macOS)
+        hoverTracking(content)
+            .background {
+                ScheduleHoverPopover(isPresented: isPresenting) {
+                    TaskPreviewPanel(model: model, task: task)
+                }
+            }
+        #else
+        hoverTracking(content)
+            .popover(
+                isPresented: $isPresenting,
+                attachmentAnchor: .rect(.bounds),
+                arrowEdge: .trailing
+            ) {
+                TaskPreviewPanel(model: model, task: task)
+            }
+        #endif
+    }
+
+    private func hoverTracking(_ content: Content) -> some View {
         content
             .onHover { hovering in
                 isHovering = hovering
                 delayedPresentation?.cancel()
-                if hovering {
+                if hovering && !isEditing {
                     delayedPresentation = Task { @MainActor in
                         try? await Task.sleep(for: .milliseconds(450))
                         guard !Task.isCancelled, isHovering else { return }
@@ -79,12 +105,10 @@ struct ScheduleTaskHoverPreviewModifier: ViewModifier {
                     isPresenting = false
                 }
             }
-            .popover(
-                isPresented: $isPresenting,
-                attachmentAnchor: .rect(.bounds),
-                arrowEdge: .trailing
-            ) {
-                TaskPreviewPanel(model: model, task: task)
+            .onChange(of: isEditing) { _, editing in
+                guard editing else { return }
+                delayedPresentation?.cancel()
+                isPresenting = false
             }
             .onDisappear {
                 delayedPresentation?.cancel()
@@ -92,3 +116,43 @@ struct ScheduleTaskHoverPreviewModifier: ViewModifier {
             }
     }
 }
+
+#if os(macOS)
+private struct ScheduleHoverPopover<Preview: View>: NSViewRepresentable {
+    let isPresented: Bool
+    @ViewBuilder let preview: () -> Preview
+
+    func makeNSView(context: Context) -> Anchor { Anchor() }
+
+    func updateNSView(_ anchor: Anchor, context: Context) {
+        guard isPresented, anchor.window != nil else {
+            anchor.popover.close()
+            return
+        }
+        if let host = anchor.popover.contentViewController as? NSHostingController<Preview> {
+            host.rootView = preview()
+        } else {
+            anchor.popover.contentViewController = NSHostingController(rootView: preview())
+        }
+        if !anchor.popover.isShown {
+            anchor.popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxX)
+        }
+    }
+
+    static func dismantleNSView(_ anchor: Anchor, coordinator: ()) {
+        anchor.popover.close()
+    }
+
+    final class Anchor: NSView {
+        let popover: NSPopover = {
+            let popover = NSPopover()
+            // The click that closes a hover preview must still reach the task bar.
+            popover.behavior = .applicationDefined
+            popover.animates = false
+            return popover
+        }()
+
+        override func hitTest(_ point: NSPoint) -> NSView? { nil }
+    }
+}
+#endif

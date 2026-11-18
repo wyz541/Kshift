@@ -95,11 +95,12 @@ struct TaskCard: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onTapGesture {
-            model.presentDetails(task)
+            editDraft = model.editDraft(for: task)
         }
         .draggable(task.id)
         .contextMenu {
             Button("编辑") { editDraft = model.editDraft(for: task) }
+            Button("查看历史和详情") { model.presentDetails(task) }
             Button(task.status == .done ? "标记为待处理" : "标记为已完成") {
                 Swift.Task { await model.toggleDone(task) }
             }
@@ -109,7 +110,7 @@ struct TaskCard: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(task.title)，\(task.status.title)，\(task.priority.title)优先级")
         .accessibilityValue("负责人 \(assigneeNames)，版本 \(task.version)")
-        .accessibilityHint("打开任务详情")
+        .accessibilityHint("编辑任务")
         .accessibilityIdentifier("task-\(task.id)")
         .taskEditorPopover(model: model, draft: $editDraft)
     }
@@ -156,10 +157,11 @@ struct AssigneeAvatarStack: View {
 struct CompactTaskRow: View {
     @ObservedObject var model: AppModel
     let task: TaskItem
+    @State private var editDraft: TaskDraft?
 
     var body: some View {
         Button {
-            model.presentDetails(task)
+            editDraft = model.editDraft(for: task)
         } label: {
             HStack {
                 Image(systemName: task.status.symbol)
@@ -174,6 +176,11 @@ struct CompactTaskRow: View {
             .padding(.vertical, 7)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button("查看历史和详情") { model.presentDetails(task) }
+        }
+        .accessibilityHint("编辑任务")
         .accessibilityIdentifier("compact-task-\(task.id)")
+        .taskEditorPopover(model: model, draft: $editDraft)
     }
 }
