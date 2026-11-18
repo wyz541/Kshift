@@ -270,6 +270,12 @@ xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
 
 验收记录见 [R3 Plan Depth](docs/r3-plan-depth.md)。决策见 [KS-DOMAIN](docs/specs/domain.md) 和 [KS-UI](docs/specs/ui.md)。
 
+## App update checks
+
+The macOS and iOS Settings screen reads the installed `CFBundleShortVersionString` and `CFBundleVersion`. `Check for Updates` fetches the promoted Stable `release-manifest.json`; the app rejects Preview, Draft, older, incompatible, unsigned, and invalid releases.
+
+The manifest endpoint defaults to `https://github.com/wyz541/Kshift/releases/latest/download/release-manifest.json`. Set `KSHIFT_UPDATE_MANIFEST_URL`, `KSHIFT_UPDATE_RELEASE_BASE_URL`, `KSHIFT_APP_VERSION`, and `KSHIFT_APP_BUILD` for local fixtures. macOS verifies the asset SHA-256 and installer signature before it opens the installer after confirmation. iOS opens the release destination and does not install an IPA directly.
+
 ## R4/R5 运维与发布
 
 | 内容 | 入口 |

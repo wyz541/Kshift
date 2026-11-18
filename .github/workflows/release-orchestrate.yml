@@ -290,7 +290,8 @@ jobs:
             --arg approved_by "$GITHUB_ACTOR" \
             --arg approved_at "$approved_at" \
             --arg run_id "$GITHUB_RUN_ID" \
-            '.release_status = "promoted" | .promotion = {approved_by: $approved_by, approved_at: $approved_at, run_id: $run_id}' \
+            --arg release_url "$release_url" \
+            '.release_status = "promoted" | .release_url = $release_url | .promotion = {approved_by: $approved_by, approved_at: $approved_at, run_id: $run_id}' \
             "$manifest" > "$manifest.tmp"
           mv "$manifest.tmp" "$manifest"
           manifest_sha256="$(sha256sum "$manifest" | awk '{print $1}')"

@@ -107,6 +107,8 @@
       "type": "string",
       "enum": ["draft", "promoted", "failed"]
     },
+    "release_notes": { "type": "string" },
+    "release_url": { "type": "string", "format": "uri" },
     "missing_platforms": {
       "type": "array",
       "items": {
