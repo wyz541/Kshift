@@ -142,16 +142,12 @@ struct PeopleScheduleView: View {
                     .accessibilityIdentifier("schedule-date-picker")
                 }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(model.scheduleRangeTitle)
-                        .font(.headline.weight(.semibold))
-                        .lineLimit(1)
-                    Text("\(model.filteredTasks.count) 项任务 · \(rows.count) 人")
-                        .font(.caption)
-                        .foregroundStyle(strongTextColor)
-                }
-                .frame(minWidth: 190, alignment: .leading)
-                .accessibilityElement(children: .combine)
+                Text("\(model.filteredTasks.count) 项任务 · \(rows.count) 人")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(strongTextColor)
+                    .lineLimit(1)
+                    .frame(minWidth: 108, alignment: .leading)
+                    .accessibilityLabel("\(model.filteredTasks.count) 项任务，\(rows.count) 人")
 
                 Picker("周期", selection: Binding(
                     get: { model.schedulePeriod },
