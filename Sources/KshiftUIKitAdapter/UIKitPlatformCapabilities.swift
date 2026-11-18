@@ -57,6 +57,17 @@
       }
     }
 
+    public func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult {
+      _ = data
+      guard candidate.asset.signingStatus == "testflight" || candidate.asset.signingStatus == "signed" else {
+        return .rejected("The release is not approved for iOS distribution.")
+      }
+      guard await openExternalURL(candidate.distributionURL) else {
+        return .rejected("The approved iOS distribution destination could not be opened.")
+      }
+      return .opened
+    }
+
     public func printHTML(_ html: String, jobName: String) async -> Bool {
       let controller = UIPrintInteractionController.shared
       let information = UIPrintInfo.printInfo()

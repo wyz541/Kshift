@@ -493,6 +493,7 @@ function mergeFragments(values) {
     gates,
     limitations: uniqueStrings(limitations),
     rollback: candidate.rollback,
+    ...(notesPath ? { release_notes: readFileSync(notesPath, 'utf8') } : {}),
     release_status: 'draft',
     missing_platforms: missingPlatforms,
     promotion: null,

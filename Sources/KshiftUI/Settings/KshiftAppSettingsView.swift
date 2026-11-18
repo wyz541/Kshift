@@ -3,6 +3,7 @@ import SwiftUI
 struct KshiftAppSettingsView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
+    @State private var isShowingUpdateConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -10,6 +11,15 @@ struct KshiftAppSettingsView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     settingsSection("排期布局") {
                         ScheduleLayoutSettingsSection(model: model)
+                    }
+
+                    Divider()
+
+                    settingsSection("Updates") {
+                        KshiftUpdateSettingsSection(
+                            model: model,
+                            isShowingConfirmation: $isShowingUpdateConfirmation
+                        )
                     }
 
                     Divider()
@@ -31,7 +41,9 @@ struct KshiftAppSettingsView: View {
                     Divider()
 
                     settingsSection("关于") {
-                        LabeledContent("应用", value: "Kshift Dev")
+                        LabeledContent("应用", value: "Kshift")
+                        LabeledContent("版本", value: model.updateService.configuration.installed.version.description)
+                        LabeledContent("Build", value: model.updateService.configuration.installed.build)
                         LabeledContent("项目", value: model.selectedProject?.name ?? "未选择")
                         LabeledContent("时区", value: model.projectTimeZone.identifier)
                     }
@@ -112,6 +124,114 @@ struct ScheduleLayoutSettingsSection: View {
             Text("布局设置按项目保存。")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+    }
+}
+
+
+private struct KshiftUpdateSettingsSection: View {
+    @ObservedObject var model: AppModel
+    @Binding var isShowingConfirmation: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            LabeledContent("Installed version", value: model.updateService.configuration.installed.version.description)
+            LabeledContent("Build", value: model.updateService.configuration.installed.build)
+
+            switch model.updateState {
+            case .idle:
+                Text("Check for a newer published Stable release.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            case .checking:
+                ProgressView("Checking for updates…")
+                    .controlSize(.small)
+            case let .available(candidate):
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Version \(candidate.version.description) is available.", systemImage: "arrow.down.circle.fill")
+                        .foregroundStyle(.green)
+                    if let notes = candidate.releaseNotes, !notes.isEmpty {
+                        Text(notes)
+                            .font(.caption)
+                            .textSelection(.enabled)
+                    } else {
+                        Text("Release notes are available on the release page.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let notesURL = candidate.releaseNotesURL {
+                        Button("View Release Notes") {
+                            Swift.Task { _ = await model.platformCapabilities.openExternalURL(notesURL) }
+                        }
+                        .buttonStyle(.link)
+                        .accessibilityIdentifier("view-release-notes")
+                    }
+                    Button("Install Update") {
+                        isShowingConfirmation = true
+                    }
+                    .buttonStyle(KshiftCompactAccentGlassButtonStyle())
+                    .accessibilityIdentifier("install-update")
+                }
+            case .noUpdate:
+                Label("No update is available.", systemImage: "checkmark.circle")
+                    .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("update-no-update")
+            case let .incompatible(version, reason):
+                VStack(alignment: .leading, spacing: 4) {
+                    Label("Version \(version.description) is not compatible.", systemImage: "exclamationmark.triangle")
+                    Text(reason)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .accessibilityIdentifier("update-incompatible")
+            case let .failed(message):
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Update check failed.", systemImage: "wifi.exclamationmark")
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Button("Retry") {
+                        Swift.Task { await model.checkForUpdates() }
+                    }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .accessibilityIdentifier("retry-update-check")
+                }
+                .accessibilityIdentifier("update-failed")
+            case .installing:
+                ProgressView("Preparing update…")
+                    .controlSize(.small)
+            case .installed:
+                Label("The approved installer was opened.", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            }
+
+            if !isCheckingOrInstalling {
+                Button("Check for Updates") {
+                    Swift.Task { await model.checkForUpdates() }
+                }
+                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .accessibilityIdentifier("check-for-updates")
+            }
+        }
+        .confirmationDialog(
+            "Install Kshift update?",
+            isPresented: $isShowingConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Continue") {
+                Swift.Task { await model.installAvailableUpdate() }
+            }
+            .accessibilityIdentifier("confirm-install-update")
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Kshift will verify the release before opening the approved platform installer.")
+        }
+    }
+
+    private var isCheckingOrInstalling: Bool {
+        switch model.updateState {
+        case .checking, .installing: return true
+        default: return false
         }
     }
 }

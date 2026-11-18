@@ -5,6 +5,12 @@ public enum KshiftPlatform: String, Sendable {
   case iOS
 }
 
+public enum KshiftUpdateInstallationResult: Equatable, Sendable {
+  case opened
+  case rejected(String)
+  case unsupported(String)
+}
+
 public enum KshiftPlatformFeedback: Equatable, Sendable {
   case selection
   case success
@@ -18,6 +24,7 @@ public protocol KshiftPlatformCapabilities: AnyObject {
   func perform(_ feedback: KshiftPlatformFeedback)
   func exportImage(_ data: Data, suggestedFilename: String) async -> Bool
   func printHTML(_ html: String, jobName: String) async -> Bool
+  func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult
 }
 
 public extension KshiftPlatformCapabilities {
@@ -31,6 +38,12 @@ public extension KshiftPlatformCapabilities {
     _ = html
     _ = jobName
     return true
+  }
+
+  func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult {
+    _ = candidate
+    _ = data
+    return .unsupported("This platform does not provide an installer.")
   }
 }
 
