@@ -18,6 +18,7 @@ struct MarkdownEditorView: View {
     @Binding var text: String
     let mode: MarkdownViewMode
     var paneHeight: CGFloat = 220
+    var showsBackground = true
     @FocusState private var isSourceFocused: Bool
 
     var body: some View {
@@ -31,7 +32,7 @@ struct MarkdownEditorView: View {
         }
         .frame(maxWidth: .infinity, minHeight: paneHeight, maxHeight: paneHeight)
         .background(
-            .primary.opacity(0.025),
+            .primary.opacity(showsBackground ? 0.025 : 0),
             in: RoundedRectangle(cornerRadius: 12, style: .continuous)
         )
     }
@@ -47,7 +48,7 @@ struct MarkdownEditorView: View {
                 if Self.shouldShowPlaceholder(for: text, isFocused: isSourceFocused) {
                     Text("输入 Markdown")
                         .font(.system(.body, design: .monospaced))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(showsBackground ? .tertiary : .secondary)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 16)
                         .allowsHitTesting(false)

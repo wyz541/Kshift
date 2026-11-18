@@ -31,6 +31,7 @@ struct TaskEditorView: View {
     @ObservedObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -68,150 +69,164 @@ struct TaskEditorView: View {
         }
     }
 
-    private var editorFields: some View {
+    private var popoverFields: some View {
         VStack(alignment: .leading, spacing: 16) {
-            titleField
-
-            markdownSection
-
-            panelSection("属性", systemImage: "slider.horizontal.3") {
-                taskPropertyFields
+            popoverFieldGroup("任务标题") {
+                titleInput
+                    .font(.title3.weight(.semibold))
+                    .padding(.horizontal, 11)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, minHeight: isCompactWidth ? 44 : 38, alignment: .leading)
+                    .modifier(TaskPopoverInputSurface())
             }
 
-            panelSection("标签", systemImage: "tag") {
-                TaskTagEditor(tags: $draft.tags, input: $tagInput)
-            }
+            popoverPropertyFields
 
-            if draft.taskID != nil {
-                Label(
-                    "编辑基于任务版本 \(draft.expectedVersion)",
-                    systemImage: "lock.shield"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
-            }
+            Divider()
 
-            if let validationMessage {
-                Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
-                    .font(.callout)
-                    .foregroundStyle(.red)
-                    .accessibilityIdentifier("task-validation")
+            popoverMarkdownSection
+
+            popoverFieldGroup("标签") {
+                TaskTagEditor(tags: $draft.tags, input: $tagInput, showsContainer: false)
             }
 
             if let conflict = model.conflict {
                 ConflictInlineView(model: model, notice: conflict, dismiss: dismiss.callAsFunction)
             }
         }
-        .padding(20)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
     }
 
-    private var markdownSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                Label("内容", systemImage: "text.alignleft")
-                    .font(.headline.weight(.semibold))
-                    .foregroundStyle(.primary)
-
-                Spacer()
-
-                Picker("Markdown 显示模式", selection: $markdownMode) {
-                    ForEach(MarkdownViewMode.allCases) { mode in
-                        Text(mode.title).tag(mode)
-                    }
+    private var popoverMarkdownSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 6) {
+                    popoverNotesLabel
+                    popoverMarkdownModePicker
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 160)
-                .accessibilityLabel("Markdown 显示模式")
-                .accessibilityIdentifier("markdown-mode")
+            } else {
+                HStack(spacing: 12) {
+                    popoverNotesLabel
+                    Spacer(minLength: 4)
+                    popoverMarkdownModePicker
+                }
             }
 
             MarkdownEditorView(
                 text: $draft.notes,
                 mode: markdownMode,
-                paneHeight: markdownPaneHeight
+                paneHeight: isCompactWidth ? 136 : 128,
+                showsBackground: false
             )
+            .modifier(TaskPopoverInputSurface())
         }
-        .padding(14)
-        .kshiftGlassCard(tint: Color.accentColor.opacity(0.06))
     }
 
-    private var titleField: some View {
+    private var popoverNotesLabel: some View {
+        Text("描述")
+            .font(.callout.weight(.semibold))
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var popoverMarkdownModePicker: some View {
+        Picker("Markdown 显示模式", selection: $markdownMode) {
+            ForEach(MarkdownViewMode.allCases) { mode in
+                Text(mode.title).tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .controlSize(.small)
+        .frame(width: dynamicTypeSize.isAccessibilitySize ? nil : 136)
+        .accessibilityLabel("Markdown 显示模式")
+        .accessibilityIdentifier("markdown-mode")
+    }
+
+    private var titleInput: some View {
         TextField(
             "任务标题",
             text: $draft.title,
             prompt: Text("任务标题"),
             axis: .vertical
         )
-        .font(.title3.weight(.semibold))
         .textFieldStyle(.plain)
         .lineLimit(1...3)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
-        .background(
-            .primary.opacity(0.04),
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous)
-        )
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.separator, lineWidth: 1)
-                .allowsHitTesting(false)
-        }
         .accessibilityLabel("任务标题")
         .accessibilityIdentifier("task-title")
     }
 
-    private func panelSection<Content: View>(
-        _ title: String,
-        systemImage: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(title, systemImage: systemImage)
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.primary)
-
-            content()
-        }
-        .padding(14)
-        .kshiftGlassCard(tint: Color.primary.opacity(0.025))
+    private var titleField: some View {
+        titleInput
+            .font(.title3.weight(.semibold))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .frame(maxWidth: .infinity, minHeight: 46, alignment: .leading)
+            .background(
+                .primary.opacity(0.04),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(.separator, lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
     }
 
-    private var taskPropertyFields: some View {
-        VStack(spacing: 16) {
-            HStack(alignment: .top, spacing: 16) {
+    private var popoverPropertyFields: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if dynamicTypeSize.isAccessibilitySize {
                 statusField
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 priorityField
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-
-            if horizontalSizeClass == .compact {
                 assigneeField
-
-                HStack(alignment: .top, spacing: 16) {
-                    startDateField
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    dueDateField
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
+                startDateField
+                dueDateField
             } else {
-                HStack(alignment: .top, spacing: 16) {
+                HStack(alignment: .top, spacing: 10) {
+                    statusField
+                    priorityField
+                    if !isCompactWidth {
+                        assigneeField
+                    }
+                }
+                if isCompactWidth {
                     assigneeField
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                HStack(alignment: .top, spacing: 10) {
                     startDateField
-                        .frame(maxWidth: .infinity, alignment: .leading)
                     dueDateField
-                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+        }
+    }
+
+    private func popoverFieldGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func metadataFieldGroup<Content: View>(
+        _ title: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        if presentation == .popover {
+            popoverFieldGroup(title, content: content)
+        } else {
+            fieldGroup(title, content: content)
         }
     }
 
     private var statusField: some View {
-        fieldGroup("状态") {
+        metadataFieldGroup("状态") {
             Menu {
                 ForEach(TaskStatus.allCases) { status in
                     Button {
@@ -227,7 +242,8 @@ struct TaskEditorView: View {
                 TaskMetadataControlLabel(
                     title: draft.status.title,
                     systemImage: draft.status.symbol,
-                    tint: draft.status.tint
+                    tint: draft.status.tint,
+                    usesPopoverSurface: presentation == .popover
                 )
             }
             .menuIndicator(.hidden)
@@ -239,7 +255,7 @@ struct TaskEditorView: View {
     }
 
     private var priorityField: some View {
-        fieldGroup("优先级") {
+        metadataFieldGroup("优先级") {
             Menu {
                 ForEach(TaskPriority.allCases) { priority in
                     Button {
@@ -255,7 +271,8 @@ struct TaskEditorView: View {
                 TaskMetadataControlLabel(
                     title: draft.priority.title,
                     systemImage: "flag.fill",
-                    tint: draft.priority.tint
+                    tint: draft.priority.tint,
+                    usesPopoverSurface: presentation == .popover
                 )
             }
             .menuIndicator(.hidden)
@@ -267,7 +284,7 @@ struct TaskEditorView: View {
     }
 
     private var assigneeField: some View {
-        fieldGroup("负责人") {
+        metadataFieldGroup("负责人") {
             Menu {
                 Button {
                     draft.assigneeIDs.removeAll()
@@ -295,7 +312,8 @@ struct TaskEditorView: View {
                 TaskMetadataControlLabel(
                     title: assigneeSummary,
                     systemImage: "person.2",
-                    tint: .blue
+                    tint: .blue,
+                    usesPopoverSurface: presentation == .popover
                 )
             }
             .menuIndicator(.hidden)
@@ -307,21 +325,48 @@ struct TaskEditorView: View {
     }
 
     private var startDateField: some View {
-        fieldGroup("开始日期") {
-            DatePicker(
-                "开始日期",
-                selection: Binding(
-                    get: { draft.startDate ?? draft.dueDate },
-                    set: { draft.startDate = $0 }
-                ),
-                displayedComponents: .date
+        taskDateField(
+            "开始日期",
+            identifier: "task-start-date",
+            selection: Binding(
+                get: { draft.startDate ?? draft.dueDate },
+                set: { draft.startDate = $0 }
             )
+        )
+    }
+
+    private func taskDateField(
+        _ title: String,
+        identifier: String,
+        selection: Binding<Date>
+    ) -> some View {
+        metadataFieldGroup(title) {
+            if presentation == .popover {
+                HStack(spacing: 8) {
+                    if !isCompactWidth {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
+                    }
+                    datePicker(title, selection: selection)
+                }
+                .font(.callout)
+                .padding(.horizontal, 10)
+                .frame(minHeight: isCompactWidth ? 44 : 34, alignment: .leading)
+                .modifier(TaskPopoverInputSurface())
+                .accessibilityIdentifier(identifier)
+            } else {
+                datePicker(title, selection: selection)
+            }
+        }
+    }
+
+    private func datePicker(_ title: String, selection: Binding<Date>) -> some View {
+        DatePicker(title, selection: selection, displayedComponents: .date)
             .labelsHidden()
             .datePickerStyle(.compact)
             .frame(maxWidth: .infinity, alignment: .leading)
             .environment(\.timeZone, model.projectTimeZone)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var sheetLayoutControl: some View {
@@ -826,22 +871,11 @@ struct TaskEditorView: View {
         if isCompactWidth {
             return 180
         }
-        return presentation == .popover ? 190 : 220
+        return 220
     }
 
     private var dueDateField: some View {
-        fieldGroup("截止日期") {
-            DatePicker(
-                "截止日期",
-                selection: $draft.dueDate,
-                displayedComponents: .date
-            )
-            .labelsHidden()
-            .datePickerStyle(.compact)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .environment(\.timeZone, model.projectTimeZone)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        taskDateField("截止日期", identifier: "task-due-date", selection: $draft.dueDate)
     }
 
     private var sheetBody: some View {
@@ -914,38 +948,38 @@ struct TaskEditorView: View {
 
     private var popoverBody: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Text(draft.isNew ? "新建任务" : "编辑任务")
                     .font(.headline.weight(.semibold))
+                    .accessibilityAddTraits(.isHeader)
                 Spacer()
                 Button {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .frame(width: 26, height: 26)
+                        .font(.footnote.weight(.semibold))
+                        .frame(width: isCompactWidth ? 44 : 30, height: isCompactWidth ? 44 : 30)
+                        .contentShape(Rectangle())
                 }
-                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .buttonStyle(.borderless)
+                .foregroundStyle(.secondary)
                 .accessibilityLabel("关闭任务编辑")
                 .accessibilityIdentifier("close-task-editor")
             }
-            .padding(.horizontal, 14)
-            .frame(height: 48)
+            .padding(.leading, 18)
+            .padding(.trailing, 10)
+            .padding(.vertical, 7)
 
             Divider()
 
             ScrollView {
-                editorFields
+                popoverFields
             }
+            .scrollBounceBehavior(.basedOnSize)
 
             Divider()
 
-            HStack(spacing: 8) {
-                Button("取消") { dismiss() }
-                    .buttonStyle(KshiftCompactGlassButtonStyle())
-                Spacer()
-                saveButton
-            }
-            .padding(12)
+            popoverFooter
         }
         .frame(
             maxWidth: isCompactWidth ? .infinity : nil,
@@ -957,19 +991,59 @@ struct TaskEditorView: View {
         )
         .background(.background)
         .interactiveDismissDisabled(isSaving)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("task-editor-popover")
+    }
+
+    private var popoverFooter: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let validationMessage {
+                Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout)
+                    .foregroundStyle(.red)
+                    .accessibilityIdentifier("task-validation")
+            }
+
+            HStack(spacing: 8) {
+                Spacer(minLength: 0)
+                Button {
+                    dismiss()
+                } label: {
+                    Text("取消")
+                        .frame(minWidth: 48, minHeight: isCompactWidth ? 30 : 20)
+                }
+                .buttonStyle(.bordered)
+                Button {
+                    save()
+                } label: {
+                    saveButtonLabel
+                        .frame(minWidth: 56, minHeight: isCompactWidth ? 30 : 20)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isSaving || draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("save-task")
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var saveButtonLabel: some View {
+        if isSaving {
+            ProgressView()
+                .controlSize(.small)
+                .accessibilityLabel("正在保存")
+        } else {
+            Text("保存")
+        }
     }
 
     private var saveButton: some View {
         Button {
             save()
         } label: {
-            if isSaving {
-                ProgressView()
-                    .controlSize(.small)
-            } else {
-                Text("保存")
-            }
+            saveButtonLabel
         }
         .buttonStyle(KshiftCompactAccentGlassButtonStyle())
         .disabled(isSaving || draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -1164,17 +1238,49 @@ private struct ClassicTitlebarCloseButton: View {
     }
 }
 
+private struct TaskPopoverInputSurface: ViewModifier {
+    private let shape = RoundedRectangle(cornerRadius: 8, style: .continuous)
+
+    func body(content: Content) -> some View {
+        content
+            .background(.primary.opacity(0.035), in: shape)
+            .overlay {
+                shape.strokeBorder(.separator.opacity(0.7), lineWidth: 1)
+                    .allowsHitTesting(false)
+            }
+    }
+}
+
 private struct TaskMetadataControlLabel: View {
     let title: String
     let systemImage: String
     let tint: Color
+    var usesPopoverSurface = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var minimumHeight: CGFloat {
         horizontalSizeClass == .compact ? 44 : 34
     }
 
+    @ViewBuilder
     var body: some View {
+        if usesPopoverSurface {
+            label.modifier(TaskPopoverInputSurface())
+        } else {
+            label
+                .background(.primary.opacity(0.045), in: shape)
+                .overlay {
+                    shape.strokeBorder(tint.opacity(0.16), lineWidth: 1)
+                        .allowsHitTesting(false)
+                }
+        }
+    }
+
+    private var shape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+    }
+
+    private var label: some View {
         HStack(spacing: 7) {
             Image(systemName: systemImage)
                 .foregroundStyle(tint)
@@ -1193,12 +1299,7 @@ private struct TaskMetadataControlLabel: View {
         .font(.callout.weight(.medium))
         .padding(.horizontal, 10)
         .frame(maxWidth: .infinity, minHeight: minimumHeight, alignment: .leading)
-        .background(.primary.opacity(0.045), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(tint.opacity(0.16), lineWidth: 1)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .contentShape(Rectangle())
     }
 }
 
@@ -1237,6 +1338,7 @@ private struct ConflictInlineView: View {
 }
 
 struct TaskEditorPopoverModifier: ViewModifier {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject var model: AppModel
     @Binding var draft: TaskDraft?
     let arrowEdge: Edge
@@ -1245,7 +1347,7 @@ struct TaskEditorPopoverModifier: ViewModifier {
         content.popover(
             item: $draft,
             attachmentAnchor: .rect(.bounds),
-            arrowEdge: arrowEdge
+            arrowEdge: horizontalSizeClass == .compact && arrowEdge == .top ? .bottom : arrowEdge
         ) { draft in
             TaskEditorView(
                 model: model,

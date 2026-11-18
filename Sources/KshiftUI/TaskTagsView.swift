@@ -17,6 +17,7 @@ struct TaskTagList: View {
 struct TaskTagEditor: View {
     @Binding var tags: [String]
     @Binding var input: String
+    var showsContainer = true
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @FocusState private var isInputFocused: Bool
 
@@ -57,15 +58,16 @@ struct TaskTagEditor: View {
             .frame(minHeight: inputMinimumHeight)
             .background(.primary.opacity(0.05), in: Capsule())
         }
-        .padding(10)
+        .padding(showsContainer ? 10 : 0)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            .primary.opacity(0.025),
+            .primary.opacity(showsContainer ? 0.025 : 0),
             in: RoundedRectangle(cornerRadius: 14, style: .continuous)
         )
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(.separator, lineWidth: 1)
+                .strokeBorder(.separator.opacity(showsContainer ? 1 : 0), lineWidth: 1)
+                .allowsHitTesting(false)
         }
     }
 

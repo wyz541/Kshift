@@ -100,7 +100,7 @@ private struct TaskTableRow: View {
             .accessibilityLabel(isSelected ? "取消选择 \(task.title)" : "选择 \(task.title)")
 
             Button {
-                model.presentDetails(task)
+                editDraft = model.editDraft(for: task)
             } label: {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(task.title)
@@ -118,6 +118,8 @@ private struct TaskTableRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityHint("编辑任务")
+            .accessibilityIdentifier("table-edit-task-\(task.id)")
 
             Menu {
                 ForEach(TaskStatus.allCases) { status in

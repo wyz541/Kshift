@@ -3,7 +3,7 @@ slug: /evidence/task-editor-popover
 title: Task editor Popover 证据
 type: report
 status: active
-updated: "2026-11-17"
+updated: "2026-11-18"
 keywords:
   - Task editor
   - Popover
@@ -62,3 +62,10 @@ macOS 截图显示 Popover anchor 指向 task card。iOS 截图显示 Popover �
 - Table-row context menu 的 dedicated screenshot 未采集；focused UI test 已通过。
 - macOS large-text 和 iOS large-text 的 independent visual pass 未采集。
 - Task-detail Sheet 仍是完整编辑 surface；本 Task 不把 detail Sheet 改为 quick-edit Popover。
+
+## Follow-up：Direct click and editor layout
+
+- macOS Debug、Demo data：Click `Schedule launch window` after the hover preview appears. One click opens the anchored editor. The editor shows task properties before the description and leaves only Cancel and Save in the footer. Internal version checks remain unchanged.
+- Before: [2026-11-17 macOS editor](./macos-edit-task-popover-2026-11-17.png). After: [2026-11-18 macOS quick edit](./macos-quick-edit-2026-11-18.png). The images use different demo tasks.
+- After screenshot SHA-256: `43c7149c6b93a62eddc6fda8b927793d90a7a74ae189ff46a20ab35d5eeb9479`.
+- iPhone 18 Pro Simulator: 4 focused UI tests passed for task creation, edit Popover layout, schedule task-bar click, and Markdown preview. The test copy uses `.plain` in place of `.link` in the existing update screen to compile on iOS. This workaround is not part of the PR.
