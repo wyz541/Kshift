@@ -163,7 +163,11 @@ private struct KshiftUpdateSettingsSection: View {
                         Button("View Release Notes") {
                             Swift.Task { _ = await model.platformCapabilities.openExternalURL(notesURL) }
                         }
+#if os(macOS)
                         .buttonStyle(.link)
+#else
+                        .buttonStyle(.plain)
+#endif
                         .accessibilityIdentifier("view-release-notes")
                     }
                     Button("Install Update") {

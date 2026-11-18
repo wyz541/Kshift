@@ -4,6 +4,7 @@ import XCTest
 final class KshiftIOSUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
+        XCUIDevice.shared.orientation = .portrait
     }
 
     func testCreateTaskThroughSharedPlanner() throws {

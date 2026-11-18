@@ -178,7 +178,10 @@ struct PlannerView: View {
     private var plannerControls: some View {
         if model.viewMode == .peopleSchedule {
             if horizontalSizeClass == .compact {
-                viewModePicker
+                VStack(alignment: .leading, spacing: 10) {
+                    viewModePicker
+                    compactActionBar
+                }
             }
         } else if usesAccessibilityLayout {
             accessibilityControls
@@ -239,6 +242,8 @@ struct PlannerView: View {
                 .frame(width: 30, height: 30)
         }
         .buttonStyle(KshiftCompactGlassButtonStyle())
+        .frame(minWidth: 44, minHeight: 44)
+        .contentShape(Rectangle())
         .accessibilityLabel("筛选任务")
         .accessibilityIdentifier("filter-button")
         .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
@@ -350,6 +355,8 @@ struct PlannerUtilityControls: View {
                         .frame(width: 30, height: 30)
                 }
                 .buttonStyle(KshiftCompactGlassButtonStyle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
                 .help("筛选任务")
                 .accessibilityLabel("筛选任务")
                 .accessibilityIdentifier("filter-button")

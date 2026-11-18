@@ -115,7 +115,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | [`macos-window-toolbar-native-glass-2026-11-16.png`](./macos-window-toolbar-native-glass-2026-11-16.png) | macOS 27.0.1；Light Mode | Native Liquid Glass toolbar group with flat actions and one accent New Task action | `0a22e7064f5cbe8330fd1687764883beccef27e7c598a6b39d693446bf1f1d62` |
 | [`macos-schedule-filter-2026-11-16.png`](./macos-schedule-filter-2026-11-16.png) | macOS 27.0.1；Light Mode | Schedule utility group with sort, filter and settings actions | `1b9bb7a12ae80379b088cfe25f6e256f5d53972793c87eb8e3f3af3f8fe2c69d` |
 | [`macos-filter-popover-compact-2026-11-16.png`](./macos-filter-popover-compact-2026-11-16.png) | macOS 27.0.1；Light Mode；`300pt × 580pt` popover | Compact chip-based filter content with fixed header, footer and complete sort grid | `24ee439cbf34132002e40a89b6205bddebb47ece312cad0fb09c0fe140ebf8e6` |
-| [`macos-filter-popover-redesign-2026-11-18.png`](./macos-filter-popover-redesign-2026-11-18.png) | macOS 27.2；Debug Demo data；Light Mode；`300pt × 580pt` popover | Redesigned filter and sort Popover with contrast-safe selected chips, grouped sections, and fixed footer | `127504716da94688c35307717a43d72ae9d5b9bbe1d6535cdf328cea9081c5ea` |
+| [`macos-filter-popover-redesign-2026-11-18.png`](./macos-filter-popover-redesign-2026-11-18.png) | macOS 27.2；Debug Demo data；Light Mode；`300pt × 580pt` popover | Redesigned filter and sort Popover with contrast-safe selected chips, grouped sections, and fixed footer | `02d9c6c23552e615912812d9475e679036eb66ac77df2cfc65b5a7914c08f1bc` |
 | [`macos-schedule-sort-menu-direct-2026-11-16.png`](./macos-schedule-sort-menu-direct-2026-11-16.png) | macOS 27.0.1；Light Mode | First-level sort menu with direct options and current-item checkmark | `6952cd5713431793677f2c2f0cf78893bf601b14d4b4357b9107d9aefa585325` |
 | [`macos-task-panel-compact-2026-11-16.png`](./macos-task-panel-compact-2026-11-16.png) | macOS 27.0.1；Dark Mode | macOS-window titlebar with red close light and Liquid Glass task detail `简约` mode | `0d1b7516852c463f98a853502add059da50bd7f93e39fdbf4d1f32dc93031733` |
 | [`macos-task-panel-detail-2026-11-16.png`](./macos-task-panel-detail-2026-11-16.png) | macOS 27.0.1；Dark Mode | macOS-window titlebar with red close light and Liquid Glass task detail `详情` mode | `cbbb4254d173de62387ca73acce12fa09225271721a7e5e4ddc3bee7ade22a03` |
@@ -138,7 +138,7 @@ description: 记录人员排期任务条使用原生染色 Liquid Glass、明亮
 | Person-header manual visual check | 通过；`168pt` and `196pt` and `320pt` widths；compact density |
 | Person-header density check | 通过；`168pt` width with compact and standard and comfortable density |
 | Window-toolbar manual visual check | 通过；single native glass surface；flat filter/refresh/audit actions；accent New Task |
-| Schedule-filter interaction check | 通过；filter icon opens `FilterPopover`；compact layout keeps one filter action |
+| Schedule-filter interaction check | 通过；filter icon opens `FilterPopover`；compact PeopleSchedule exposes one visible filter action；chip selection、reset、sort and Done are covered |
 | Filter-popover content visual check | 通过；`300pt × 580pt`；fixed header/footer；complete chip grids；no clipping or dead space |
 | Schedule-sort menu check | 通过；first-level options；current-item checkmark updates after selection |
 | Task-detail panel visual check | 通过；`简约` and `详情` modes；red close light；centered title；neutral mode control；header/body/footer remain visible |
