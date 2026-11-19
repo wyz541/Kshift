@@ -3,7 +3,7 @@ slug: /specs/ui
 title: KS-UI Kshift 界面与无障碍规范
 type: standard
 status: active
-updated: "2026-11-17"
+updated: "2026-11-19"
 owner: "@wyz541"
 keywords:
   - SwiftUI
@@ -145,12 +145,12 @@ flowchart TB
 - `UI-PPL-013`：项目偏好必须保存当前日期、横向位置、人员列宽度、日期列宽度、显示密度、折叠状态和视图选择。
 - `UI-PPL-014`：人员排期必须提供网格语义、图标按钮标签、键盘焦点、悬停预览和 Reduce Motion 行为。
 - `UI-PPL-015`：`compact` 水平尺寸类必须使用按人员分组的纵向任务列表。任务条必须使用 UI-PPL-006 的全宽原生染色玻璃、`Capsule(style: .continuous)` 和单行标题。常规水平尺寸类继续使用人员×日期时间轴。
-- `UI-PPL-016`：人员排期模式不得显示重复的 `SummaryStrip`。任务数量显示在排期工具栏和人员分组标题中。
+- `UI-PPL-016`：人员排期模式不得显示重复的 `SummaryStrip`。Regular horizontal-size class 的任务数量显示在排期工具栏。Compact horizontal-size class 的任务数量显示在排期内容区顶部，只统计当前周期内的任务。人员分组标题显示各自的任务数量。
 - `UI-PPL-017`：任务状态徽章必须使用 26pt 外框、3pt 状态语义色环、白色中性内盘和 `13pt` heavy 状态符号。`todo` 使用 `circle.dashed` 和 `#8E8E93`/`#4B4B50`。`inProgress` 使用 `clock.fill` 和 `#0A84FF`/`#0057C8`。`blocked` 使用 `exclamationmark.octagon.fill` 和 `#FF453A`/`#A61B1B`。`done` 使用 `checkmark` 和 `#30D158`/`#0F7A3D`。优先级继续由 task bar tint 表达。状态菜单保持 44pt 触控区域。
 - `UI-PPL-018`：Planner toolbar 和 PeopleSchedule toolbar 的 action buttons 必须使用 `KshiftCompactGlassButtonStyle`。Visual height 必须为 34pt。Outer hit target 不得小于 44pt。Content 必须使用 primary color。Glass 必须使用 neutral `.glassEffect(.regular.interactive())`。禁止 accent-tinted `.buttonStyle(.glass)` 和 oversized glass container。Schedule toolbar 的 vertical padding 必须为 4pt，minimum height 必须为 52pt。
 - `UI-PPL-019`：macOS work area 必须将 vertical wheel route 到 nearest vertical scroll view。Shift + wheel 必须 route 到 nearest horizontal scroll view。Wheel routing 必须保留 precise scrolling deltas。Event handling 必须位于 `KshiftAppKitAdapter`。
 - `UI-PPL-020`：Click blank schedule day cell 必须使用 clicked person 和 clicked date 创建 local `TaskDraft`。交互必须打开 `TaskEditorView` 的 `popover` presentation。Popover default size 必须为 560pt × 580pt。Popup layout 必须使用 responsive assignee row 和 two-date row。该交互不得设置 root `editorDraft` 或复用 sheet presentation。
-- `UI-PPL-021`：Regular horizontal-size PeopleSchedule 必须隐藏 PlannerView 的 global date navigation row。Schedule toolbar 必须是唯一 date 和 period navigation source。Schedule toolbar 必须包含 date picker、period control、density、sort、filter 和 settings。The filter action 必须打开 `FilterPopover`，不得复用 clear-selection behavior。Compact horizontal-size class 必须保留 view picker 和 compact action bar，并不得显示 duplicate filter action。
+- `UI-PPL-021`：Regular horizontal-size PeopleSchedule 必须隐藏 PlannerView 的 global date navigation row。Schedule toolbar 必须是唯一 date 和 period navigation source。Schedule toolbar 必须包含 date picker、period control、density、sort、filter 和 settings。The filter action 必须打开 `FilterPopover`，不得复用 clear-selection behavior。Compact horizontal-size class 必须保留 view picker，并只使用一条 schedule toolbar row：上一周期、今天、下一周期、sort、filter 和 overflow menu。Overflow menu 必须包含 period、refresh 和 layout settings。Compact PeopleSchedule 不得显示 PlannerView compact action bar，并不得显示 duplicate filter action。
 - `UI-PPL-022`：Sidebar footer 的 trailing action 必须是 settings gear button。该按钮必须打开 `KshiftAppSettingsView`。Settings surface 必须包含 schedule layout controls、system accessibility shortcut 和 about information。禁止将 system accessibility settings 作为 footer button 的直接 action。Button accessibility identifier 必须为 `settings-button`。
 - `UI-PPL-023`：Task bar 必须在 pointer hover 450ms 后显示 adjacent preview panel。Preview panel 必须显示 title、status、priority、assignee、date、tags 和 rendered Markdown detail。Preview panel 必须是 read-only，并使用 accessibility identifier `task-preview-<task-id>`。
 - `UI-PPL-024`：Task detail 和 task editor 必须使用 shared Markdown workspace，并通过 `源码` / `预览` mode switch 切换显示。Existing task detail 必须打开 editable `TaskEditorView` sheet。New task 默认使用 `源码` mode。Existing task with content 默认使用 `预览` mode。Preview 必须支持 heading、paragraph、bullet list、numbered list、blockquote、divider 和 fenced code block。Inline Markdown 必须保留。`详情` mode 必须提供 large editing surface。
@@ -166,6 +166,8 @@ flowchart TB
 - `UI-PPL-034`：Task detail titlebar 不得使用 oversized leading title block or `NavigationStack` toolbar that renders actions outside the titlebar。Title 必须在 bar 中居中。Close action 必须位于 leading edge，并必须呈现为 native macOS red traffic-light control。Control frame 必须为 `28pt` macOS target；12pt red disc 必须使用 hover-only xmark。Titlebar blank surface 必须提供 window-drag interaction。Mode control 必须位于 trailing edge，使用 neutral-tinted small segmented control。Titlebar 必须使用 `52pt` system bar material and a `0.5pt` separator。
 - `UI-PPL-035`：`FilterPopover` 必须使用 `300pt × 580pt` 固定尺寸、fixed header and footer。Filter content 必须使用 compact multi-select chips，不得恢复 vertical switch rows。Assignee chips 必须使用 adaptive two-column grid。Status 和 priority chips 必须分别使用 four-column grids。Tags 必须使用 adaptive grid。Sort options 必须使用 two-column grid。Selected chips 必须使用 tint、outline、`selected` accessibility state and `已选择` accessibility value。Wide selected chips 必须同时显示 checkmark。Selected compact chips 必须保持 primary text contrast；禁止把 bright P1 yellow or neutral todo tint 用作 white-text solid fill。Header 必须显示 active-condition count and enabled reset action。Footer 必须显示 filtered-task count and prominent `完成` action。Popover 在右侧 toolbar anchor 下不得发生 clipping、overlap or dead space。
 - `UI-PPL-036`：Compact PeopleSchedule 必须隐藏 duplicated global day-navigation row，并只保留一个 schedule navigation row。Accessibility text sizes 必须把 compact person role and metrics reflow below the name。Person header 必须保持在 window bounds 内，不得发生 horizontal clipping。
+- `UI-PPL-037`：Compact PeopleSchedule 必须在 schedule toolbar 下方显示固定的 week strip。Week strip 只列出有任务的周，并始终包含本周和所选周。每个 week chip 显示日期范围和任务数量；跨周任务在每个重叠的周计数。Tap week chip 必须切换到 week period 并显示该周。Week chip 文字必须使用 strong text color，selection 使用 tint 和 accent border，并支持 Dynamic Type。Compact task bar 必须显示完整日期范围。
+- `UI-PPL-038`：Compact `NavigationStack` 不承载 toolbar items 时，必须使用 `.toolbarVisibility(.hidden, for: .automatic)` 隐藏空 navigation bar。Project title 必须直接位于 status bar 下方。System search 必须保留在 bottom toolbar 并保持可用。
 
 ## 8. 关联合同
 
