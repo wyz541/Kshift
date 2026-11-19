@@ -11,6 +11,7 @@ struct PeopleScheduleView: View {
     @State private var horizontalOffset: CGFloat = 0
     @State private var viewportWidth: CGFloat = 0
     @State private var isShowingSettings = false
+    @State private var isShowingFilters = false
     @State private var hasRestoredScroll = false
 
     private var rows: [PeopleScheduleRow] {
@@ -70,39 +71,339 @@ struct PeopleScheduleView: View {
             }
         }
         .background(.background)
+        // Establish the container first so the identifier and label describe
+        // the container itself instead of propagating onto every child control.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("people-schedule-view")
         .accessibilityLabel("人员排期，\(rows.count) 人，\(model.scheduleRangeTitle)")
-        .accessibilityElement(children: .contain)
     }
 
     private var compactSchedule: some View {
-        ScrollView(.vertical) {
-            LazyVStack(alignment: .leading, spacing: 10) {
-                ForEach(rows) { row in
-                    CompactSchedulePersonSection(model: model, row: row)
+        VStack(spacing: 0) {
+            compactWeekStrip
+                .padding(.horizontal, 12)
+
+            Divider().opacity(0.4)
+
+            ScrollView(.vertical) {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    compactTaskSummary
+
+                    ForEach(rows) { row in
+                        CompactSchedulePersonSection(model: model, row: row)
+                    }
                 }
+                .padding(.horizontal, 12)
+                .padding(.top, 8)
+                .padding(.bottom, 88)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .padding(.bottom, 88)
+            .scrollIndicators(.visible)
+            .accessibilityLabel("人员排期，\(rows.count) 人，\(model.scheduleRangeTitle)")
         }
-        .scrollIndicators(.visible)
-        .accessibilityLabel("人员排期，\(rows.count) 人，\(model.scheduleRangeTitle)")
     }
 
+    /// Counts tasks inside the shown range, so the number matches the week
+    /// strip. A task with several assignees appears in several rows but
+    /// counts once.
+    private var compactTaskSummary: some View {
+        let visibleTaskCount = Set(rows.flatMap { $0.tasks.map(\.id) }).count
+        return Text("\(visibleTaskCount) 项任务 · \(rows.count) 人")
+            .font(.caption.weight(.medium))
+            .foregroundStyle(strongTextColor)
+            .accessibilityIdentifier("schedule-task-summary")
+    }
+
+    /// Weeks that have tasks, plus the current and selected weeks.
+    private var compactWeekBuckets: [PeopleScheduleWeekBucket] {
+        PeopleScheduleLayout.weekBuckets(
+            for: model.filteredTasks,
+            alwaysInclude: [model.projectToday, model.selectedDate],
+            calendar: model.projectCalendar
+        )
+    }
+
+    /// The selected chip exists only in week scope. Month scope shows a whole
+    /// month, so no single week is selected there.
+    private var compactSelectedWeekStart: Date? {
+        guard model.schedulePeriod == .week else { return nil }
+        return model.scheduleRangeStart
+    }
+
+    /// Week-level quick filter. Each chip is one week that has tasks; tapping
+    /// it shows that week. The strip scrolls horizontally and keeps the
+    /// selected week in view.
+    private var compactWeekStrip: some View {
+        let buckets = compactWeekBuckets
+        let selectedWeekStart = compactSelectedWeekStart
+        return ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 6) {
+                    ForEach(buckets) { bucket in
+                        compactWeekChip(bucket, isSelected: bucket.start == selectedWeekStart)
+                            .id(bucket.start)
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
+            .onAppear {
+                if let selectedWeekStart {
+                    proxy.scrollTo(selectedWeekStart, anchor: .center)
+                }
+            }
+            .onChange(of: selectedWeekStart) { _, newValue in
+                guard let newValue else { return }
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    proxy.scrollTo(newValue, anchor: .center)
+                }
+            }
+        }
+        // A horizontal scroll view is vertically flexible; fix it to the chip
+        // height so the chips can still grow with Dynamic Type.
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.vertical, 4)
+        .background(.background)
+        .accessibilityIdentifier("schedule-week-strip")
+    }
+
+    private func compactWeekChip(_ bucket: PeopleScheduleWeekBucket, isSelected: Bool) -> some View {
+        let isCurrentWeek = bucket.contains(model.projectToday)
+        return Button {
+            selectWeek(bucket)
+        } label: {
+            VStack(spacing: 1) {
+                Text(weekRangeLabel(bucket))
+                    .font(.footnote.monospacedDigit().weight(.semibold))
+                Text(weekDetailLabel(bucket, isCurrentWeek: isCurrentWeek))
+                    .font(.caption.weight(isCurrentWeek ? .bold : .medium))
+            }
+            // Text keeps the strong color in every state; the selected week is
+            // marked by the tinted fill and accent border, which keeps text
+            // contrast independent of the accent color.
+            .foregroundStyle(strongTextColor)
+            .lineLimit(1)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .frame(minHeight: 44)
+            .background {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.16) : Color.clear)
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(
+                        isSelected ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(.separator),
+                        lineWidth: isSelected ? 1.5 : 1
+                    )
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(weekAccessibilityLabel(bucket, isCurrentWeek: isCurrentWeek, isSelected: isSelected))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier(
+            "schedule-week-\(KshiftDate.isoString(from: bucket.start, calendar: model.projectCalendar))"
+        )
+    }
+
+    /// Shows the tapped week. Month scope switches to week scope, so a chip
+    /// tap always narrows the list to one week. Inside the current week the
+    /// selection stays on today; other weeks select their first day.
+    private func selectWeek(_ bucket: PeopleScheduleWeekBucket) {
+        model.setSchedulePeriod(.week)
+        let today = model.projectToday
+        model.selectDate(bucket.contains(today) ? today : bucket.start)
+    }
+
+    private func weekRangeLabel(_ bucket: PeopleScheduleWeekBucket) -> String {
+        let calendar = model.projectCalendar
+        let startMonth = calendar.component(.month, from: bucket.start)
+        let startDay = calendar.component(.day, from: bucket.start)
+        let endMonth = calendar.component(.month, from: bucket.end)
+        let endDay = calendar.component(.day, from: bucket.end)
+        if startMonth == endMonth {
+            return "\(startMonth)/\(startDay)–\(endDay)"
+        }
+        return "\(startMonth)/\(startDay)–\(endMonth)/\(endDay)"
+    }
+
+    private func weekDetailLabel(_ bucket: PeopleScheduleWeekBucket, isCurrentWeek: Bool) -> String {
+        let count = bucket.taskCount == 0 ? "无任务" : "\(bucket.taskCount) 项"
+        return isCurrentWeek ? "本周 · \(count)" : count
+    }
+
+    private func weekAccessibilityLabel(
+        _ bucket: PeopleScheduleWeekBucket,
+        isCurrentWeek: Bool,
+        isSelected: Bool
+    ) -> String {
+        let style = Date.FormatStyle(timeZone: model.projectTimeZone).month(.wide).day()
+        var parts = [
+            "\(bucket.start.formatted(style)) 至 \(bucket.end.formatted(style))",
+            bucket.taskCount == 0 ? "无任务" : "\(bucket.taskCount) 项任务",
+        ]
+        if isCurrentWeek { parts.append("本周") }
+        if isSelected { parts.append("已选择") }
+        return parts.joined(separator: "，")
+    }
+
+    @ViewBuilder
     private var scheduleToolbar: some View {
+        if horizontalSizeClass == .compact {
+            compactScheduleToolbar
+        } else {
+            regularScheduleToolbar
+        }
+    }
+
+    /// Compact chrome: one row. Period navigation on the left, the two
+    /// selection controls in the middle, and an overflow menu for the
+    /// low-frequency actions. Nine controls cannot share one phone-width row
+    /// without truncation, so the menu absorbs the rest.
+    private var compactScheduleToolbar: some View {
+        HStack(spacing: 6) {
+            compactStepButton(
+                symbol: "chevron.left",
+                label: "上一周期",
+                identifier: "schedule-previous"
+            ) {
+                model.moveSchedulePeriod(-1)
+            }
+
+            Button {
+                model.selectScheduleToday()
+            } label: {
+                Label("今天", systemImage: "calendar.badge.clock")
+                    .labelStyle(.titleAndIcon)
+                    .frame(minHeight: 34)
+                    .foregroundStyle(strongTextColor)
+            }
+            .buttonStyle(KshiftCompactGlassButtonStyle())
+            .accessibilityLabel("今天")
+            .accessibilityIdentifier("schedule-today")
+
+            compactStepButton(
+                symbol: "chevron.right",
+                label: "下一周期",
+                identifier: "schedule-next"
+            ) {
+                model.moveSchedulePeriod(1)
+            }
+
+            Spacer(minLength: 4)
+
+            sortControl
+
+            filterControl
+
+            compactOverflowMenu
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+        .frame(minHeight: 52)
+    }
+
+    private var sortControl: some View {
+        Menu {
+            ForEach(TaskSortOption.allCases) { option in
+                Toggle(option.title, isOn: Binding(
+                    get: { model.sortOption == option },
+                    set: { isSelected in
+                        if isSelected { model.sortOption = option }
+                    }
+                ))
+            }
+        } label: {
+            Image(systemName: "arrow.up.arrow.down")
+                .frame(width: 30, height: 30)
+        }
+        .menuStyle(.button)
+        .buttonStyle(KshiftCompactGlassButtonStyle())
+        .accessibilityLabel("排序")
+        .accessibilityIdentifier("sort-menu")
+    }
+
+    private var filterControl: some View {
+        Button {
+            isShowingFilters.toggle()
+        } label: {
+            Image(systemName: model.filter.isActive
+                ? "line.3.horizontal.decrease.circle.fill"
+                : "line.3.horizontal.decrease.circle")
+                .frame(width: 30, height: 30)
+        }
+        .buttonStyle(KshiftCompactGlassButtonStyle())
+        .accessibilityLabel("筛选任务")
+        .accessibilityIdentifier("filter-button")
+        .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
+            FilterPopover(model: model)
+        }
+    }
+
+    /// Holds the actions that do not need a permanent slot: period scope,
+    /// snapshot refresh, and layout settings.
+    private var compactOverflowMenu: some View {
+        Menu {
+            Picker("周期", selection: Binding(
+                get: { model.schedulePeriod },
+                set: { model.setSchedulePeriod($0) }
+            )) {
+                ForEach(SchedulePeriod.allCases) { period in
+                    Text(period.title).tag(period)
+                }
+            }
+
+            Button {
+                Swift.Task { await model.refresh() }
+            } label: {
+                Label("刷新共享快照", systemImage: "arrow.clockwise")
+            }
+            .accessibilityIdentifier("refresh-button")
+
+            Button {
+                isShowingSettings = true
+            } label: {
+                Label("排期布局设置", systemImage: "slider.horizontal.3")
+            }
+            .accessibilityIdentifier("schedule-settings")
+        } label: {
+            Image(systemName: "ellipsis")
+                .frame(width: 30, height: 30)
+        }
+        .menuStyle(.button)
+        .buttonStyle(KshiftCompactGlassButtonStyle())
+        .accessibilityLabel("更多操作")
+        .accessibilityIdentifier("schedule-overflow")
+        .popover(isPresented: $isShowingSettings, arrowEdge: .bottom) {
+            PeopleScheduleSettingsPopover(model: model)
+        }
+    }
+
+    private func compactStepButton(
+        symbol: String,
+        label: String,
+        identifier: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .frame(width: 30, height: 30)
+        }
+        .buttonStyle(KshiftCompactGlassButtonStyle())
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(identifier)
+    }
+
+    private var regularScheduleToolbar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 HStack(spacing: 6) {
-                    Button {
+                    compactStepButton(
+                        symbol: "chevron.left",
+                        label: "上一周期",
+                        identifier: "schedule-previous"
+                    ) {
                         model.moveSchedulePeriod(-1)
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .frame(width: 30, height: 30)
                     }
-                    .buttonStyle(KshiftCompactGlassButtonStyle())
-                    .accessibilityLabel("上一周期")
-                    .accessibilityIdentifier("schedule-previous")
 
                     Button {
                         model.selectScheduleToday()
@@ -115,15 +416,13 @@ struct PeopleScheduleView: View {
                     .accessibilityLabel("今天")
                     .accessibilityIdentifier("schedule-today")
 
-                    Button {
+                    compactStepButton(
+                        symbol: "chevron.right",
+                        label: "下一周期",
+                        identifier: "schedule-next"
+                    ) {
                         model.moveSchedulePeriod(1)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .frame(width: 30, height: 30)
                     }
-                    .buttonStyle(KshiftCompactGlassButtonStyle())
-                    .accessibilityLabel("下一周期")
-                    .accessibilityIdentifier("schedule-next")
                 }
 
                 if horizontalSizeClass == .regular {
@@ -172,18 +471,6 @@ struct PeopleScheduleView: View {
                 .accessibilityIdentifier("schedule-density")
 
                 PlannerUtilityControls(model: model)
-
-                if horizontalSizeClass == .compact {
-                    Button {
-                        Swift.Task { await model.refresh() }
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                            .frame(width: 30, height: 30)
-                    }
-                    .buttonStyle(KshiftCompactGlassButtonStyle())
-                    .accessibilityLabel("刷新共享快照")
-                    .accessibilityIdentifier("refresh-button")
-                }
 
                 Button {
                     isShowingSettings.toggle()
@@ -626,6 +913,12 @@ private struct CompactScheduleTaskCapsule: View {
         return "\(start[1])/\(start[2])–\(end[1])/\(end[2])"
     }
 
+    /// Canvas text has no intrinsic size, so the frame follows the label
+    /// length instead of reserving the widest possible range.
+    private var dateWidth: CGFloat {
+        CGFloat(dateLabel.count) * ScheduleTaskMetrics.dateCharacterWidth + 4
+    }
+
     var body: some View {
         ZStack(alignment: .leading) {
             Button {
@@ -654,7 +947,8 @@ private struct CompactScheduleTaskCapsule: View {
                             anchor: .center
                         )
                     }
-                    .frame(width: 58, height: 18)
+                    .frame(width: dateWidth, height: 18)
+                    .padding(.leading, ScheduleTaskMetrics.titleSpacing)
                     .accessibilityHidden(true)
                 }
                 .padding(.leading, ScheduleTaskMetrics.statusLeadingInset)
@@ -1366,7 +1660,10 @@ private enum ScheduleTaskMetrics {
     static let hitHeight: CGFloat = 44
     static let statusLeadingInset: CGFloat = 4
     static let contentSpacing: CGFloat = 3
-    static let trailingInset: CGFloat = 3
+    static let titleSpacing: CGFloat = 6
+    /// Advance width of one 10pt semibold monospaced character.
+    static let dateCharacterWidth: CGFloat = 6.1
+    static let trailingInset: CGFloat = 6
     static let statusFrame: CGFloat = 26
     static let contentLeading: CGFloat = statusFrame + contentSpacing
 }

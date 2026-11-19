@@ -176,12 +176,23 @@ final class KshiftIOSUITests: XCTestCase {
         next.tap()
         today.tap()
 
+        // Period scope and refresh live in the compact overflow menu, so the
+        // menu must be opened before either control exists in the hierarchy.
+        let overflow = element(in: app, identifier: "schedule-overflow", labelContains: "更多操作")
+        XCTAssertTrue(overflow.waitForExistence(timeout: 5), app.debugDescription)
+        overflow.tap()
+
         let month = app.buttons["月"].firstMatch
         let week = app.buttons["周"].firstMatch
         XCTAssertTrue(month.waitForExistence(timeout: 5), app.debugDescription)
         XCTAssertTrue(week.waitForExistence(timeout: 5), app.debugDescription)
         month.tap()
-        week.tap()
+        overflow.tap()
+        XCTAssertTrue(
+            app.buttons["周"].firstMatch.waitForExistence(timeout: 5),
+            app.debugDescription
+        )
+        app.buttons["周"].firstMatch.tap()
 
         let sortMenu = app.buttons["sort-menu"].firstMatch
         XCTAssertTrue(sortMenu.waitForExistence(timeout: 5), app.debugDescription)
@@ -257,6 +268,71 @@ final class KshiftIOSUITests: XCTestCase {
         }
 
         XCTAssertTrue(unexpectedIssues.isEmpty, unexpectedIssues.joined(separator: "\n"))
+    }
+
+    func testCompactLayoutHidesEmptyNavigationBarAndKeepsSearch() throws {
+        let app = launchPlannerWithDefaultView()
+
+        // The compact navigation bar carries no items, so the project title
+        // sits directly below the status bar instead of below an empty band.
+        let projectSwitcher = element(
+            in: app,
+            identifier: "project-switcher",
+            labelContains: "切换项目"
+        )
+        XCTAssertTrue(projectSwitcher.waitForExistence(timeout: 8))
+        XCTAssertLessThan(projectSwitcher.frame.minY, 100, app.debugDescription)
+
+        let filteredOut = app.buttons["schedule-task-task-launch-brief"].firstMatch
+        XCTAssertTrue(filteredOut.waitForExistence(timeout: 5), app.debugDescription)
+
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5), app.debugDescription)
+        search.tap()
+        search.typeText("VoiceOver")
+
+        let disappeared = expectation(
+            for: NSPredicate(format: "exists == false"),
+            evaluatedWith: filteredOut
+        )
+        wait(for: [disappeared], timeout: 5)
+        XCTAssertTrue(
+            app.buttons["schedule-task-task-voiceover"].firstMatch.exists,
+            app.debugDescription
+        )
+    }
+
+    func testWeekStripChipSwitchesShownWeek() throws {
+        let app = launchPlannerWithDefaultView()
+
+        let summary = app.staticTexts["schedule-task-summary"].firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 8), app.debugDescription)
+        let currentWeekSummary = summary.label
+        XCTAssertFalse(currentWeekSummary.hasPrefix("0 "), currentWeekSummary)
+
+        // Demo tasks lie at most three days from today, so two weeks ahead is
+        // always empty regardless of the weekday the test runs on.
+        let next = app.buttons["schedule-next"].firstMatch
+        XCTAssertTrue(next.waitForExistence(timeout: 5))
+        next.tap()
+        next.tap()
+        XCTAssertTrue(
+            NSPredicate(format: "label BEGINSWITH %@", "0 ").evaluate(with: summary),
+            summary.label
+        )
+
+        let currentWeekChip = app.buttons.matching(
+            NSPredicate(
+                format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                "schedule-week-",
+                "本周"
+            )
+        ).firstMatch
+        XCTAssertTrue(currentWeekChip.waitForExistence(timeout: 5), app.debugDescription)
+        currentWeekChip.tap()
+
+        XCTAssertEqual(summary.label, currentWeekSummary)
+        XCTAssertTrue(currentWeekChip.isSelected, app.debugDescription)
     }
 
     func testPeopleScheduleStatusControlOpensNativeMenu() throws {
@@ -382,6 +458,10 @@ final class KshiftIOSUITests: XCTestCase {
 
     func testCoreActionsMeetMinimumTouchTargets() throws {
         let app = launchPlanner()
+        // Frames at fractional origins report heights such as
+        // 43.99999999999997. The tolerance absorbs floating-point error only;
+        // it is far below one device pixel (0.333pt at 3x).
+        let minimumTarget: CGFloat = 44 - 0.01
 
         let actions = [
             element(in: app, identifier: "project-switcher", labelContains: "切换项目"),
@@ -393,8 +473,8 @@ final class KshiftIOSUITests: XCTestCase {
 
         for action in actions {
             XCTAssertTrue(action.waitForExistence(timeout: 5))
-            XCTAssertGreaterThanOrEqual(action.frame.width, 44)
-            XCTAssertGreaterThanOrEqual(action.frame.height, 44)
+            XCTAssertGreaterThanOrEqual(action.frame.width, minimumTarget)
+            XCTAssertGreaterThanOrEqual(action.frame.height, minimumTarget)
         }
 
         let toggle = element(
@@ -403,8 +483,8 @@ final class KshiftIOSUITests: XCTestCase {
             labelContains: "标记为"
         )
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
-        XCTAssertGreaterThanOrEqual(toggle.frame.width, 44)
-        XCTAssertGreaterThanOrEqual(toggle.frame.height, 44)
+        XCTAssertGreaterThanOrEqual(toggle.frame.width, minimumTarget)
+        XCTAssertGreaterThanOrEqual(toggle.frame.height, minimumTarget)
     }
 
     func testAddTaskActionsDoNotOverlap() throws {

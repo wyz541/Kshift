@@ -177,11 +177,11 @@ struct PlannerView: View {
     @ViewBuilder
     private var plannerControls: some View {
         if model.viewMode == .peopleSchedule {
+            // Compact People Schedule carries sort, filter, refresh and
+            // settings in its own single toolbar row (UI-PPL-021), so the
+            // planner header keeps only the view picker.
             if horizontalSizeClass == .compact {
-                VStack(alignment: .leading, spacing: 10) {
-                    viewModePicker
-                    compactActionBar
-                }
+                viewModePicker
             }
         } else if usesAccessibilityLayout {
             accessibilityControls

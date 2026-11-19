@@ -188,20 +188,28 @@ public struct KshiftRootView: View {
     private var rootContent: some View {
         if horizontalSizeClass == .compact {
             NavigationStack {
-                PlannerView(model: model) {
-                    isShowingPlanDepth = true
-                }
+                // PlannerView draws its own project title, and the toolbar
+                // items above are attached outside this stack, so the compact
+                // navigation bar is an empty band. `.automatic` is the
+                // navigation bar on iOS; search lives in the bottom toolbar
+                // and stays visible with the bar hidden.
+                planner
+                    .toolbarVisibility(.hidden, for: .automatic)
             }
         } else {
             NavigationSplitView {
                 SidebarView(model: model, usesNavigationLinks: false)
                     .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 310)
             } detail: {
-                PlannerView(model: model) {
-                    isShowingPlanDepth = true
-                }
+                planner
             }
             .navigationSplitViewStyle(.balanced)
+        }
+    }
+
+    private var planner: some View {
+        PlannerView(model: model) {
+            isShowingPlanDepth = true
         }
     }
 
