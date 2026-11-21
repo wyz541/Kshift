@@ -104,6 +104,36 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(editor.waitForNonExistence(timeout: 5), app.debugDescription)
     }
 
+    func testBoardNotesOpenReadableMarkdownAtAccessibilitySize() throws {
+        let app = XCUIApplication()
+        app.launchArguments += [
+            "-UIPreferredContentSizeCategoryName",
+            "UICTContentSizeCategoryAccessibilityXXXL",
+        ]
+        app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
+        app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
+        app.launchEnvironment["KSHIFT_INITIAL_VIEW_MODE"] = "board"
+        app.launch()
+
+        let notesButton = app.buttons["task-notes-task-launch-brief"].firstMatch
+        XCTAssertTrue(app.scrollViews["board-view"].firstMatch.waitForExistence(timeout: 8))
+        if !notesButton.isHittable { app.swipeUp() }
+        XCTAssertTrue(notesButton.waitForExistence(timeout: 8), app.debugDescription)
+        let card = app.descendants(matching: .any)["task-task-launch-brief"].firstMatch
+        // The accessibility-size board column is wider than the 286-point compact column.
+        XCTAssertGreaterThan(card.frame.width, 286)
+        XCTAssertGreaterThanOrEqual(notesButton.frame.width, 44 - 0.01)
+        XCTAssertGreaterThanOrEqual(notesButton.frame.height, 44 - 0.01)
+        attachScreenshot(app, named: "ios-board-notes-accessibility-size")
+        notesButton.tap()
+
+        let preview = app.scrollViews["board-task-notes"].firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertTrue(preview.staticTexts["发布准备"].isHittable, app.debugDescription)
+        XCTAssertTrue(preview.staticTexts["确认舞台与音响"].isHittable, app.debugDescription)
+        attachScreenshot(app, named: "ios-board-notes-markdown-accessibility-size")
+    }
+
     func testTableRowEditUsesAnchoredPopover() throws {
         let app = launchPlanner()
         let table = app.buttons["表格"].firstMatch
@@ -296,10 +326,14 @@ final class KshiftIOSUITests: XCTestCase {
             evaluatedWith: filteredOut
         )
         wait(for: [disappeared], timeout: 5)
-        XCTAssertTrue(
-            app.buttons["schedule-task-task-voiceover"].firstMatch.exists,
-            app.debugDescription
-        )
+        let result = app.buttons["schedule-task-task-voiceover"].firstMatch
+        let scheduleRows = app.scrollViews.matching(
+            NSPredicate(format: "label BEGINSWITH %@", "人员排期")
+        ).firstMatch
+        for _ in 0..<3 where !result.isHittable && scheduleRows.isHittable {
+            scheduleRows.swipeUp()
+        }
+        XCTAssertTrue(result.waitForExistence(timeout: 5), app.debugDescription)
     }
 
     func testWeekStripChipSwitchesShownWeek() throws {
@@ -518,6 +552,7 @@ final class KshiftIOSUITests: XCTestCase {
             return true
         }
 
+        attachScreenshot(app, named: "ios-board-accessibility-audit")
         XCTAssertTrue(unexpectedIssues.isEmpty, unexpectedIssues.joined(separator: "\n"))
     }
 

@@ -27,7 +27,21 @@ final class KshiftUpdateTests: XCTestCase {
         XCTAssertEqual(candidate.version.description, "1.1.0")
         XCTAssertEqual(candidate.asset.platform, .macOS)
         XCTAssertEqual(candidate.releaseNotes, "Bug fixes")
-        XCTAssertTrue(candidate.assetURL.absoluteString.contains("download"))
+        XCTAssertEqual(candidate.distributionURL.absoluteString, "https://example.test/releases/tag/v1.1.0")
+        XCTAssertEqual(candidate.assetURL.absoluteString, "https://example.test/releases/download/v1.1.0/Kshift.dmg")
+        XCTAssertEqual(candidate.releaseNotesURL?.absoluteString, "https://example.test/releases/download/v1.1.0/release-notes.md")
+        XCTAssertEqual(candidate.manifest.assets.map(\.platform), [.macOS, .source, .server])
+    }
+
+    func testManifestAcceptsFractionalReleaseAndPromotionTimestamps() throws {
+        let data = try manifestData(version: "1.1.0", channel: "stable", releaseStatus: "promoted", timestamp: "2026-11-18T00:00:00.123Z")
+        let manifest = try KshiftReleaseManifest(data: data)
+        XCTAssertEqual(manifest.generatedAt.timeIntervalSince1970, 1794960000.123, accuracy: 0.001)
+    }
+
+    func testUpdateConfigurationUsesInjectedHostPlatform() {
+        XCTAssertEqual(KshiftUpdateConfiguration.from(platform: .iOS, environment: [:]).platform, .iOS)
+        XCTAssertEqual(KshiftUpdateConfiguration.from(platform: .macOS, environment: [:]).platform, .macOS)
     }
 
     func testEqualOrOlderReleaseReturnsNoUpdate() async throws {
@@ -96,7 +110,7 @@ final class KshiftUpdateTests: XCTestCase {
             configuration: configuration(platform: .macOS),
             fetch: { url in
                 if url.absoluteString.contains("release-manifest") { return (data, 200) }
-                return (Data("tampered".utf8), 200)
+                return (Data("bad".utf8), 200)
             }
         )
         guard case let .available(candidate) = await service.checkForUpdates() else { return XCTFail("Expected candidate") }
@@ -104,7 +118,8 @@ final class KshiftUpdateTests: XCTestCase {
             _ = try await service.downloadAndVerify(candidate)
             XCTFail("Expected checksum mismatch")
         } catch let error as KshiftUpdateError {
-            guard case .checksumMismatch = error else { return XCTFail("Unexpected error: \(error)") }
+            guard case let .checksumMismatch(_, actual) = error else { return XCTFail("Unexpected error: \(error)") }
+            XCTAssertEqual(actual.count, 64)
         }
     }
 
@@ -126,7 +141,8 @@ final class KshiftUpdateTests: XCTestCase {
         architecture: String = "arm64",
         minimumMacOS: String = "26.0",
         assetSigningStatus: String = "signed",
-        manifestSigningStatus: String = "signed"
+        manifestSigningStatus: String = "signed",
+        timestamp: String = "2026-11-18T00:00:00Z"
     ) throws -> Data {
         let assetDigest = String(repeating: "a", count: 64)
         let manifest: [String: Any] = [
@@ -136,12 +152,13 @@ final class KshiftUpdateTests: XCTestCase {
             "channel": channel,
             "tag": "v\(version)",
             "source_commit": String(repeating: "b", count: 40),
-            "generated_at": "2026-11-18T00:00:00Z",
+            "generated_at": timestamp,
             "minimum_os": ["macos": minimumMacOS, "ios": "26.0"],
             "database": ["engine": "postgresql", "major": 18, "exact_version": "18.0", "schema_version": "0001", "migration_digest": String(repeating: "c", count: 64)],
             "assets": [
-                ["name": "Kshift.dmg", "platform": "macos", "architecture": architecture, "role": "application", "size_bytes": 3, "sha256": assetDigest, "signing_status": "signed"],
-                ["name": "release-notes.md", "platform": "source", "architecture": "all", "role": "notes", "size_bytes": 9, "sha256": String(repeating: "d", count: 64), "signing_status": "not-applicable"]
+                ["name": "Kshift.dmg", "platform": "macos", "architecture": architecture, "role": "application", "size_bytes": 3, "sha256": assetDigest, "signing_status": assetSigningStatus],
+                ["name": "release-notes.md", "platform": "source", "architecture": "all", "role": "notes", "size_bytes": 9, "sha256": String(repeating: "d", count: 64), "signing_status": "not-applicable"],
+                ["name": "kshift-server.tar.gz", "platform": "server", "architecture": "arm64", "role": "server-bundle", "size_bytes": 32, "sha256": assetDigest, "signing_status": "unsigned"]
             ],
             "signing": ["status": manifestSigningStatus, "identity": "Developer ID Application", "notarization": "passed"],
             "sbom": ["format": "spdx-json", "file": "sbom.json", "sha256": String(repeating: "e", count: 64)],
@@ -150,7 +167,7 @@ final class KshiftUpdateTests: XCTestCase {
             "limitations": [],
             "rollback": ["strategy": "new-patch-release", "notes": "publish a patch"],
             "release_status": releaseStatus,
-            "promotion": releaseStatus == "promoted" ? ["approved_by": "fixture", "approved_at": "2026-11-18T00:00:00Z", "run_id": "100"] : NSNull(),
+            "promotion": releaseStatus == "promoted" ? ["approved_by": "fixture", "approved_at": timestamp, "run_id": "100"] : NSNull(),
             "release_notes": "Bug fixes"
         ]
         return try JSONSerialization.data(withJSONObject: manifest)

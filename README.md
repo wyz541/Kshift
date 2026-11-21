@@ -269,6 +269,7 @@ R3 已进入共享 `KshiftRootView` 的“计划深度”入口。切片包含�
 - 计划深度页面通过 Rust client 的 R3 gRPC/FFI 边界读取 snapshot、写入 status/rollback 并生成报告。Sample boundary 只用于 Demo 和 preview。
 - 看板、甘特、历史、报告、Markdown 和附件视图在 macOS/iOS 共用。
 - 看板任务卡使用原生 Liquid Glass。甘特、历史和报告使用内容底板。
+- 有备注的看板任务卡提供「查看备注」按钮；完整 Markdown 在独立的可滚动面板中阅读，支持系统大字体。
 
 R3 验收：
 

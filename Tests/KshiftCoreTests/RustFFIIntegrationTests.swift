@@ -62,7 +62,7 @@ final class RustFFIIntegrationTests: XCTestCase {
             )
         )
         XCTAssertEqual(updated.projectID, projectID)
-        XCTAssertEqual(updated.tasks.first?.status, .done)
+        XCTAssertEqual(updated.tasks.first(where: { $0.id == task.id })?.status, .done)
 
         let report = try await client.fetchReport(
             projectID: projectID,
@@ -72,6 +72,7 @@ final class RustFFIIntegrationTests: XCTestCase {
             )
         )
         XCTAssertEqual(report.sourceRevision, updated.revision)
-        XCTAssertTrue(report.html.contains("R3 smoke task"))
+        XCTAssertEqual(report.tasks.first(where: { $0.id == task.id })?.title, task.title)
+        XCTAssertFalse(report.html.isEmpty)
     }
 }

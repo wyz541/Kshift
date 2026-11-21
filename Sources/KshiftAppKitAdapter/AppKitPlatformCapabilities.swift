@@ -8,6 +8,13 @@
   @MainActor
   public final class AppKitPlatformCapabilities: KshiftPlatformCapabilities {
     public let platform: KshiftPlatform = .macOS
+    public let fetchReleaseResource: KshiftUpdateService.Fetch = { url in
+      let (data, response) = try await URLSession.shared.data(from: url)
+      guard let response = response as? HTTPURLResponse else {
+        throw KshiftUpdateError.network("Expected an HTTP release response.")
+      }
+      return (data, response.statusCode)
+    }
 
     private let openURLHandler: (URL) -> Bool
     private let feedbackHandler: (KshiftPlatformFeedback) -> Void

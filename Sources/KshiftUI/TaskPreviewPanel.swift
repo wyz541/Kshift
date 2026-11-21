@@ -1,8 +1,18 @@
 import KshiftCore
 import SwiftUI
-#if os(macOS)
-import AppKit
-#endif
+
+public typealias KshiftScheduleHoverPresenter = @MainActor (Bool, AnyView) -> AnyView
+
+private struct KshiftScheduleHoverPresenterKey: EnvironmentKey {
+    static let defaultValue: KshiftScheduleHoverPresenter? = nil
+}
+
+public extension EnvironmentValues {
+    var kshiftScheduleHoverPresenter: KshiftScheduleHoverPresenter? {
+        get { self[KshiftScheduleHoverPresenterKey.self] }
+        set { self[KshiftScheduleHoverPresenterKey.self] = newValue }
+    }
+}
 
 struct TaskPreviewPanel: View {
     @ObservedObject var model: AppModel
@@ -65,29 +75,28 @@ struct ScheduleTaskHoverPreviewModifier: ViewModifier {
 
     let isEditing: Bool
 
+    @Environment(\.kshiftScheduleHoverPresenter) private var presentHover
     @State private var isHovering = false
     @State private var isPresenting = false
     @State private var delayedPresentation: Task<Void, Never>?
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        #if os(macOS)
-        hoverTracking(content)
-            .background {
-                ScheduleHoverPopover(isPresented: isPresenting) {
+        if let presentHover {
+            hoverTracking(content)
+                .background {
+                    presentHover(isPresenting, AnyView(TaskPreviewPanel(model: model, task: task)))
+                }
+        } else {
+            hoverTracking(content)
+                .popover(
+                    isPresented: $isPresenting,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .trailing
+                ) {
                     TaskPreviewPanel(model: model, task: task)
                 }
-            }
-        #else
-        hoverTracking(content)
-            .popover(
-                isPresented: $isPresenting,
-                attachmentAnchor: .rect(.bounds),
-                arrowEdge: .trailing
-            ) {
-                TaskPreviewPanel(model: model, task: task)
-            }
-        #endif
+        }
     }
 
     private func hoverTracking(_ content: Content) -> some View {
@@ -116,43 +125,3 @@ struct ScheduleTaskHoverPreviewModifier: ViewModifier {
             }
     }
 }
-
-#if os(macOS)
-private struct ScheduleHoverPopover<Preview: View>: NSViewRepresentable {
-    let isPresented: Bool
-    @ViewBuilder let preview: () -> Preview
-
-    func makeNSView(context: Context) -> Anchor { Anchor() }
-
-    func updateNSView(_ anchor: Anchor, context: Context) {
-        guard isPresented, anchor.window != nil else {
-            anchor.popover.close()
-            return
-        }
-        if let host = anchor.popover.contentViewController as? NSHostingController<Preview> {
-            host.rootView = preview()
-        } else {
-            anchor.popover.contentViewController = NSHostingController(rootView: preview())
-        }
-        if !anchor.popover.isShown {
-            anchor.popover.show(relativeTo: anchor.bounds, of: anchor, preferredEdge: .maxX)
-        }
-    }
-
-    static func dismantleNSView(_ anchor: Anchor, coordinator: ()) {
-        anchor.popover.close()
-    }
-
-    final class Anchor: NSView {
-        let popover: NSPopover = {
-            let popover = NSPopover()
-            // The click that closes a hover preview must still reach the task bar.
-            popover.behavior = .applicationDefined
-            popover.animates = false
-            return popover
-        }()
-
-        override func hitTest(_ point: NSPoint) -> NSView? { nil }
-    }
-}
-#endif

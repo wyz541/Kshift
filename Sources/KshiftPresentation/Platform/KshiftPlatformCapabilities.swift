@@ -20,6 +20,7 @@ public enum KshiftPlatformFeedback: Equatable, Sendable {
 @MainActor
 public protocol KshiftPlatformCapabilities: AnyObject {
   var platform: KshiftPlatform { get }
+  var fetchReleaseResource: KshiftUpdateService.Fetch { get }
   func openExternalURL(_ url: URL) async -> Bool
   func perform(_ feedback: KshiftPlatformFeedback)
   func exportImage(_ data: Data, suggestedFilename: String) async -> Bool
@@ -28,6 +29,10 @@ public protocol KshiftPlatformCapabilities: AnyObject {
 }
 
 public extension KshiftPlatformCapabilities {
+  var fetchReleaseResource: KshiftUpdateService.Fetch {
+    { _ in throw KshiftUpdateError.network("Release downloads are not available on this platform.") }
+  }
+
   func exportImage(_ data: Data, suggestedFilename: String) async -> Bool {
     _ = data
     _ = suggestedFilename

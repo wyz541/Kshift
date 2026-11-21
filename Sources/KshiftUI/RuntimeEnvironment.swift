@@ -31,7 +31,10 @@ public enum KshiftRuntimeEnvironment {
             now: fixedNow.map { value in { value } } ?? Date.init,
             initialViewMode: initialViewMode,
             preferencesStore: preferencesStore,
-            updateService: KshiftUpdateService(configuration: KshiftUpdateConfiguration.from(environment: environment))
+            updateService: KshiftUpdateService(
+                configuration: KshiftUpdateConfiguration.from(platform: platform.platform, environment: environment),
+                fetch: platform.fetchReleaseResource
+            )
         )
     }
 

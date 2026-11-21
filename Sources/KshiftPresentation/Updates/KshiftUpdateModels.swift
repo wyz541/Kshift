@@ -3,10 +3,6 @@ import Foundation
 import CryptoKit
 #endif
 
-#if canImport(FoundationNetworking)
-import FoundationNetworking
-#endif
-
 public struct KshiftVersion: Codable, Comparable, Hashable, Sendable, CustomStringConvertible {
     public let major: Int
     public let minor: Int
@@ -110,16 +106,10 @@ public struct KshiftUpdateConfiguration: Sendable {
     }
 
     public static func from(
+        platform: KshiftPlatform,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         bundle: Bundle = .main
     ) -> KshiftUpdateConfiguration {
-        let platform: KshiftUpdatePlatform = {
-            #if os(iOS)
-            return .iOS
-            #else
-            return .macOS
-            #endif
-        }()
         let architecture: String = {
             #if arch(arm64)
             return "arm64"
@@ -145,7 +135,7 @@ public struct KshiftUpdateConfiguration: Sendable {
         return KshiftUpdateConfiguration(
             manifestURL: manifestURL,
             releaseBaseURL: releaseBaseURL,
-            platform: platform,
+            platform: platform == .iOS ? .iOS : .macOS,
             architecture: architecture,
             operatingSystemVersion: osVersion,
             installed: KshiftInstalledAppInfo(version: version, build: build)
@@ -153,9 +143,16 @@ public struct KshiftUpdateConfiguration: Sendable {
     }
 }
 
+public enum KshiftReleaseAssetPlatform: String, Codable, Sendable {
+    case macOS = "macos"
+    case iOS = "ios"
+    case server
+    case source
+}
+
 public struct KshiftReleaseAsset: Codable, Equatable, Sendable {
     public let name: String
-    public let platform: KshiftUpdatePlatform
+    public let platform: KshiftReleaseAssetPlatform
     public let architecture: String
     public let role: String
     public let sizeBytes: Int
@@ -164,7 +161,7 @@ public struct KshiftReleaseAsset: Codable, Equatable, Sendable {
 
     public init(
         name: String,
-        platform: KshiftUpdatePlatform,
+        platform: KshiftReleaseAssetPlatform,
         architecture: String,
         role: String,
         sizeBytes: Int,
@@ -208,7 +205,16 @@ public struct KshiftReleaseManifest: Decodable, Equatable, Sendable {
 
     public init(data: Data) throws {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            let value = try container.decode(String.self)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: value) { return date }
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: value) { return date }
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Expected an ISO 8601 timestamp.")
+        }
         self = try decoder.decode(Self.self, from: data)
         try validate()
     }
@@ -477,7 +483,7 @@ public struct KshiftUpdateService: Sendable {
     public let configuration: KshiftUpdateConfiguration
     private let fetch: Fetch
 
-    public init(configuration: KshiftUpdateConfiguration, fetch: @escaping Fetch = KshiftUpdateService.defaultFetch) {
+    public init(configuration: KshiftUpdateConfiguration, fetch: @escaping Fetch) {
         self.configuration = configuration
         self.fetch = fetch
     }
@@ -498,7 +504,7 @@ public struct KshiftUpdateService: Sendable {
                 return .incompatible(version: manifest.version, reason: "The release requires a newer operating system.")
             }
             let compatible = manifest.assets.filter {
-                $0.platform == platform && $0.role == "application" && isArchitectureCompatible($0.architecture)
+                $0.platform.rawValue == platform.rawValue && $0.role == "application" && isArchitectureCompatible($0.architecture)
             }
             guard let asset = compatible.first else {
                 return .incompatible(version: manifest.version, reason: "No compatible application asset is published for this device.")
@@ -513,11 +519,12 @@ public struct KshiftUpdateService: Sendable {
             guard signingAllowed else {
                 return .incompatible(version: manifest.version, reason: "The release is not signed for this platform.")
             }
-            let base = manifest.releaseURL ?? configuration.releaseBaseURL.appendingPathComponent("tag").appendingPathComponent(manifest.tag)
-            let distributionURL = base
-            let assetURL = base.appendingPathComponent("download").appendingPathComponent(asset.name)
+            let distributionURL = manifest.releaseURL
+                ?? configuration.releaseBaseURL.appendingPathComponent("tag").appendingPathComponent(manifest.tag)
+            let downloadBase = configuration.releaseBaseURL.appendingPathComponent("download").appendingPathComponent(manifest.tag)
+            let assetURL = downloadBase.appendingPathComponent(asset.name)
             let notesAsset = manifest.assets.first { $0.role == "notes" }
-            let notesURL = notesAsset.map { base.appendingPathComponent("download").appendingPathComponent($0.name) }
+            let notesURL = notesAsset.map { downloadBase.appendingPathComponent($0.name) }
             return .available(KshiftUpdateCandidate(
                 manifest: manifest,
                 asset: asset,
@@ -548,15 +555,6 @@ public struct KshiftUpdateService: Sendable {
 
     private func isArchitectureCompatible(_ assetArchitecture: String) -> Bool {
         assetArchitecture == configuration.architecture || assetArchitecture == "universal" || assetArchitecture == "all"
-    }
-
-    public static let defaultFetch: Fetch = { url in
-        do {
-            let (data, response) = try await URLSession.shared.data(from: url)
-            return (data, (response as? HTTPURLResponse)?.statusCode ?? 200)
-        } catch {
-            throw KshiftUpdateError.network(error.localizedDescription)
-        }
     }
 }
 
