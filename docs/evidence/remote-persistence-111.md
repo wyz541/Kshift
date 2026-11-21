@@ -21,8 +21,10 @@ description: 记录 Task #111 的本地连接、PostgreSQL 和恢复验证结果
 | macOS Debug `xcodebuild build`，使用 `build/DerivedData` | 构建通过。 |
 | `swift test --filter 'LiveP0E2ETests\|KshiftClientFactoryTests'`，连接测试服务 | 6 项通过。macOS P0 完成 38 项检查。两个默认客户端实例通过 snapshot 看到同一任务的创建和删除，各推进一个 revision。 |
 | iOS `testIOSLiveP0Scenario` | 通过；共享 P0 场景通过 FFI 对测试服务读写。 |
-| iOS `testDefaultClientOpensRemoteProject` | 通过；应用未设置 `KSHIFT_USE_FFI`，成功打开远端项目。 |
-| iOS `testBothProjectTimeZonesAndLiveUIWriteE2E` | 未通过；到达远端项目后停在日期或当日任务数断言，未走到 UI 保存。 |
+| iOS `testDefaultClientOpensRemoteProject` | 通过；未启用 `KSHIFT_USE_FFI` 或 Demo，项目切换按钮确认打开的是远端 `Alpha Project`。 |
+| iOS `testBothProjectTimeZonesAndLiveUIWriteE2E` | 通过；覆盖两个项目时区、日期导航、日历、任务历史、UI 保存和项目切换。 |
+| iOS UI 写入的 PostgreSQL 校验 | 通过；`Alpha Project` 存在一条 `Live UI created task`。计划日期为 `2026-11-15`，任务版本为 `1`，`create_task` 审计记录匹配 outbox revision `14`。 |
+| 完整 iOS Simulator `xcodebuild test` | UI 套件 23 项通过、1 项失败；App 测试 2 项通过。没有跳过用例。唯一失败是 `testAccessibilityAudit`：看板 Markdown 摘要触发 Dynamic Type 和文字裁切报告。未放宽此审计。 |
 | 完整 `swift test` 与 `b16d3c7` 对照 | 两者均未通过：更新模块报 6 个失败，平台边界测试报 5 个断言失败。未在此任务修复。 |
 
 Migration digest：`76d52640b1d854e9d18663b59f08522d6a60c48929b1c69c6424a782836bc164`。

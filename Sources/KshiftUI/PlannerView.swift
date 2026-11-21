@@ -380,6 +380,7 @@ struct SummaryStrip: View {
                     symbol: "checklist",
                     tint: .blue
                 )
+                .accessibilityIdentifier("daily-task-count")
                 SummaryMetric(
                     title: "已完成",
                     value: String(model.completedToday),

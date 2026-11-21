@@ -168,6 +168,28 @@ env "${test_runner_env[@]}" \
     -resultBundlePath "$ios_result" \
     test >"$scratch/ios-test.log" 2>&1
 
+primary_project_id="$(python3 -c 'import json, sys; print(json.load(sys.stdin)["alpha_project_id"])' < "$scratch/fixture.json")"
+persisted_task_count="$(psql "$database_url" -v ON_ERROR_STOP=1 \
+  -v primary_project_id="$primary_project_id" -v primary_date="$primary_date" -At <<'SQL'
+  SELECT count(*)
+    FROM kshift.task AS task
+    JOIN kshift.project AS project ON project.id = task.project_id
+    JOIN kshift.audit_log AS audit
+      ON audit.project_id = project.id AND audit.entity_id = task.id
+    JOIN kshift.change_event AS event
+      ON event.project_id = project.id AND event.command_id = audit.command_id
+   WHERE project.id = :'primary_project_id'::uuid
+     AND task.title = 'Live UI created task'
+     AND task.planned_on = :'primary_date'::date
+     AND task.deleted_at IS NULL
+     AND audit.command_name = 'create_task';
+SQL
+)"
+if [[ "$persisted_task_count" != 1 ]]; then
+  echo 'Expected one iOS UI task with a matching audit record and change event.' >&2
+  exit 1
+fi
+
 for command in create_project add_project_member create_task update_task batch_update_tasks delete_task; do
   if ! rg -q "\"command\":\"$command\"" "$server_log"; then
     echo "Expected live E2E command $command in server log." >&2

@@ -569,7 +569,7 @@ final class KshiftIOSUITests: XCTestCase {
         let selectedDate = app.descendants(matching: .any)["selected-date"].firstMatch
         XCTAssertTrue(selectedDate.waitForExistence(timeout: 8))
         XCTAssertTrue(selectedDate.label.contains("November 15"), selectedDate.label)
-        XCTAssertTrue(app.staticTexts["当日任务 3"].waitForExistence(timeout: 8))
+        assertDailyTaskCount(3, in: app)
 
         app.buttons["前一天"].firstMatch.tap()
         XCTAssertTrue(
@@ -615,14 +615,17 @@ final class KshiftIOSUITests: XCTestCase {
                 .waitForExistence(timeout: 8),
             app.debugDescription
         )
+        app.buttons["task-history-button"].firstMatch.tap()
+        XCTAssertTrue(app.staticTexts["任务历史"].firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(
-            app.descendants(matching: .any)
+            app.staticTexts
                 .matching(NSPredicate(format: "label CONTAINS %@", "创建任务 Shared roadmap task"))
                 .firstMatch
                 .waitForExistence(timeout: 8),
             app.debugDescription
         )
         app.buttons["关闭"].firstMatch.tap()
+        app.buttons["close-task-editor"].firstMatch.tap()
 
         firstMiaAddTask(in: app).tap()
         let titleField = taskTitleField(in: app)
@@ -630,10 +633,7 @@ final class KshiftIOSUITests: XCTestCase {
         titleField.typeText("Live UI created task")
         app.buttons["保存"].firstMatch.tap()
 
-        XCTAssertTrue(
-            app.staticTexts["当日任务 4"].waitForExistence(timeout: 15),
-            app.debugDescription
-        )
+        assertDailyTaskCount(4, in: app)
 
         let projectSwitcher = element(
             in: app,
@@ -653,11 +653,11 @@ final class KshiftIOSUITests: XCTestCase {
                 .waitForExistence(timeout: 15),
             app.debugDescription
         )
-        XCTAssertTrue(app.staticTexts["当日任务 1"].waitForExistence(timeout: 8))
+        assertDailyTaskCount(1, in: app)
     }
 
     func testDefaultClientOpensRemoteProject() throws {
-        let app = try launchLivePlanner(forceFFI: false)
+        let app = try launchLivePlanner()
         attachScreenshot(app, named: "ios-default-remote-client")
     }
 
@@ -753,7 +753,7 @@ final class KshiftIOSUITests: XCTestCase {
         return app
     }
 
-    private func launchLivePlanner(forceFFI: Bool = true) throws -> XCUIApplication {
+    private func launchLivePlanner() throws -> XCUIApplication {
         let environment = ProcessInfo.processInfo.environment
         guard let endpoint = environment["KSHIFT_ENDPOINT"],
               let token = environment["KSHIFT_TOKEN"],
@@ -773,9 +773,11 @@ final class KshiftIOSUITests: XCTestCase {
             throw XCTSkip("Set KSHIFT_CA_PEM or KSHIFT_CA_PATH.")
         }
         let app = XCUIApplication()
-        if forceFFI {
-            app.launchEnvironment["KSHIFT_USE_FFI"] = "1"
-        }
+        // Do not inherit demo mode or the force-remote override from the simulator.
+        app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
+        app.launchEnvironment["KSHIFT_INITIAL_VIEW_MODE"] = "board"
+        app.launchEnvironment["KSHIFT_DEMO_MODE"] = "0"
+        app.launchEnvironment["KSHIFT_USE_FFI"] = "0"
         app.launchEnvironment["KSHIFT_ENDPOINT"] = endpoint
         app.launchEnvironment["KSHIFT_CA_PEM"] = caPEM
         app.launchEnvironment["KSHIFT_TOKEN"] = token
@@ -784,12 +786,21 @@ final class KshiftIOSUITests: XCTestCase {
         app.launchEnvironment["KSHIFT_USER_TIME_ZONE"] = userTimeZone
         app.launchEnvironment["KSHIFT_NOW"] = now
         app.launch()
+        let remoteProject = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@ AND label CONTAINS %@", "project-switcher", primaryProject)
+        ).firstMatch
         XCTAssertTrue(
-            element(in: app, identifier: "project-switcher", labelContains: primaryProject)
-                .waitForExistence(timeout: 15),
+            remoteProject.waitForExistence(timeout: 15),
             app.debugDescription
         )
         return app
+    }
+
+    private func assertDailyTaskCount(_ count: Int, in app: XCUIApplication) {
+        let metric = app.descendants(matching: .any).matching(
+            NSPredicate(format: "identifier == %@ AND label == %@", "daily-task-count", "当日任务 \(count)")
+        ).firstMatch
+        XCTAssertTrue(metric.waitForExistence(timeout: 10), app.debugDescription)
     }
 
     private func element(
