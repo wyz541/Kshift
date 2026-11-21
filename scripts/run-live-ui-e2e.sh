@@ -149,7 +149,7 @@ KSHIFT_CARGO_OFFLINE=1 ./scripts/build-ffi.sh macos >/dev/null
 env "${p0_env[@]}" \
   KSHIFT_FFI_PATH="$root/.build/ffi/macos/libkshift_ffi.a" \
   KSHIFT_P0_E2E_REPORT="$scratch/macos-p0-report.json" \
-  swift test --filter 'LiveP0E2ETests/testMacOSLiveP0Scenario' \
+  swift test --filter LiveP0E2ETests \
   >"$scratch/macos-p0-test.log" 2>&1
 xcodegen generate >/dev/null
 ios_result="$scratch/ios-live.xcresult"
@@ -163,6 +163,7 @@ env "${test_runner_env[@]}" \
     -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
     -derivedDataPath "$ios_derived" \
     -only-testing:Kshift-iOS-PlannerTests/KshiftIOSTests/testIOSLiveP0Scenario \
+    -only-testing:Kshift-iOS-PlannerUITests/KshiftIOSUITests/testDefaultClientOpensRemoteProject \
     -only-testing:Kshift-iOS-PlannerUITests/KshiftIOSUITests/testBothProjectTimeZonesAndLiveUIWriteE2E \
     -resultBundlePath "$ios_result" \
     test >"$scratch/ios-test.log" 2>&1
@@ -222,7 +223,6 @@ run_macos_capture() {
 run_macos_capture "$scratch/macos-board.png" KSHIFT_DEMO_MODE=1
 run_macos_capture \
   "$scratch/macos-live-server.png" \
-  KSHIFT_USE_FFI=1 \
   KSHIFT_ENDPOINT="$endpoint" \
   KSHIFT_CA_PATH="$ca_path" \
   KSHIFT_TOKEN="$token" \

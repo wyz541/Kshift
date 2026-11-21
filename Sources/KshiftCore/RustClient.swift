@@ -21,13 +21,13 @@ public final class RustClient: KshiftClientProtocol, KshiftPlanDepthBoundary, @u
         endpoint: String? = nil,
         caPEM: Data? = nil,
         token: String? = nil,
-        deadlineMilliseconds: UInt64 = 10_000
+        deadlineMilliseconds: UInt64 = 15_000,
+        environment: [String: String] = ProcessInfo.processInfo.environment
     ) {
         self.actorID = actorID
         self.clientID = clientID
         self.deadlineMilliseconds = deadlineMilliseconds
 
-        let environment = ProcessInfo.processInfo.environment
         let resolvedEndpoint = endpoint ?? environment["KSHIFT_ENDPOINT"]
         let resolvedToken = token ?? environment["KSHIFT_TOKEN"]
         let resolvedCA = caPEM ?? Self.caPEM(from: environment)

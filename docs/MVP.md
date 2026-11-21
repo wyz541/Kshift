@@ -30,7 +30,7 @@ flowchart LR
   CL -->|"gRPC over TLS"| SV["Rust server"]
 ```
 
-`RustClient` 是配置了 `KSHIFT_ENDPOINT` 的 Debug 和 Release 入口。`KSHIFT_DEMO_MODE=1` 只用于显式选择 Demo 数据，`KSHIFT_USE_FFI=1` 强制选择远端 client。`RustClient` 读取 `KSHIFT_ENDPOINT`、`KSHIFT_CA_PATH` 或 `KSHIFT_CA_PEM`、`KSHIFT_TOKEN`。
+Debug 和 Release 默认使用 `RustClient`。缺少连接配置时会显示错误，不会回退到 Demo 数据。预览和 UI 测试用 `KSHIFT_DEMO_MODE=1` 显式选择 Demo 数据；`KSHIFT_USE_FFI=1` 优先于该选项。`RustClient` 读取 `KSHIFT_ENDPOINT`、`KSHIFT_CA_PATH` 或 `KSHIFT_CA_PEM`、`KSHIFT_TOKEN`。
 
 `KshiftRootView` 是唯一日计划 UI。并行原型已归档在 Git 提交 `84a8d1d`。决策见 [ADR-0009](adr/0009-single-day-plan-ui.md)。
 

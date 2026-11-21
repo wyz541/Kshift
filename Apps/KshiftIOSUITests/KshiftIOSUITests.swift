@@ -656,6 +656,11 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["当日任务 1"].waitForExistence(timeout: 8))
     }
 
+    func testDefaultClientOpensRemoteProject() throws {
+        let app = try launchLivePlanner(forceFFI: false)
+        attachScreenshot(app, named: "ios-default-remote-client")
+    }
+
     func testSheetOpenAndClosePerformance() throws {
         let app = launchPlanner()
         let addTask = firstMiaAddTask(in: app)
@@ -748,7 +753,7 @@ final class KshiftIOSUITests: XCTestCase {
         return app
     }
 
-    private func launchLivePlanner() throws -> XCUIApplication {
+    private func launchLivePlanner(forceFFI: Bool = true) throws -> XCUIApplication {
         let environment = ProcessInfo.processInfo.environment
         guard let endpoint = environment["KSHIFT_ENDPOINT"],
               let token = environment["KSHIFT_TOKEN"],
@@ -768,7 +773,9 @@ final class KshiftIOSUITests: XCTestCase {
             throw XCTSkip("Set KSHIFT_CA_PEM or KSHIFT_CA_PATH.")
         }
         let app = XCUIApplication()
-        app.launchEnvironment["KSHIFT_USE_FFI"] = "1"
+        if forceFFI {
+            app.launchEnvironment["KSHIFT_USE_FFI"] = "1"
+        }
         app.launchEnvironment["KSHIFT_ENDPOINT"] = endpoint
         app.launchEnvironment["KSHIFT_CA_PEM"] = caPEM
         app.launchEnvironment["KSHIFT_TOKEN"] = token

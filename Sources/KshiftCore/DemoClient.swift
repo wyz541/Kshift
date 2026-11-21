@@ -293,28 +293,9 @@ public enum KshiftClientFactory {
         environment: [String: String] = ProcessInfo.processInfo.environment
     ) -> any KshiftClientProtocol {
         let resolvedActorID = actorID ?? environment["KSHIFT_ACTOR_ID"] ?? "person-mia"
-        if shouldUseRustClient(environment: environment) {
-            return RustClient(actorID: resolvedActorID)
-        }
-        if environment["KSHIFT_DEMO_MODE"] == "1" {
+        if environment["KSHIFT_DEMO_MODE"] == "1", environment["KSHIFT_USE_FFI"] != "1" {
             return DemoKshiftClient(actorID: resolvedActorID)
         }
-#if DEBUG
-        return DemoKshiftClient(actorID: resolvedActorID)
-#else
-        return RustClient(actorID: resolvedActorID)
-#endif
-    }
-
-    /// A configured server is the source of truth, including in Debug builds.
-    /// Demo mode remains an explicit override for previews and UI fixtures.
-    static func shouldUseRustClient(environment: [String: String]) -> Bool {
-        if environment["KSHIFT_USE_FFI"] == "1" {
-            return true
-        }
-        if environment["KSHIFT_DEMO_MODE"] == "1" {
-            return false
-        }
-        return environment["KSHIFT_ENDPOINT"]?.isEmpty == false
+        return RustClient(actorID: resolvedActorID, environment: environment)
     }
 }

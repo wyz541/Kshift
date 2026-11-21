@@ -13,11 +13,7 @@ final class RustFFIIntegrationTests: XCTestCase {
     }
 
     func testRustClientReportsMissingConfigurationExplicitly() async {
-        let client = RustClient(
-            endpoint: nil,
-            caPEM: nil,
-            token: nil
-        )
+        let client = RustClient(environment: [:])
         do {
             _ = try await client.projects()
             XCTFail("Unconfigured RustClient must not return fabricated data.")
