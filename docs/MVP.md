@@ -3,7 +3,7 @@ slug: /docs/r2-mvp
 title: R2 MVP 证据
 type: report
 status: review
-updated: "2026-11-14"
+updated: "2026-11-21"
 keywords:
   - R2
   - MVP
@@ -30,7 +30,7 @@ flowchart LR
   CL -->|"gRPC over TLS"| SV["Rust server"]
 ```
 
-`DemoKshiftClient` 只用于 Debug、预览和 UI 证据。Release 入口使用 `RustClient`。`RustClient` 读取 `KSHIFT_ENDPOINT`、`KSHIFT_CA_PATH` 或 `KSHIFT_CA_PEM`、`KSHIFT_TOKEN`。
+`RustClient` 是配置了 `KSHIFT_ENDPOINT` 的 Debug 和 Release 入口。`KSHIFT_DEMO_MODE=1` 只用于显式选择 Demo 数据，`KSHIFT_USE_FFI=1` 强制选择远端 client。`RustClient` 读取 `KSHIFT_ENDPOINT`、`KSHIFT_CA_PATH` 或 `KSHIFT_CA_PEM`、`KSHIFT_TOKEN`。
 
 `KshiftRootView` 是唯一日计划 UI。并行原型已归档在 Git 提交 `84a8d1d`。决策见 [ADR-0009](adr/0009-single-day-plan-ui.md)。
 
