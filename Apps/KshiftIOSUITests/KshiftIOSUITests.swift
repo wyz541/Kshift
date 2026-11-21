@@ -142,7 +142,10 @@ final class KshiftIOSUITests: XCTestCase {
 
         let row = app.descendants(matching: .any)["table-task-task-launch-brief"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 8), app.debugDescription)
-        row.press(forDuration: 1.0)
+        // The full row extends beyond the viewport on compact devices.
+        let title = row.buttons["table-edit-task-task-launch-brief"].firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 5), app.debugDescription)
+        title.press(forDuration: 1.0)
 
         let edit = app.buttons["编辑"].firstMatch
         XCTAssertTrue(edit.waitForExistence(timeout: 5), app.debugDescription)
@@ -545,7 +548,7 @@ final class KshiftIOSUITests: XCTestCase {
                 && contrastFalsePositives.contains(label)
             if !waivedDynamicType && !waivedContrast {
                 unexpectedIssues.append(
-                    "\(issue.compactDescription): \(issue.detailedDescription) [\(label)]"
+                    "\(issue.compactDescription): \(issue.detailedDescription) [\(label)] id=\(issue.element?.identifier ?? "") frame=\(String(describing: issue.element?.frame))"
                 )
             }
             // Return true so this test reports one deterministic assertion below.
