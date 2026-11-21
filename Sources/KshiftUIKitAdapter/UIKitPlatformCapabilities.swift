@@ -6,6 +6,13 @@
   @MainActor
   public final class UIKitPlatformCapabilities: KshiftPlatformCapabilities {
     public let platform: KshiftPlatform = .iOS
+    public let fetchReleaseResource: KshiftUpdateService.Fetch = { url in
+      let (data, response) = try await URLSession.shared.data(from: url)
+      guard let response = response as? HTTPURLResponse else {
+        throw KshiftUpdateError.network("Expected an HTTP release response.")
+      }
+      return (data, response.statusCode)
+    }
 
     private let openURLHandler: @MainActor (URL) async -> Bool
     private let feedbackHandler: (KshiftPlatformFeedback) -> Void

@@ -38,59 +38,78 @@ struct PlannerView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(alignment: .leading, spacing: 0) {
-                header
-                    .padding(.horizontal, horizontalSizeClass == .compact ? 16 : 20)
-                    .padding(.top, horizontalSizeClass == .compact ? 8 : 12)
-                    .padding(.bottom, horizontalSizeClass == .compact ? 8 : 10)
-
-                if model.viewMode != .peopleSchedule {
-                    SummaryStrip(model: model)
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 10)
-                }
-
-                Divider()
-                    .opacity(0.5)
-
-                Group {
-                    switch model.viewMode {
-                    case .peopleSchedule:
-                        PeopleScheduleView(model: model)
-                    case .board:
-                        BoardView(model: model)
-                    case .calendar:
-                        CalendarView(model: model)
-                    case .table:
-                        TaskTableView(model: model)
+            if usesAccessibilityLayout && model.viewMode == .board {
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        plannerHeader
+                        BoardView(model: model, scrollsWithinColumns: false)
                     }
                 }
-                .padding(.bottom, showsFloatingAddButton ? 76 : 0)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                plannerLayout(in: proxy.size)
             }
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
-            .clipped()
-            .background(.clear)
-            .overlay(alignment: .bottomTrailing) {
-                if showsFloatingAddButton {
-                    TaskCreationButton(
-                        model: model,
-                        assigneeIDs: [],
-                        arrowEdge: .bottom
-                    ) {
-                        Image(systemName: "plus")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 48, height: 48)
-                            .background(Color(hex: "#003F80"), in: Circle())
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular, in: Capsule())
-                    .padding(20)
-                    .accessibilityLabel("添加任务")
-                    .accessibilityIdentifier("add-task")
+        }
+    }
+
+    private var plannerHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+                .padding(.horizontal, horizontalSizeClass == .compact ? 16 : 20)
+                .padding(.top, horizontalSizeClass == .compact ? 8 : 12)
+                .padding(.bottom, horizontalSizeClass == .compact ? 8 : 10)
+
+            if model.viewMode != .peopleSchedule {
+                SummaryStrip(model: model)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+            }
+
+            Divider()
+                .opacity(0.5)
+        }
+    }
+
+    private func plannerLayout(in size: CGSize) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            plannerHeader
+
+            Group {
+                switch model.viewMode {
+                case .peopleSchedule:
+                    PeopleScheduleView(model: model)
+                case .board:
+                    BoardView(model: model)
+                case .calendar:
+                    CalendarView(model: model)
+                case .table:
+                    TaskTableView(model: model)
                 }
+            }
+            .padding(.bottom, showsFloatingAddButton ? 76 : 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .clipped()
+        .background(.clear)
+        .overlay(alignment: .bottomTrailing) {
+            if showsFloatingAddButton {
+                TaskCreationButton(
+                    model: model,
+                    assigneeIDs: [],
+                    arrowEdge: .bottom
+                ) {
+                    Image(systemName: "plus")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(Color(hex: "#003F80"), in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular, in: Capsule())
+                .padding(20)
+                .accessibilityLabel("添加任务")
+                .accessibilityIdentifier("add-task")
             }
         }
     }
@@ -380,6 +399,7 @@ struct SummaryStrip: View {
                     symbol: "checklist",
                     tint: .blue
                 )
+                .accessibilityIdentifier("daily-task-count")
                 SummaryMetric(
                     title: "已完成",
                     value: String(model.completedToday),

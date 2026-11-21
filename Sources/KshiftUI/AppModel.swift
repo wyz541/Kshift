@@ -235,7 +235,8 @@ public final class AppModel: ObservableObject {
         self.initialViewMode = initialViewMode
         self.preferencesStore = preferencesStore
         self.updateService = updateService ?? KshiftUpdateService(
-            configuration: KshiftUpdateConfiguration.from()
+            configuration: KshiftUpdateConfiguration.from(platform: platform.platform),
+            fetch: platform.fetchReleaseResource
         )
         self.viewMode = initialViewMode ?? .peopleSchedule
     }

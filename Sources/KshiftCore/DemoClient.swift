@@ -288,19 +288,14 @@ public actor DemoKshiftClient: KshiftClientProtocol {
 }
 
 public enum KshiftClientFactory {
-    public static func makeDefault(actorID: String? = nil) -> any KshiftClientProtocol {
-        let environment = ProcessInfo.processInfo.environment
+    public static func makeDefault(
+        actorID: String? = nil,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> any KshiftClientProtocol {
         let resolvedActorID = actorID ?? environment["KSHIFT_ACTOR_ID"] ?? "person-mia"
-        if environment["KSHIFT_USE_FFI"] == "1" {
-            return RustClient(actorID: resolvedActorID)
-        }
-        if environment["KSHIFT_DEMO_MODE"] == "1" {
+        if environment["KSHIFT_DEMO_MODE"] == "1", environment["KSHIFT_USE_FFI"] != "1" {
             return DemoKshiftClient(actorID: resolvedActorID)
         }
-#if DEBUG
-        return DemoKshiftClient(actorID: resolvedActorID)
-#else
-        return RustClient(actorID: resolvedActorID)
-#endif
+        return RustClient(actorID: resolvedActorID, environment: environment)
     }
 }

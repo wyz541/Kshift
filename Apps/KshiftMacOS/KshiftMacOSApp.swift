@@ -24,6 +24,9 @@
     var body: some Scene {
       WindowGroup {
         KshiftRootView(model: model)
+          .environment(\.kshiftScheduleHoverPresenter, { isPresented, preview in
+            AnyView(AppKitScheduleHoverPopover(isPresented: isPresented, preview: preview))
+          })
           .environment(
             \.kshiftForceReduceTransparency,
             ProcessInfo.processInfo.environment["KSHIFT_FORCE_REDUCE_TRANSPARENCY"] == "1"

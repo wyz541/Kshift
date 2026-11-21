@@ -126,6 +126,19 @@ cargo run -p kshift-server -- serve
 export KSHIFT_ALLOW_INSECURE=true
 ```
 
+### 客户端连接
+
+macOS 和 iOS 的 Debug 与 Release 构建默认从 Kshift server 读取和更新项目数据。服务端将更新写入 PostgreSQL。客户端不持有数据库凭据。
+
+| 配置 | 值 |
+| --- | --- |
+| `KSHIFT_ENDPOINT` | Kshift server 的内网 HTTPS 地址；主机名必须匹配 TLS 证书 |
+| `KSHIFT_CA_PATH` 或 `KSHIFT_CA_PEM` | 客户端进程可读的 PEM CA 文件路径或 PEM 内容 |
+| `KSHIFT_TOKEN` | 服务端为当前用户配置的 bearer token |
+| `KSHIFT_TLS_DOMAIN` | 可选；仅在连接地址与证书验证名称不同时配置 |
+
+通过受控的启动环境向客户端提供这些值。不要将 token 写入仓库、启动示例或日志。缺少连接配置时，应用显示配置错误，不加载演示数据。`KSHIFT_DEMO_MODE=1` 只用于明确选择预览或测试数据；它不会将数据写入远端。
+
 ### Rust 验证
 
 ```sh
@@ -256,6 +269,7 @@ R3 已进入共享 `KshiftRootView` 的“计划深度”入口。切片包含�
 - 计划深度页面通过 Rust client 的 R3 gRPC/FFI 边界读取 snapshot、写入 status/rollback 并生成报告。Sample boundary 只用于 Demo 和 preview。
 - 看板、甘特、历史、报告、Markdown 和附件视图在 macOS/iOS 共用。
 - 看板任务卡使用原生 Liquid Glass。甘特、历史和报告使用内容底板。
+- 有备注的看板任务卡提供「查看备注」按钮；完整 Markdown 在独立的可滚动面板中阅读，支持系统大字体。
 
 R3 验收：
 
@@ -322,7 +336,7 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 ## 当前限制
 
 - 身份认证数据源尚未最终确认。R1 使用可控 bearer token hash。
-- Release app 需要配置 `KSHIFT_ENDPOINT`、CA 和 token。登录界面尚未实现。
+- 客户端仍需要通过启动环境配置 endpoint、CA 和 token。应用内登录和连接配置尚未实现。
 - UI 已通过 `kshift-ffi` 读取真实 gRPC/PostgreSQL server 数据。
 - macOS 和 iOS 分发方式尚未确认。
 - Release 仓库、通道和审批人尚未确认。

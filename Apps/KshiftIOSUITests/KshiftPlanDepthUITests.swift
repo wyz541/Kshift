@@ -8,6 +8,9 @@ final class KshiftPlanDepthUITests: XCTestCase {
     @MainActor
     func testPlanDepthFlowAndAccessibilityAudit() throws {
         let app = XCUIApplication()
+        app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
+        app.launchEnvironment["KSHIFT_USE_FFI"] = "0"
+        app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
         app.launch()
 
         let board = app.buttons["看板"].firstMatch
@@ -18,7 +21,7 @@ final class KshiftPlanDepthUITests: XCTestCase {
         XCTAssertTrue(openPlanDepth.waitForExistence(timeout: 8))
         openPlanDepth.tap()
 
-        XCTAssertTrue(app.staticTexts["计划深度"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["计划深度"].waitForExistence(timeout: 8), app.debugDescription)
         XCTAssertTrue(app.buttons.matching(identifier: "甘特").firstMatch.exists)
 
         app.buttons["甘特"].tap()
