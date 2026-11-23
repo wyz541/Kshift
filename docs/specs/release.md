@@ -3,7 +3,7 @@ slug: /specs/release
 title: KS-RELEASE Kshift 质量与发布规范
 type: standard
 status: active
-updated: "2026-11-14"
+updated: "2026-11-23"
 owner: "@wyz541"
 keywords:
   - 质量门禁
@@ -74,6 +74,7 @@ flowchart TD
 - `REL-007`：Stable 禁止包含 debug、ad-hoc 或 unsigned 资产。
 - `REL-008`：Release manager 必须在受保护环境批准 Promote。
 - `REL-009`：macOS 和 iOS 的最低系统版本必须写入 manifest 和 Release notes。
+- `REL-011`：Windows 资产首版只允许进入 Preview 通道。Windows 进入 Stable 前，必须先确认签名方式和 `release/policy.json` 的决策状态。
 - `REL-010`：Release 必须包含 SHA-256、SBOM、provenance、attestation 和 gate 证据。
 
 平台 workflow 使用 `contents: read`。平台 workflow 只上传 fragment。只有 release environment 中的 orchestrator 获得 `contents: write`。
@@ -102,6 +103,7 @@ Release 必须保留以下证据。
 - 平台构建日志和 gate 结果。
 - macOS 安装、升级、卸载和回滚记录。
 - iOS 安装和升级记录。
+- Windows 安装、升级、卸载和回滚记录。Windows 首版只要求 Preview 通道记录。
 - Server 启动、健康、日志和恢复记录。
 - PostgreSQL 版本、schema 和 migration digest。
 - 备份和恢复演练记录。

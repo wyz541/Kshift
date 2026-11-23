@@ -1,6 +1,6 @@
 # Kshift
 
-结论：Kshift 是只在内网运行的 macOS/iOS 共享任务工作台。Rust server 是业务状态唯一写入权威。
+结论：Kshift 是只在内网运行的 macOS、iOS 和 Windows 共享任务工作台。Rust server 是业务状态唯一写入权威。
 
 ## 当前状态
 
@@ -17,9 +17,9 @@
 
 | 项目 | 首版决策 |
 | --- | --- |
-| 平台 | macOS 26.0+、iOS 26.0+ |
-| UI | 一套共享 SwiftUI；平台能力使用 adapter |
-| 视觉 | Apple 原生 Liquid Glass |
+| 平台 | macOS 26.0+、iOS 26.0+、Windows 11（Preview） |
+| UI | macOS 和 iOS 共享 SwiftUI；Windows 使用 Rust + gpui |
+| 视觉 | macOS 和 iOS 使用 Apple 原生 Liquid Glass；Windows 使用高对比内容底板 |
 | 业务逻辑 | Rust 唯一 owner |
 | 服务 | Rust server、gRPC、PostgreSQL 18 |
 | 部署 | 内网 macOS 开发机 |
