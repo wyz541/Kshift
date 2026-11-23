@@ -3,7 +3,7 @@ slug: /specs/architecture
 title: KS-ARCH Kshift 架构与同步规范
 type: standard
 status: active
-updated: "2026-11-14"
+updated: "2026-11-23"
 owner: "@wyz541"
 keywords:
   - 架构
@@ -16,7 +16,7 @@ description: 定义 Kshift 的运行时边界、Rust workspace、快照、outbox
 
 # KS-ARCH Kshift 架构与同步规范
 
-> 结论：SwiftUI host 只通过 `kshift-ffi` 调用 Rust client。Rust client 和 server 使用 `kshift.v1` protobuf。同步使用 revisioned snapshot 和 transactional outbox。
+> 结论：所有 UI host 只通过 `kshift-ffi` 调用 Rust client。Rust client 和 server 使用 `kshift.v1` protobuf。同步使用 revisioned snapshot 和 transactional outbox。
 
 ## 1. 适用范围
 
@@ -30,7 +30,8 @@ description: 定义 Kshift 的运行时边界、Rust workspace、快照、outbox
 
 ```mermaid
 flowchart LR
-  UI["SwiftUI UI Host"] -->|"C ABI"| FFI["kshift-ffi"]
+  UI["macOS / iOS SwiftUI UI Host"] -->|"C ABI"| FFI["kshift-ffi"]
+  WIN["Windows gpui UI Host"] -->|"rlib"| FFI
   FFI --> CL["kshift-client"]
   CL -->|"gRPC / HTTP2 + TLS"| SV["kshift-server"]
   SV -->|"sqlx transaction"| DB[("PostgreSQL 18")]
@@ -38,13 +39,14 @@ flowchart LR
   SV -->|"snapshot / stream"| CL
 ```
 
-- `ARC-001`：UI host 只调用 `kshift-ffi`。
+- `ARC-001`：所有 UI host 只调用 `kshift-ffi`。
 - `ARC-002`：UI host 禁止直接调用 HTTP。
 - `ARC-003`：UI host 禁止连接 PostgreSQL。
 - `ARC-004`：PostgreSQL 凭据只存在服务端配置。
 - `ARC-005`：Rust client 和 Rust server 共用 protobuf 合同。
 - `ARC-006`：Rust 是业务规则、校验和持久化的唯一 owner。
 - `ARC-007`：UI host 只拥有渲染、输入、焦点、无障碍、动画和临时 UI 状态。
+- `ARC-008`：Windows host 以 rlib 方式依赖 `kshift-ffi`。它禁止直接依赖 `kshift-client`、`tonic`、`sqlx` 或数据库类型。
 
 ## 3. Rust workspace
 
@@ -54,7 +56,7 @@ flowchart LR
 | `kshift-contract` | protobuf、error、snapshot、event 和 schema version | 不包含 UI 类型 |
 | `kshift-client` | TLS、认证、deadline、取消、重试、revision 和缓存 | 不持有数据库凭据 |
 | `kshift-server` | tonic service、鉴权、事务、审计和 outbox | 不包含 UI 状态 |
-| `kshift-ffi` | C ABI、opaque handle、bounded buffer 和错误映射 | 不承载产品页面 |
+| `kshift-ffi` | C ABI、opaque handle、bounded buffer 和错误映射；同时提供 rlib 供 Windows host 使用 | 不承载产品页面 |
 | migrations | `sqlx` migration 和 digest | 不在 server 启动时自动执行 |
 
 - `ARC-101`：crate 只依赖更内层模块。

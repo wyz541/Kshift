@@ -3,20 +3,22 @@ slug: /specs/ui
 title: KS-UI Kshift 界面与无障碍规范
 type: standard
 status: active
-updated: "2026-11-19"
+updated: "2026-11-23"
 owner: "@wyz541"
 keywords:
   - SwiftUI
+  - gpui
+  - Windows
   - Liquid Glass
   - 无障碍
   - 性能
   - 平台边界
-description: 定义 Kshift 的平台范围、共享 SwiftUI、人员排期、Liquid Glass、无障碍、性能与唯一日计划入口。
+description: 定义 Kshift 的平台范围、共享 SwiftUI、Windows gpui 层、人员排期、Liquid Glass、无障碍、性能与唯一日计划入口。
 ---
 
 # KS-UI Kshift 界面与无障碍规范
 
-> 结论：macOS 和 iOS 共享一套 SwiftUI。平台差异只进入 adapter。默认规划视图是人员排期。`KshiftRootView` 是唯一日计划 UI。
+> 结论：macOS 和 iOS 共享一套 SwiftUI。Windows 使用 Rust 和 gpui。平台差异只进入 adapter。默认规划视图是人员排期。`KshiftRootView` 是 macOS 和 iOS 的唯一日计划 UI。
 
 ## 1. 适用范围
 
@@ -28,14 +30,26 @@ description: 定义 Kshift 的平台范围、共享 SwiftUI、人员排期、Liq
 
 | 项目 | 决策 |
 | --- | --- |
-| 最低系统 | macOS 26.0、iOS 26.0 |
-| 共享 UI | SwiftUI feature slices、components、styles、presentation mapping |
+| 最低系统 | macOS 26.0、iOS 26.0、Windows 11（x86_64） |
+| 共享 UI | macOS 和 iOS 共享 SwiftUI feature slices、components、styles、presentation mapping |
 | macOS 适配 | AppKit adapter |
 | iOS 适配 | UIKit adapter；只处理系统集成 |
+| Windows UI | Rust + gpui。独立视图层。不复用 SwiftUI 类型。 |
+| Windows 适配 | DPI、字体、键盘、窗口 chrome 和文件对话框 |
 | 业务状态 | Rust client 提供的 immutable snapshot 或 event |
-| 视觉核心 | Apple 原生 Liquid Glass |
+| 视觉核心 | macOS 和 iOS 使用 Apple 原生 Liquid Glass。Windows 使用高对比内容底板。 |
 
-首版平台只有 macOS 和 iOS。Web、Windows、Android 和外部导入不进入首版。
+客户端平台为 macOS、iOS 和 Windows。Web、Android 和外部导入不进入首版。Windows 首版只进入 Preview 通道。
+
+## 2.1 Windows parity 边界
+
+Windows 与 macOS 对齐的范围如下。
+
+- `UI-WIN-001`：Windows 必须对齐 macOS 的信息架构、布局层级、状态色、优先级色和交互结果。
+- `UI-WIN-002`：Windows 禁止自绘 Liquid Glass，也禁止用渐变或模糊模拟玻璃。内容区使用纯色高对比底板。
+- `UI-WIN-003`：Windows 和 macOS 必须使用同一任务语义和同一 FFI JSON 投影。禁止在 Windows 复制业务校验。
+- `UI-WIN-004`：允许的差异只包括窗口 chrome、菜单、文件对话框、DPI 缩放和字体回退。
+- `UI-WIN-005`：Windows 验收必须包含 1280×800 布局和 150% 缩放截图。未运行项必须标明未运行。
 
 ## 3. 共享 SwiftUI 与平台边界
 
@@ -127,6 +141,7 @@ flowchart TB
 - `QA-UI-005`：Reduce Transparency、Increase Contrast 和 Reduce Motion 检查通过。
 - `QA-UI-006`：自动无障碍审计、触控目标和系统文字大小测试通过。
 - `QA-UI-007`：iOS 滚动、拖拽和 Sheet 切换有 XCUITest 性能读数。
+- `QA-UI-008`：Windows Preview 必须通过 `UI-WIN-001` 至 `UI-WIN-005`。Windows 不得进入 Stable，直到 Release 门禁和签名决策完成。
 
 ## 7.1 人员排期工作区
 
