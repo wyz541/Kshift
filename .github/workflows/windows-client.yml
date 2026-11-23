@@ -2,12 +2,33 @@ name: Windows client
 
 on:
   workflow_dispatch:
-  push:
-    branches: [issue/123-windows-client]
+  pull_request:
+    branches: [main]
     paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".gitattributes"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-client/**"
+      - "crates/kshift-ffi/**"
       - "crates/kshift-windows/**"
       - "crates/kshift-windows-gpui/**"
+      - ".github/workflows/windows-client.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".gitattributes"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-client/**"
       - "crates/kshift-ffi/**"
+      - "crates/kshift-windows/**"
+      - "crates/kshift-windows-gpui/**"
       - ".github/workflows/windows-client.yml"
 
 permissions:
