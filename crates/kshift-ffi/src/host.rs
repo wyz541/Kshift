@@ -76,8 +76,8 @@ impl HostClient {
 
     /// Fetch one project snapshot and update the memory cache as JSON.
     pub fn snapshot_json(&self, project_id: &str) -> Result<String, String> {
-        let project_id = Uuid::parse_str(project_id)
-            .map_err(|error| format!("invalid project_id: {error}"))?;
+        let project_id =
+            Uuid::parse_str(project_id).map_err(|error| format!("invalid project_id: {error}"))?;
         let cancel = CancellationToken::new();
         let snapshot = self
             .runtime
@@ -88,8 +88,8 @@ impl HostClient {
 
     /// Return a cached snapshot without a network request.
     pub fn cached_snapshot_json(&self, project_id: &str) -> Result<String, String> {
-        let project_id = Uuid::parse_str(project_id)
-            .map_err(|error| format!("invalid project_id: {error}"))?;
+        let project_id =
+            Uuid::parse_str(project_id).map_err(|error| format!("invalid project_id: {error}"))?;
         let snapshot = self
             .core
             .cached_snapshot(project_id)
