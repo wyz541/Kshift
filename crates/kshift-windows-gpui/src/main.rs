@@ -273,7 +273,7 @@ fn text_on(background: u32) -> u32 {
     let blue = background & 0xFF;
     let luminance = (red * 299 + green * 587 + blue * 114) / 1000;
     if luminance > 160 {
-        0x10_12_16
+        0x101216
     } else {
         0xFF_FF_FF
     }
