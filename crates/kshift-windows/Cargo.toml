@@ -1,0 +1,16 @@
+[package]
+name = "kshift-windows"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "Kshift Windows client: snapshot model and people-schedule layout"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true

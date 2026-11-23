@@ -46,3 +46,6 @@ __pycache__/
 # Test and build evidence
 *.xcresult
 /Kshift.xcodeproj/project.xcworkspace/
+
+# Standalone Rust workspace build output
+/crates/kshift-windows-gpui/target/
