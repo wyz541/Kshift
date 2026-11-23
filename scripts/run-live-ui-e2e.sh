@@ -65,13 +65,16 @@ if [[ "${KSHIFT_CARGO_OFFLINE:-1}" == "1" ]]; then
   cargo_flags+=(--offline)
 fi
 
-docker compose up -d --wait postgres >/dev/null
+if [[ -z "${KSHIFT_LIVE_UI_ADMIN_URL:-}" ]]; then
+  docker compose up -d --wait postgres >/dev/null
+fi
 for _ in {1..30}; do
-  if pg_isready -h 127.0.0.1 -p 54329 -U postgres >/dev/null 2>&1; then
+  if psql "$admin_url" -Atc 'SELECT 1' >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
+psql "$admin_url" -Atc 'SELECT 1' >/dev/null
 
 psql "$admin_url" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE \"$database_name\""
 "$cargo_bin" build "${cargo_flags[@]}" -p kshift-server >/dev/null
@@ -201,6 +204,8 @@ if [[ ! -s "$scratch/macos-p0-report.json" ]]; then
   exit 1
 fi
 
+if [[ "${KSHIFT_LIVE_UI_SKIP_CAPTURE:-0}" != "1" ]]; then
+
 macos_derived="$root/build/DerivedData"
 xcodebuild \
   -project Kshift.xcodeproj \
@@ -280,9 +285,14 @@ PY
 cp "$scratch/macos-board.png" "$root/docs/evidence/macos-board.png"
 cp "$scratch/macos-live-server.png" "$root/docs/evidence/macos-live-server.png"
 cp "$scratch/ios-live-server.png" "$root/docs/evidence/ios-live-server.png"
+fi
 
 printf 'scratch=%s\n' "$scratch"
 printf 'ios_result=%s\n' "$ios_result"
-printf 'macos_board=%s\n' "$root/docs/evidence/macos-board.png"
-printf 'macos_live_server=%s\n' "$root/docs/evidence/macos-live-server.png"
-printf 'ios_live_server=%s\n' "$root/docs/evidence/ios-live-server.png"
+if [[ "${KSHIFT_LIVE_UI_SKIP_CAPTURE:-0}" == "1" ]]; then
+  printf 'captures=skipped\n'
+else
+  printf 'macos_board=%s\n' "$root/docs/evidence/macos-board.png"
+  printf 'macos_live_server=%s\n' "$root/docs/evidence/macos-live-server.png"
+  printf 'ios_live_server=%s\n' "$root/docs/evidence/ios-live-server.png"
+fi
