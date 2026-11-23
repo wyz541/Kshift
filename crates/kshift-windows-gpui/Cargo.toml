@@ -1,0 +1,17 @@
+[package]
+name = "kshift-windows-gpui"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Kshift Windows gpui shell"
+
+# Standalone workspace on purpose. `gpui` pulls a large GUI dependency tree.
+# Keeping it out of the root workspace keeps the root `Cargo.lock` free of gpui
+# so every `--locked` build and script keeps working unchanged.
+[workspace]
+
+[dependencies]
+chrono = { version = "0.4.45", features = ["serde"] }
+gpui = "0.2.2"
+kshift-ffi = { path = "../kshift-ffi" }
+kshift-windows = { path = "../kshift-windows" }

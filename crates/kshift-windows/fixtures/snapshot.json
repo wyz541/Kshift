@@ -1,0 +1,133 @@
+{
+  "project": {
+    "id": "9f1c2d3e-0000-4000-8000-000000000001",
+    "name": "Launch Room",
+    "time_zone": "Asia/Shanghai",
+    "current_revision": 12,
+    "created_at": "2026-11-01T00:00:00Z",
+    "updated_at": "2026-11-23T00:00:00Z"
+  },
+  "members": [
+    {
+      "user_id": "11111111-1111-4111-8111-111111111111",
+      "display_name": "Mia Chen",
+      "role": "editor"
+    },
+    {
+      "user_id": "22222222-2222-4222-8222-222222222222",
+      "display_name": "Noah Li",
+      "role": "editor"
+    },
+    {
+      "user_id": "33333333-3333-4333-8333-333333333333",
+      "display_name": "Ava Wong",
+      "role": "viewer"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000001",
+      "title": "Ship brief",
+      "description_markdown": "Publish the launch brief.",
+      "status": "in_progress",
+      "priority": "urgent",
+      "assignee_ids": ["11111111-1111-4111-8111-111111111111"],
+      "planned_on": "2026-11-23",
+      "starts_on": "2026-11-23",
+      "due_on": "2026-11-25",
+      "tags": ["launch"],
+      "version": 3
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000002",
+      "title": "VoiceOver",
+      "description_markdown": "",
+      "status": "todo",
+      "priority": "high",
+      "assignee_ids": ["22222222-2222-4222-8222-222222222222"],
+      "planned_on": "2026-11-24",
+      "starts_on": "2026-11-24",
+      "due_on": "2026-11-27",
+      "tags": ["audio"],
+      "version": 2
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000003",
+      "title": "Done item",
+      "description_markdown": "",
+      "status": "done",
+      "priority": "medium",
+      "assignee_ids": ["11111111-1111-4111-8111-111111111111"],
+      "planned_on": "2026-11-23",
+      "due_on": "2026-11-24",
+      "tags": [],
+      "version": 1
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000004",
+      "title": "Review copy",
+      "description_markdown": "",
+      "status": "blocked",
+      "priority": "urgent",
+      "assignee_ids": ["22222222-2222-4222-8222-222222222222"],
+      "planned_on": "2026-11-25",
+      "starts_on": "2026-11-25",
+      "due_on": "2026-11-26",
+      "tags": ["review"],
+      "version": 4
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000005",
+      "title": "Weekly recap",
+      "description_markdown": "",
+      "status": "todo",
+      "priority": "low",
+      "assignee_ids": ["33333333-3333-4333-8333-333333333333"],
+      "planned_on": "2026-11-27",
+      "starts_on": "2026-11-27",
+      "due_on": "2026-12-01",
+      "tags": [],
+      "version": 1
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000006",
+      "title": "Backlog grooming",
+      "description_markdown": "",
+      "status": "in_progress",
+      "priority": "medium",
+      "assignee_ids": [],
+      "planned_on": "2026-11-26",
+      "starts_on": "2026-11-26",
+      "due_on": "2026-11-28",
+      "tags": ["planning"],
+      "version": 5
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000007",
+      "title": "Ship brief follow-up",
+      "description_markdown": "",
+      "status": "todo",
+      "priority": "high",
+      "assignee_ids": ["11111111-1111-4111-8111-111111111111"],
+      "planned_on": "2026-11-26",
+      "starts_on": "2026-11-26",
+      "due_on": "2026-11-30",
+      "tags": ["launch"],
+      "version": 1
+    },
+    {
+      "id": "aaaaaaaa-0000-4000-8000-000000000008",
+      "title": "Print assets",
+      "description_markdown": "",
+      "status": "todo",
+      "priority": "low",
+      "assignee_ids": ["33333333-3333-4333-8333-333333333333"],
+      "planned_on": "2026-11-23",
+      "due_on": "2026-11-23",
+      "tags": ["print"],
+      "version": 1
+    }
+  ],
+  "audit": [],
+  "generated_at": "2026-11-23T00:00:00Z"
+}
