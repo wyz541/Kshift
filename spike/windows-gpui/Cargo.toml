@@ -1,0 +1,13 @@
+[package]
+name = "kshift-windows-gpui-spike"
+version = "0.0.0"
+edition = "2021"
+publish = false
+description = "Standalone Windows build spike for the gpui crate"
+
+# Standalone on purpose. The crate must not join the Kshift workspace until
+# the Windows platform decision in issue #120 is accepted.
+[workspace]
+
+[dependencies]
+gpui = "0.2.2"
