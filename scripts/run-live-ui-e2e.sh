@@ -65,13 +65,16 @@ if [[ "${KSHIFT_CARGO_OFFLINE:-1}" == "1" ]]; then
   cargo_flags+=(--offline)
 fi
 
-docker compose up -d --wait postgres >/dev/null
+if [[ -z "${KSHIFT_LIVE_UI_ADMIN_URL:-}" ]]; then
+  docker compose up -d --wait postgres >/dev/null
+fi
 for _ in {1..30}; do
-  if pg_isready -h 127.0.0.1 -p 54329 -U postgres >/dev/null 2>&1; then
+  if psql "$admin_url" -Atc 'SELECT 1' >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
+psql "$admin_url" -Atc 'SELECT 1' >/dev/null
 
 psql "$admin_url" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE \"$database_name\""
 "$cargo_bin" build "${cargo_flags[@]}" -p kshift-server >/dev/null
