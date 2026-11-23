@@ -44,6 +44,12 @@ jobs:
         run: |
           set -euo pipefail
           cargo build --release 2>&1 | tee spike-build.log
+      - name: Run window spike
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./target/release/kshift-windows-gpui-spike.exe 2>&1 | tee window-spike.log
       - name: Record resolved gpui version
         if: always()
         shell: bash

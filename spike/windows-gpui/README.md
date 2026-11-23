@@ -18,8 +18,8 @@
 
 | 项 | 状态 |
 | --- | --- |
-| Windows 编译 | 由 workflow 验证 |
-| 打开窗口 | 未实现 |
+| Windows 编译 | 通过。见 run 45105238463。 |
+| 打开窗口 | 由 workflow 验证 |
 | 连接 kshift-client | 未实现 |
 | 安装包 | 未实现 |
 
