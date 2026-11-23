@@ -204,6 +204,8 @@ if [[ ! -s "$scratch/macos-p0-report.json" ]]; then
   exit 1
 fi
 
+if [[ "${KSHIFT_LIVE_UI_SKIP_CAPTURE:-0}" != "1" ]]; then
+
 macos_derived="$root/build/DerivedData"
 xcodebuild \
   -project Kshift.xcodeproj \
@@ -283,9 +285,14 @@ PY
 cp "$scratch/macos-board.png" "$root/docs/evidence/macos-board.png"
 cp "$scratch/macos-live-server.png" "$root/docs/evidence/macos-live-server.png"
 cp "$scratch/ios-live-server.png" "$root/docs/evidence/ios-live-server.png"
+fi
 
 printf 'scratch=%s\n' "$scratch"
 printf 'ios_result=%s\n' "$ios_result"
-printf 'macos_board=%s\n' "$root/docs/evidence/macos-board.png"
-printf 'macos_live_server=%s\n' "$root/docs/evidence/macos-live-server.png"
-printf 'ios_live_server=%s\n' "$root/docs/evidence/ios-live-server.png"
+if [[ "${KSHIFT_LIVE_UI_SKIP_CAPTURE:-0}" == "1" ]]; then
+  printf 'captures=skipped\n'
+else
+  printf 'macos_board=%s\n' "$root/docs/evidence/macos-board.png"
+  printf 'macos_live_server=%s\n' "$root/docs/evidence/macos-live-server.png"
+  printf 'ios_live_server=%s\n' "$root/docs/evidence/ios-live-server.png"
+fi
