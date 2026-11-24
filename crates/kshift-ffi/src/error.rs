@@ -69,7 +69,7 @@ impl FfiError {
         }
     }
 
-    fn json(&self) -> Vec<u8> {
+    pub(crate) fn json(&self) -> Vec<u8> {
         let value = match self {
             Self::Client(error) => {
                 serde_json::to_value(error.view()).unwrap_or_else(|_| plain_error(&error.view()))
