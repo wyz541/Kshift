@@ -53,3 +53,23 @@ The compact iOS People Schedule hides the empty navigation bar and uses one sche
 - `testCompactLayoutHidesEmptyNavigationBarAndKeepsSearch`: passed.
 - `testWeekStripChipSwitchesShownWeek`: passed.
 - Manual acceptance on iPhone simulators: passed by `@wyz541` on 2026-11-19.
+
+## Accessibility XXXL compact schedule reflow
+
+The 2026-11-24 pass reproduced a blocking compact-width layout at Accessibility XXXL: schedule controls overlapped, the week strip extended past the viewport, and person/task content was clipped. The reflow keeps the schedule toolbar on one 44pt control row, gives each week chip a bounded width, anchors the selected week, reflows person identity and metrics, and gives compact task capsules a readable title/date stack.
+
+| File | Environment | SHA-256 |
+| --- | --- | --- |
+| `axxxl-before-2026-11-24.png` | Before. iPhone 18 Pro Simulator; iOS 27.0; portrait; Accessibility XXXL; Demo data | `e0ef7549465d9f38d49f0d75ac17cce90e9be17896a1b38b0bc605e5f8c93f41` |
+| `axxxl-after-toolbar-2026-11-24.png` | After. Same environment; toolbar and selected week chip | `c99074048a96a59b809558a087e54971da1231737b7797df7c1cfba6c2c65c56` |
+| `axxxl-after-task-2026-11-24.png` | After. Same environment; scrolled task content | `e53d517a7305a266c46e2f26de266af6d6cfd921cebcdeb345f5306549c84975` |
+
+### Verification
+
+- `testAccessibilityTextSizeKeepsCoreActionsAvailable`: passed on iPhone 18 Pro Simulator at `UICTContentSizeCategoryAccessibilityXXXL`.
+- The test verifies all six schedule toolbar controls are at least 44pt, inside the window, and non-overlapping.
+- The test verifies the selected/current week chip is inside the window and the Mia person header stays inside the window.
+- The test verifies a task bar is discoverable by vertical scrolling and stays inside the horizontal window.
+- Full iOS suite: 25 tests passed, 2 live-only tests skipped, 0 failures.
+- `make swift-test`: 66 tests passed, 3 live-only tests skipped, 0 failures.
+- `./scripts/check-r0.sh`: passed.

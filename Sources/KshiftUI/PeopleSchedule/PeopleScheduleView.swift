@@ -13,6 +13,7 @@ struct PeopleScheduleView: View {
     @State private var isShowingSettings = false
     @State private var isShowingFilters = false
     @State private var hasRestoredScroll = false
+    @State private var weekScrollPosition: String?
 
     private var rows: [PeopleScheduleRow] {
         var result = model.people.map { person in
@@ -44,6 +45,7 @@ struct PeopleScheduleView: View {
     }
     private var headerHeight: CGFloat { 62 * typeScale }
     private var strongTextColor: Color { colorScheme == .dark ? .white : .black }
+    private var isAccessibilityTextSize: Bool { dynamicTypeSize.isAccessibilitySize }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -129,33 +131,45 @@ struct PeopleScheduleView: View {
         return model.scheduleRangeStart
     }
 
+    private var compactSelectedWeekID: String? {
+        compactSelectedWeekStart.map { weekBucketID($0) }
+    }
+
+    private func weekBucketID(_ date: Date) -> String {
+        KshiftDate.isoString(from: date, calendar: model.projectCalendar)
+    }
+
+    private var compactWeekChipWidth: CGFloat? { isAccessibilityTextSize ? 280 : nil }
+
     /// Week-level quick filter. Each chip is one week that has tasks; tapping
     /// it shows that week. The strip scrolls horizontally and keeps the
     /// selected week in view.
     private var compactWeekStrip: some View {
         let buckets = compactWeekBuckets
-        let selectedWeekStart = compactSelectedWeekStart
-        return ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 6) {
-                    ForEach(buckets) { bucket in
-                        compactWeekChip(bucket, isSelected: bucket.start == selectedWeekStart)
-                            .id(bucket.start)
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
-            .onAppear {
-                if let selectedWeekStart {
-                    proxy.scrollTo(selectedWeekStart, anchor: .center)
+        let selectedWeekID = compactSelectedWeekID
+        return ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 6) {
+                ForEach(buckets) { bucket in
+                    compactWeekChip(
+                        bucket,
+                        isSelected: weekBucketID(bucket.start) == selectedWeekID
+                    )
+                    .id(weekBucketID(bucket.start))
                 }
             }
-            .onChange(of: selectedWeekStart) { _, newValue in
-                guard let newValue else { return }
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    proxy.scrollTo(newValue, anchor: .center)
-                }
-            }
+            .scrollTargetLayout()
+            .padding(.horizontal, 2)
+        }
+        .scrollTargetBehavior(.viewAligned)
+        .scrollPosition(id: $weekScrollPosition, anchor: .leading)
+        .onAppear {
+            weekScrollPosition = selectedWeekID
+        }
+        .onChange(of: selectedWeekID) { _, newValue in
+            weekScrollPosition = newValue
+        }
+        .onChange(of: isAccessibilityTextSize) { _, _ in
+            weekScrollPosition = selectedWeekID
         }
         // A horizontal scroll view is vertically flexible; fix it to the chip
         // height so the chips can still grow with Dynamic Type.
@@ -173,16 +187,22 @@ struct PeopleScheduleView: View {
             VStack(spacing: 1) {
                 Text(weekRangeLabel(bucket))
                     .font(.footnote.monospacedDigit().weight(.semibold))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
                 Text(weekDetailLabel(bucket, isCurrentWeek: isCurrentWeek))
                     .font(.caption.weight(isCurrentWeek ? .bold : .medium))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
             }
             // Text keeps the strong color in every state; the selected week is
             // marked by the tinted fill and accent border, which keeps text
             // contrast independent of the accent color.
             .foregroundStyle(strongTextColor)
-            .lineLimit(1)
+            .lineLimit(isAccessibilityTextSize ? 2 : 1)
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
+            .frame(width: compactWeekChipWidth)
+            .clipped()
             .frame(minHeight: 44)
             .background {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -198,6 +218,7 @@ struct PeopleScheduleView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .frame(width: compactWeekChipWidth)
         .accessibilityLabel(weekAccessibilityLabel(bucket, isCurrentWeek: isCurrentWeek, isSelected: isSelected))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityIdentifier(
@@ -269,17 +290,7 @@ struct PeopleScheduleView: View {
                 model.moveSchedulePeriod(-1)
             }
 
-            Button {
-                model.selectScheduleToday()
-            } label: {
-                Label("今天", systemImage: "calendar.badge.clock")
-                    .labelStyle(.titleAndIcon)
-                    .frame(minHeight: 34)
-                    .foregroundStyle(strongTextColor)
-            }
-            .buttonStyle(KshiftCompactGlassButtonStyle())
-            .accessibilityLabel("今天")
-            .accessibilityIdentifier("schedule-today")
+            compactTodayControl
 
             compactStepButton(
                 symbol: "chevron.right",
@@ -302,6 +313,27 @@ struct PeopleScheduleView: View {
         .frame(minHeight: 52)
     }
 
+    private var compactTodayControl: some View {
+        Button {
+            model.selectScheduleToday()
+        } label: {
+            if isAccessibilityTextSize {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 30, height: 30)
+            } else {
+                Label("今天", systemImage: "calendar.badge.clock")
+                    .labelStyle(.titleAndIcon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .frame(minHeight: 34)
+                    .foregroundStyle(strongTextColor)
+            }
+        }
+        .buttonStyle(KshiftCompactGlassButtonStyle())
+        .accessibilityLabel("今天")
+        .accessibilityIdentifier("schedule-today")
+    }
+
     private var sortControl: some View {
         Menu {
             ForEach(TaskSortOption.allCases) { option in
@@ -314,6 +346,7 @@ struct PeopleScheduleView: View {
             }
         } label: {
             Image(systemName: "arrow.up.arrow.down")
+                .font(.system(size: 17, weight: .semibold))
                 .frame(width: 30, height: 30)
         }
         .menuStyle(.button)
@@ -329,6 +362,7 @@ struct PeopleScheduleView: View {
             Image(systemName: model.filter.isActive
                 ? "line.3.horizontal.decrease.circle.fill"
                 : "line.3.horizontal.decrease.circle")
+                .font(.system(size: 17, weight: .semibold))
                 .frame(width: 30, height: 30)
         }
         .buttonStyle(KshiftCompactGlassButtonStyle())
@@ -367,6 +401,7 @@ struct PeopleScheduleView: View {
             .accessibilityIdentifier("schedule-settings")
         } label: {
             Image(systemName: "ellipsis")
+                .font(.system(size: 17, weight: .semibold))
                 .frame(width: 30, height: 30)
         }
         .menuStyle(.button)
@@ -386,6 +421,7 @@ struct PeopleScheduleView: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
+                .font(.system(size: 17, weight: .semibold))
                 .frame(width: 30, height: 30)
         }
         .buttonStyle(KshiftCompactGlassButtonStyle())
@@ -699,6 +735,7 @@ private struct CompactSchedulePersonSection: View {
     private var strongTextColor: Color {
         colorScheme == .dark ? .white : .black
     }
+    private var isAccessibilityTextSize: Bool { dynamicTypeSize.isAccessibilitySize }
 
     private var collapsed: Bool {
         model.collapsedSchedulePersonIDs.contains(row.id)
@@ -736,6 +773,7 @@ private struct CompactSchedulePersonSection: View {
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
         .background(.background, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay {
@@ -767,24 +805,14 @@ private struct CompactSchedulePersonSection: View {
         Button {
             model.toggleSchedulePersonCollapsed(row.id)
         } label: {
-            HStack(spacing: 8) {
-                avatar
-
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(row.person?.name ?? "未分配")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(strongTextColor)
-                        .fixedSize(horizontal: false, vertical: true)
-                    personSummary
+            Group {
+                if isAccessibilityTextSize {
+                    accessibilityHeader
+                } else {
+                    standardHeader
                 }
-
-                Spacer(minLength: 4)
-
-                Image(systemName: collapsed ? "chevron.right" : "chevron.down")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(strongTextColor)
             }
-            .frame(minHeight: 36)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .accessibilityHidden(true)
         }
@@ -795,6 +823,53 @@ private struct CompactSchedulePersonSection: View {
         .accessibilityIdentifier("schedule-person-\(row.id)")
     }
 
+    private var accessibilityHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
+                avatar
+
+                Text(row.person?.name ?? "未分配")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(strongTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(strongTextColor)
+                    .fixedSize()
+            }
+
+            personSummary
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.vertical, 4)
+    }
+
+    private var standardHeader: some View {
+        HStack(spacing: 8) {
+            avatar
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(row.person?.name ?? "未分配")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(strongTextColor)
+                    .fixedSize(horizontal: false, vertical: true)
+                personSummary
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Spacer(minLength: 4)
+
+            Image(systemName: collapsed ? "chevron.right" : "chevron.down")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(strongTextColor)
+                .fixedSize()
+        }
+        .frame(minHeight: 36)
+    }
+
     @ViewBuilder
     private var personSummary: some View {
         if dynamicTypeSize.isAccessibilitySize {
@@ -803,6 +878,7 @@ private struct CompactSchedulePersonSection: View {
                     .font(.caption2.weight(.medium))
                     .foregroundStyle(strongTextColor)
                     .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 if !collapsed {
                     VStack(alignment: .leading, spacing: 2) {
                         if row.inProgressCount > 0 {
@@ -884,7 +960,16 @@ private struct CompactScheduleTaskCapsule: View {
     let task: TaskItem
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var editDraft: TaskDraft?
+
+    private var isAccessibilityTextSize: Bool { dynamicTypeSize.isAccessibilitySize }
+    private var visualHeight: CGFloat {
+        isAccessibilityTextSize ? 132 : ScheduleTaskMetrics.visualHeight
+    }
+    private var hitHeight: CGFloat {
+        isAccessibilityTextSize ? max(visualHeight + 8, ScheduleTaskMetrics.hitHeight) : ScheduleTaskMetrics.hitHeight
+    }
 
     private var palette: SchedulePriorityPalette {
         SchedulePriorityPalette(priority: task.priority)
@@ -924,48 +1009,16 @@ private struct CompactScheduleTaskCapsule: View {
             Button {
                 editDraft = model.editDraft(for: task)
             } label: {
-                HStack(spacing: ScheduleTaskMetrics.contentSpacing) {
-                    statusBadge
-
-                    Text(task.title)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                        .minimumScaleFactor(0.88)
-                        .allowsTightening(true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .clipped()
-                        .accessibilityHidden(true)
-
-                    Canvas { context, size in
-                        context.draw(
-                            Text(dateLabel)
-                                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(.primary),
-                            at: CGPoint(x: size.width / 2, y: size.height / 2),
-                            anchor: .center
-                        )
-                    }
-                    .frame(width: dateWidth, height: 18)
-                    .padding(.leading, ScheduleTaskMetrics.titleSpacing)
-                    .accessibilityHidden(true)
-                }
-                .padding(.leading, ScheduleTaskMetrics.statusLeadingInset)
-                .padding(.trailing, ScheduleTaskMetrics.trailingInset)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: ScheduleTaskMetrics.visualHeight)
-                .clipShape(taskShape)
-                .contentShape(Rectangle())
+                taskButtonContent
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity)
-            .frame(height: ScheduleTaskMetrics.visualHeight)
+            .frame(height: visualHeight)
             .glassEffect(
                 .regular.tint(glassTint).interactive(),
                 in: taskShape
             )
-            .frame(height: ScheduleTaskMetrics.hitHeight)
+            .frame(height: hitHeight)
             .contentShape(Rectangle())
             .accessibilityLabel("\(task.title)，\(task.priority.code)，\(task.status.title)，\(dateLabel)")
             .accessibilityHint("编辑任务")
@@ -981,6 +1034,71 @@ private struct CompactScheduleTaskCapsule: View {
         }
         .contentShape(Rectangle())
         .taskEditorPopover(model: model, draft: $editDraft)
+    }
+
+    @ViewBuilder
+    private var taskButtonContent: some View {
+        if isAccessibilityTextSize {
+            HStack(alignment: .center, spacing: 6) {
+                statusBadge
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(task.title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                    Text(dateLabel)
+                        .font(.caption2.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityHidden(true)
+            }
+            .padding(.leading, ScheduleTaskMetrics.statusLeadingInset)
+            .padding(.trailing, ScheduleTaskMetrics.trailingInset)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, minHeight: visualHeight, alignment: .leading)
+            .clipShape(taskShape)
+            .contentShape(Rectangle())
+        } else {
+            HStack(spacing: ScheduleTaskMetrics.contentSpacing) {
+                statusBadge
+
+                Text(task.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .minimumScaleFactor(0.88)
+                    .allowsTightening(true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .clipped()
+                    .accessibilityHidden(true)
+
+                Canvas { context, size in
+                    context.draw(
+                        Text(dateLabel)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.primary),
+                        at: CGPoint(x: size.width / 2, y: size.height / 2),
+                        anchor: .center
+                    )
+                }
+                .frame(width: dateWidth, height: 18)
+                .padding(.leading, ScheduleTaskMetrics.titleSpacing)
+                .accessibilityHidden(true)
+            }
+            .padding(.leading, ScheduleTaskMetrics.statusLeadingInset)
+            .padding(.trailing, ScheduleTaskMetrics.trailingInset)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: ScheduleTaskMetrics.visualHeight)
+            .clipShape(taskShape)
+            .contentShape(Rectangle())
+        }
     }
 
     private var statusMenu: some View {
