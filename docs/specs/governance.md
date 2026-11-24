@@ -3,7 +3,7 @@ slug: /specs/governance
 title: KS-GOV Kshift 工程治理规范
 type: standard
 status: active
-updated: "2026-11-16"
+updated: "2026-11-24"
 owner: "@wyz541"
 keywords:
   - 工程治理
@@ -13,7 +13,7 @@ keywords:
   - Spec
   - Workflow
   - Worktree
-description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree 和本地构建规则。
+description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree、关单门禁和本地构建规则。
 ---
 
 # KS-GOV Kshift 工程治理规范
@@ -43,7 +43,7 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 - `KS-GOV-009`：Feature 使用原生 sub-issues。Feature 至少有一个交付子 Issue 和一个 Acceptance 子 Issue。
 - `KS-GOV-010`：Acceptance 等待全部交付子 Issue。Acceptance 只验收、记录证据和给出结论。
 - `KS-GOV-011`：硬依赖使用 `blocked_by`。软关联写在正文，不阻止开始。
-- `KS-GOV-012`：一个 PR 只关闭一个主 Issue。非 Worktree 交付最终关闭写 `Closes #N`。Worktree 交付写 `Part of #N`，清理后手工关闭。
+- `KS-GOV-012`：一个 PR 只关闭一个主 Issue。非 Worktree 交付最终关闭写 `Closes #N`。Worktree 交付写 `Part of #N`，清理后通过关闭门禁关闭。
 - `KS-GOV-013`：PR 正文保存交付证据。Issue 或 Acceptance 保存最终证据。评论不能成为唯一证据。
 - `KS-GOV-014`：每个 PR 必须判断文档、FAQ 和 Release note 的影响。不适用时写原因。
 - `KS-GOV-015`：Research 完成后回写来源 Discussion。RFC 类 Discussion 保持 Open。
@@ -54,7 +54,7 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 - `KS-GOV-020`：未运行的检查必须写“未运行”和原因。禁止写成通过。
 - `KS-GOV-021`：会修改仓库的 Task 和 Bug 各使用一个独立 Worktree 和 branch。Feature、Research 和 Acceptance 不要求实现 Worktree。
 - `KS-GOV-022`：主检出保持在 `main` branch，并保持干净工作区。现有偏离只进入人工复核，禁止自动修复。
-- `KS-GOV-023`：Worktree 交付的 PR 使用 `Part of #N`。合并后先迁移证据、清理产物、移除 Worktree、删除 branch，再由 Issue owner 手工关闭 Issue。
+- `KS-GOV-023`：Worktree 交付的 PR 使用 `Part of #N`。合并后先迁移证据、清理产物、移除 Worktree、删除 branch，再由 Issue owner 通过 `make close-issue` 关闭 Issue。
 - `KS-GOV-024`：移除 Worktree 前必须确认路径已登记、没有未提交修改、没有未推送提交、没有未合并提交，并且证据已迁移。
 - `KS-GOV-025`：Worktree 只使用 `git worktree remove <path>` 移除。命令失败时停止并人工复核。禁止 `git worktree remove --force`。
 - `KS-GOV-026`：Branch 只在已合并到 `origin/main` 且 Worktree 已移除后删除。只使用 `git branch -d`。禁止 `git branch -D`。
@@ -63,6 +63,10 @@ description: 定义 Kshift 的 Issue、PR、Project、证据、决策、Worktree
 - `KS-GOV-029`：Worktree 审计只读取本地 Git 状态，不联网，不提供删除参数。审计输出按固定顺序排序。
 - `KS-GOV-030`：Worktree 不是归档位置。证据先迁移到 `docs/evidence` 或登记的项目证据目录。生成物不进入证据目录。
 - `KS-GOV-031`：`docs/workflow.drawio` 第 3 页是项目工作流的权威来源，定义阶段、状态、分支、回退、角色、产物和门禁。`docs/workflow.md` 是必须同步的文字镜像。工作流内容冲突时，以 draw.io 第 3 页为准。该页未定义的事项由本 Spec 补充。两份文件必须在同一个 PR 同步修改。仓库文件是唯一 authority；本地 Windows path 不是 authority。
+- `KS-GOV-032`：Issue 只能通过 `make close-issue ISSUE=<N>` 关闭。直接使用网页或 `gh issue close` 属于绕过门禁。
+- `KS-GOV-033`：关闭前必须在 Issue 写入 `kshift-close-gate` 机器可读记录；记录包含 Issue、状态、Worktree、branch、生成物、证据目标、检查、批准人和批准时间。
+- `KS-GOV-034`：关闭门禁必须重新运行 Issue 关系审计和 Worktree 审计；检查失败时 fail closed，不得关闭 Issue。
+- `KS-GOV-035`：关闭后审计必须报告缺少有效 `kshift-close-gate` 记录的 Issue。
 
 ## 3. 决策流程
 
@@ -176,13 +180,13 @@ git worktree add -b issue/<N>-<slug> \
 [再次审计]
   │
   ▼
-[Issue owner 手工关闭 Issue]
+[Issue owner 运行 make close-issue]
   │
   ▼
 (结束)
 ```
 
-Worktree 交付不依赖 PR 的 `Closes`。PR 合并会早于本地清理。因此，PR 使用 `Part of #N`，清理完成后手工关闭 Issue。
+Worktree 交付不依赖 PR 的 `Closes`。PR 合并会早于本地清理。因此，PR 使用 `Part of #N`，清理完成后通过 `make close-issue` 关闭 Issue。
 
 ### 6.3 保留例外
 
@@ -223,6 +227,28 @@ python3 scripts/audit_worktrees.py --repo . --expected-task-worktrees <N>
 ```
 
 命令使用本地 `origin/main`。命令不执行 `fetch`、`prune`、`remove`、`branch -d` 或 `branch -D`。需要最新远端状态时，由人员单独运行只读的 `git fetch` 后重新审计。
+
+## 6.6 关单门禁
+
+清理批准和 Worktree 移除完成后，在 Issue 写入机器可读记录，再运行：
+
+```bash
+make close-issue ISSUE=<N>
+```
+
+只有 dry-run 通过后，才允许：
+
+```bash
+make close-issue ISSUE=<N> APPLY=1
+```
+
+禁止直接运行 `gh issue close` 或使用网页关闭。关闭后运行：
+
+```bash
+make audit-closed-issues LIMIT=100
+```
+
+记录 schema、三种状态和失败条件见 [关单门禁](../governance/close-gate.md)。
 
 ## 7. 本地构建
 

@@ -57,6 +57,7 @@
 - [ ] Worktree 交付已使用 `Part of #N`。
 - [ ] 唯一证据已迁移，生成物清理结果已记录。
 - [ ] 需要删除的 Worktree 或 branch 已有 `@wyz541` 的明确批准。
+- [ ] 已准备 `kshift-close-gate` 记录，并计划通过 `make close-issue` 关闭。
 - [ ] Active Spec 已更新或已写明无需更新原因。
 - [ ] 合同变更兼容或已新增版本。
 - [ ] 没有秘密或敏感数据。

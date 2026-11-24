@@ -34,13 +34,14 @@ Do not infer permission to skip the workflow from a short user request. A short 
 7. Run the required local tests and record actual results. Never report an unrun check as passed.
 8. Use the PR template. Include the required functional evidence and Before/After visual evidence for UI changes.
 9. Treat merge as a stage, not completion. Complete CD Build, UX final acceptance, documentation capture, evidence migration, cleanup, and Issue closure according to the workflow.
+10. Close Issues only through `make close-issue ISSUE=<N>`; direct web or `gh issue close` is a bypass unless the close-gate audit explicitly records an approved exception.
 
 ## Issue and Project Rules
 
 - Every open Issue has exactly one `type:` label and at least one `area:` label.
 - Project `Status` is the state source. Use `Inbox`, `Triage`, `Ready`, `In Progress`, `In Review`, `Blocked`, or `Done`.
 - Use native sub-issues for Feature decomposition and native dependencies for hard blockers.
-- Worktree PRs use `Part of #N`. The Issue owner closes the Issue manually after evidence migration and cleanup.
+- Worktree PRs use `Part of #N`. After evidence migration and cleanup, the Issue owner closes the Issue through `make close-issue ISSUE=<N>`.
 - Do not use PR comments as the only location for delivery evidence.
 
 ## Conflict and Scope Rules

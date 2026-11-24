@@ -3,15 +3,15 @@ slug: /governance/issue-relations
 title: Kshift Issue 与 PR 关系规则
 type: standard
 status: active
-version: "1.1"
-updated: "2026-11-14"
+version: "1.2"
+updated: "2026-11-24"
 keywords:
   - Issue 关系
   - sub-issues
   - blocked_by
   - PR 追踪
   - 工程治理
-description: 规定 Discussion、Research、Feature、Acceptance 和 PR 的原生关系与审计方法。
+description: 规定 Discussion、Research、Feature、Acceptance、PR 关系、关闭门禁和审计方法。
 ---
 
 # Kshift Issue 与 PR 关系规则
@@ -101,11 +101,22 @@ PR 评论只补充证据。PR 评论不替代 `## 验收证据`、Issue 验收�
 
 Worktree 交付的 PR 使用 `Part of #N`。PR 合并后仍需要迁移证据、清理本地产物、移除 Worktree、删除 branch 并再次审计。
 
-Issue owner 在以上步骤完成后手工关闭 Issue。Worktree 交付禁止只依赖 `Closes` 自动关闭。
+Issue owner 在以上步骤完成后通过 `make close-issue` 关闭 Issue。Worktree 交付禁止只依赖 `Closes` 自动关闭。
 
 Worktree 保留、清理和批准记录遵循 [KS-GOV](../specs/governance.md) 的 Worktree 生命周期。
 
 跨仓库 Issue 使用完整引用，例如 `OWNER/REPO#123`。当前仓库的 `blocked_by` 不表示跨仓库关系。
+
+### 5.2 关单门禁
+
+Worktree 清理和批准完成后，Issue 必须通过 `make close-issue ISSUE=<N>` 关闭，不得直接使用网页或 `gh issue close`。关闭门禁会：
+
+1. 读取 Issue 的 `kshift-close-gate` 记录。
+2. 重新运行 Issue 关系审计和 Worktree 审计。
+3. 校验 `cleaned`、`retained` 或 `not-applicable` 记录。
+4. 仅在全部检查通过且提供 `APPLY=1` 时关闭 Issue。
+
+记录 schema 和操作步骤见 [关单门禁](close-gate.md)。
 
 ## 6. Duplicate 与软关联
 
@@ -172,5 +183,6 @@ python3 scripts/audit_issue_relations.py --repo wyz541/Kshift --pr 42
 
 | 版本 | 日期 | 变更 |
 | --- | --- | --- |
+| 1.2 | 2026-11-24 | 增加 `make close-issue` 关闭门禁和关闭后审计。 |
 | 1.1 | 2026-11-14 | 增加 Worktree 交付使用 `Part of` 和清理后手工关闭的规则。 |
 | 1.0 | 2026-11-14 | 建立关系规则和审计命令。 |

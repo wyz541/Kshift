@@ -95,9 +95,21 @@ python3 scripts/audit_worktrees.py --repo . --expected-task-worktrees <N>
 2. 运行 `git branch -d <branch>`。Branch 为 `detached` 时跳过本步。
 3. 再次运行 Worktree 审计。
 4. 核对结果与批准记录一致。
-5. 由 Issue owner 手工关闭 Issue。
+5. 由 Issue owner 通过 `make close-issue ISSUE=<N>` 关闭 Issue。
 
 保留 Worktree 时，在 Issue 记录 owner、原因、批准人、批准日期和复核日期。复核日期不得超过批准日期后 14 天。
+
+### 4.3 关单门禁
+
+清理批准和 Worktree 移除完成后，必须在 Issue 写入 `kshift-close-gate` 记录，再使用合规入口关闭：
+
+```bash
+make close-issue ISSUE=<N>
+make close-issue ISSUE=<N> APPLY=1
+make audit-closed-issues LIMIT=100
+```
+
+第一条命令是 dry-run；只有全部检查通过且提供 `APPLY=1` 才会关闭 Issue。直接使用网页或 `gh issue close` 属于绕过。记录 schema 和三种状态见 [关单门禁](docs/governance/close-gate.md)。
 
 ## 5. 决策变更
 
