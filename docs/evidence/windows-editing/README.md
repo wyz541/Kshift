@@ -1,3 +1,19 @@
+---
+slug: /evidence/windows-editing
+title: Windows task editing evidence
+type: report
+status: review
+updated: "2026-11-24"
+owner: "@wyz541"
+keywords:
+  - Windows
+  - task editor
+  - conflict
+  - gpui
+  - FFI
+description: 记录 Issue #136 的 Windows typed task editing、conflict projection、本地测试、fixture smoke 和仍待执行的 Windows CI/桌面验收。
+---
+
 # Windows task editing evidence
 
 Issue: #136
