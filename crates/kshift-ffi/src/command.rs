@@ -514,6 +514,39 @@ mod tests {
     }
 
     #[test]
+    fn update_patch_distinguishes_omitted_and_explicit_null() {
+        let json = br#"{
+          "client_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "command_id": "99999999-8888-4777-8666-555555555555",
+          "project_id": "11111111-2222-4333-8444-555555555555",
+          "expected_project_revision": 7,
+          "command": {
+            "type": "update_task",
+            "value": {
+              "task_id": "22222222-2222-4222-8222-222222222222",
+              "expected_entity_version": 3,
+              "title": "Updated",
+              "starts_on": null
+            }
+          }
+        }"#;
+        let envelope = command_from_json(json).expect("update JSON should parse");
+        let Command::UpdateTask {
+            expected_entity_version,
+            patch,
+            ..
+        } = envelope.command
+        else {
+            panic!("expected update command");
+        };
+        assert_eq!(expected_entity_version, 3);
+        assert!(matches!(patch.title, Maybe::Value(ref title) if title == "Updated"));
+        assert!(matches!(patch.starts_on, Maybe::Null));
+        assert!(matches!(patch.due_on, Maybe::Unset));
+        assert!(matches!(patch.tags, Maybe::Unset));
+    }
+
+    #[test]
     fn parses_r3_status_command() {
         let json = br#"{
           "request_id": "99999999-8888-4777-8666-555555555555",

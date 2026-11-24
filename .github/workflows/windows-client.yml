@@ -63,9 +63,12 @@ jobs:
       - name: Check library formatting
         shell: bash
         run: cargo fmt -p kshift-windows --check
-      - name: Test layout rules
+      - name: Test layout and editor rules
         shell: bash
         run: cargo test -p kshift-windows 2>&1 | tee test.log
+      - name: Test FFI host command boundary
+        shell: bash
+        run: cargo test -p kshift-ffi 2>&1 | tee ffi-test.log
       - name: Lint the library
         shell: bash
         run: cargo clippy -p kshift-windows --all-targets -- -D warnings 2>&1 | tee clippy.log
@@ -92,6 +95,19 @@ jobs:
           ./target/release/kshift-windows-gpui.exe \
             --snapshot ../kshift-windows/fixtures/snapshot.json \
             --today 2026-11-25 2>&1 | tee ../../window.log
+      - name: Open the read-only task editor
+        timeout-minutes: 5
+        shell: bash
+        working-directory: crates/kshift-windows-gpui
+        env:
+          KSHIFT_SMOKE_SECONDS: "3"
+        run: |
+          set -euo pipefail
+          ./target/release/kshift-windows-gpui.exe \
+            --snapshot ../kshift-windows/fixtures/snapshot.json \
+            --today 2026-11-25 \
+            --open-task aaaaaaaa-0000-4000-8000-000000000001 \
+            2>&1 | tee ../../editor-window.log
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -99,8 +115,10 @@ jobs:
           name: windows-client-log
           path: |
             test.log
+            ffi-test.log
             clippy.log
             clippy-gpui.log
             build.log
             window.log
+            editor-window.log
           if-no-files-found: warn
