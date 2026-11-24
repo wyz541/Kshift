@@ -68,10 +68,38 @@ window smoke with `--open-task`.
 ## Windows CI
 
 - Workflow: `.github/workflows/windows-client.yml`
-- Required result: build, clippy, `kshift-windows` tests, `kshift-ffi` tests,
-  schedule window smoke, and read-only editor window smoke.
-- Result: pending PR CI run.
-- Run URL / ID: pending.
+- PR: #138
+- Commit: `2f8bad2c06decefbc349d091edf56c4e587b62c6`
+- Run: [45376500802](https://github.com/wyz541/Kshift/actions/runs/45376500802)
+- Result: **PASS**
+- Environment: `windows-latest`, stable Rust, `x86_64-pc-windows-msvc`
+
+Actual log summaries:
+
+```text
+kshift-windows: 19 tests passed
+kshift-ffi: 9 tests passed
+```
+
+Schedule window smoke:
+
+```text
+kshift-windows: snapshot loaded project=Launch Room tasks=8 editable=false
+kshift-windows: window opened
+kshift-windows: smoke window alive; exiting
+```
+
+Read-only editor window smoke:
+
+```text
+kshift-windows: snapshot loaded project=Launch Room tasks=8 editable=false
+kshift-windows: editor opened at startup task=aaaaaaaa-0000-4000-8000-000000000001 editable=false
+kshift-windows: window opened
+kshift-windows: smoke window alive; exiting
+```
+
+The Windows workflow also passed `cargo clippy -p kshift-windows --all-targets
+-- -D warnings`, gpui formatting, gpui clippy, and the release build.
 
 ## Windows visual evidence
 
