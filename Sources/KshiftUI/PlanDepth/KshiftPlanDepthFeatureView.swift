@@ -9,7 +9,9 @@ public struct KshiftPlanDepthFeatureView: View {
     @State private var showsStatusFilter = false
     private let capabilities: any KshiftPlatformCapabilities
 
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     public init(
         capabilities: any KshiftPlatformCapabilities,
@@ -69,6 +71,10 @@ public struct KshiftPlanDepthFeatureView: View {
             .kshiftScreenBackground()
             .navigationTitle("计划深度")
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") { dismiss() }
+                        .accessibilityIdentifier("close-plan-depth")
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         Task { await model.load() }
@@ -79,6 +85,10 @@ public struct KshiftPlanDepthFeatureView: View {
                 }
             }
         }
+        .frame(
+            minWidth: horizontalSizeClass == .compact ? nil : 860,
+            minHeight: horizontalSizeClass == .compact ? nil : 700
+        )
         .task {
             await model.loadIfNeeded()
         }

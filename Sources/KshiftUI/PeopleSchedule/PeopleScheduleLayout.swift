@@ -23,7 +23,70 @@ public struct PeopleScheduleTaskSlice: Identifiable, Hashable, Sendable {
     }
 }
 
+public struct PeopleScheduleWeekBucket: Identifiable, Hashable, Sendable {
+    public let start: Date
+    public let end: Date
+    public let taskCount: Int
+
+    public var id: Date { start }
+
+    public init(start: Date, end: Date, taskCount: Int) {
+        self.start = start
+        self.end = end
+        self.taskCount = taskCount
+    }
+
+    public func contains(_ date: Date) -> Bool {
+        date >= start && date <= end
+    }
+}
+
 public enum PeopleScheduleLayout {
+    /// First day of the calendar week that contains `date`. Matches how
+    /// `AppModel.scheduleRangeStart` computes the week scope.
+    public static func weekStart(for date: Date, calendar: Calendar) -> Date {
+        calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date))
+            ?? calendar.startOfDay(for: date)
+    }
+
+    /// Groups tasks into the calendar weeks their schedule range overlaps.
+    /// A task that spans several weeks counts once in each of those weeks.
+    /// Weeks that contain a date in `alwaysInclude` appear even without
+    /// tasks, so the current and selected weeks stay reachable.
+    public static func weekBuckets(
+        for tasks: [TaskItem],
+        alwaysInclude: [Date],
+        calendar: Calendar
+    ) -> [PeopleScheduleWeekBucket] {
+        var counts: [Date: Int] = [:]
+        for date in alwaysInclude {
+            let week = weekStart(for: date, calendar: calendar)
+            if counts[week] == nil {
+                counts[week] = 0
+            }
+        }
+        for task in tasks {
+            guard let taskStart = KshiftDate.date(from: task.scheduleStartDate, calendar: calendar),
+                  let taskEnd = KshiftDate.date(from: task.scheduleEndDate, calendar: calendar)
+            else { continue }
+            let lastWeek = weekStart(for: max(taskStart, taskEnd), calendar: calendar)
+            var week = weekStart(for: min(taskStart, taskEnd), calendar: calendar)
+            while week <= lastWeek {
+                counts[week, default: 0] += 1
+                guard let next = calendar.date(byAdding: .weekOfYear, value: 1, to: week) else { break }
+                week = next
+            }
+        }
+        return counts
+            .map { start, count in
+                PeopleScheduleWeekBucket(
+                    start: start,
+                    end: KshiftDate.addingDays(6, to: start, calendar: calendar),
+                    taskCount: count
+                )
+            }
+            .sorted { $0.start < $1.start }
+    }
     public static func slices(
         for tasks: [TaskItem],
         days: [Date],
@@ -115,6 +178,14 @@ public enum PeopleScheduleLayout {
         let visibleRight = min(taskX + taskWidth, horizontalOffset + viewportWidth)
         guard visibleRight > visibleLeft else { return inset }
         return max(inset, visibleLeft - taskX + inset)
+    }
+
+    public static func clippedTitleWidth(
+        taskWidth: CGFloat,
+        leadingInset: CGFloat,
+        trailingInset: CGFloat = 8
+    ) -> CGFloat {
+        max(taskWidth - leadingInset - trailingInset, 0)
     }
 
     public static func statusSortWeight(_ status: TaskStatus) -> Int {

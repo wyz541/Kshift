@@ -8,14 +8,25 @@
 
   @main
   struct KshiftMacOSApp: App {
-    @StateObject private var model = KshiftRuntimeEnvironment.makeModel(
-      client: KshiftClientFactory.makeDefault(),
-      platform: AppKitPlatformCapabilities()
-    )
+    @StateObject private var model: AppModel
+
+    init() {
+      let platform = AppKitPlatformCapabilities()
+      platform.installScrollWheelRouting()
+      _model = StateObject(
+        wrappedValue: KshiftRuntimeEnvironment.makeModel(
+          client: KshiftClientFactory.makeDefault(),
+          platform: platform
+        )
+      )
+    }
 
     var body: some Scene {
       WindowGroup {
         KshiftRootView(model: model)
+          .environment(\.kshiftScheduleHoverPresenter, { isPresented, preview in
+            AnyView(AppKitScheduleHoverPopover(isPresented: isPresented, preview: preview))
+          })
           .environment(
             \.kshiftForceReduceTransparency,
             ProcessInfo.processInfo.environment["KSHIFT_FORCE_REDUCE_TRANSPARENCY"] == "1"

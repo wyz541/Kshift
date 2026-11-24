@@ -5,6 +5,12 @@ public enum KshiftPlatform: String, Sendable {
   case iOS
 }
 
+public enum KshiftUpdateInstallationResult: Equatable, Sendable {
+  case opened
+  case rejected(String)
+  case unsupported(String)
+}
+
 public enum KshiftPlatformFeedback: Equatable, Sendable {
   case selection
   case success
@@ -14,13 +20,19 @@ public enum KshiftPlatformFeedback: Equatable, Sendable {
 @MainActor
 public protocol KshiftPlatformCapabilities: AnyObject {
   var platform: KshiftPlatform { get }
+  var fetchReleaseResource: KshiftUpdateService.Fetch { get }
   func openExternalURL(_ url: URL) async -> Bool
   func perform(_ feedback: KshiftPlatformFeedback)
   func exportImage(_ data: Data, suggestedFilename: String) async -> Bool
   func printHTML(_ html: String, jobName: String) async -> Bool
+  func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult
 }
 
 public extension KshiftPlatformCapabilities {
+  var fetchReleaseResource: KshiftUpdateService.Fetch {
+    { _ in throw KshiftUpdateError.network("Release downloads are not available on this platform.") }
+  }
+
   func exportImage(_ data: Data, suggestedFilename: String) async -> Bool {
     _ = data
     _ = suggestedFilename
@@ -31,6 +43,12 @@ public extension KshiftPlatformCapabilities {
     _ = html
     _ = jobName
     return true
+  }
+
+  func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult {
+    _ = candidate
+    _ = data
+    return .unsupported("This platform does not provide an installer.")
   }
 }
 

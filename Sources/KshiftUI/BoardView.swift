@@ -3,6 +3,7 @@ import SwiftUI
 
 struct BoardView: View {
     @ObservedObject var model: AppModel
+    var scrollsWithinColumns = true
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -20,7 +21,8 @@ struct BoardView: View {
                     BoardColumnView(
                         model: model,
                         column: column,
-                        width: columnWidth
+                        width: columnWidth,
+                        scrollsWithinColumn: scrollsWithinColumns
                     )
                 }
                 Color.clear
@@ -39,6 +41,7 @@ private struct BoardColumnView: View {
     @ObservedObject var model: AppModel
     let column: PersonColumn
     let width: CGFloat
+    let scrollsWithinColumn: Bool
 
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
@@ -54,46 +57,21 @@ private struct BoardColumnView: View {
         VStack(spacing: 12) {
             columnHeader
 
-            ScrollView(.vertical) {
-                GlassEffectContainer(spacing: 12) {
-                    LazyVStack(spacing: 12) {
-                        ForEach(Array(column.tasks.prefix(maximumGlassCards))) { task in
-                            TaskCard(
-                                model: model,
-                                task: task,
-                                isSelected: model.selectedTaskIDs.contains(task.id)
-                            )
-                            .glassEffectID(task.id, in: namespace)
-                        }
-                    }
-                }
-
-                if column.tasks.count > maximumGlassCards {
-                    VStack(spacing: 6) {
-                        ForEach(column.tasks.dropFirst(maximumGlassCards)) { task in
-                            CompactTaskRow(model: model, task: task)
-                            Divider()
-                        }
-                    }
-                    .padding(10)
-                    .kshiftContentBoard()
-                    .padding(.top, 12)
-                }
-
-                if column.tasks.isEmpty {
-                    emptyState
-                }
+            if scrollsWithinColumn {
+                ScrollView(.vertical) { taskList }
+                    .scrollIndicators(.hidden)
+                    .frame(maxHeight: .infinity)
+                    .accessibilityIdentifier("board-column-\(column.id)")
+            } else {
+                taskList
             }
-            .scrollIndicators(.hidden)
-            .frame(maxHeight: .infinity)
-            .accessibilityIdentifier("board-column-\(column.id)")
 
-            Button {
-                model.presentNewTask(
-                    assigneeIDs: column.person.map { [$0.id] } ?? [],
-                    date: model.selectedDate
-                )
-            } label: {
+            TaskCreationButton(
+                model: model,
+                assigneeIDs: column.person.map { [$0.id] } ?? [],
+                date: model.selectedDate,
+                arrowEdge: .bottom
+            ) {
                 Label("添加任务", systemImage: "plus")
                     .font(.headline)
                     .fixedSize(horizontal: false, vertical: true)
@@ -130,6 +108,32 @@ private struct BoardColumnView: View {
 
     @Namespace private var namespace
 
+    @ViewBuilder
+    private var taskList: some View {
+        GlassEffectContainer(spacing: 12) {
+            LazyVStack(spacing: 12) {
+                ForEach(Array(column.tasks.prefix(maximumGlassCards))) { task in
+                    TaskCard(model: model, task: task, isSelected: model.selectedTaskIDs.contains(task.id))
+                        .glassEffectID(task.id, in: namespace)
+                }
+            }
+        }
+
+        if column.tasks.count > maximumGlassCards {
+            VStack(spacing: 6) {
+                ForEach(column.tasks.dropFirst(maximumGlassCards)) { task in
+                    CompactTaskRow(model: model, task: task)
+                    Divider()
+                }
+            }
+            .padding(10)
+            .kshiftContentBoard()
+            .padding(.top, 12)
+        }
+
+        if column.tasks.isEmpty { emptyState }
+    }
+
     private var columnHeader: some View {
         HStack(spacing: 10) {
             if let person = column.person {
@@ -159,7 +163,7 @@ private struct BoardColumnView: View {
                 .font(.subheadline.weight(.medium))
             Text("拖入任务或新建一项。")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary.opacity(0.72))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)

@@ -7,9 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04DBC8DDF71A6B0FC1A1B808 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 844311005036A153C4597595 /* Assets.xcassets */; };
 		23CF61EB131DEACF0E426D25 /* KshiftMacOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48779BBA9EE6293471830410 /* KshiftMacOSApp.swift */; };
 		52A64508EF9B03000E0BCCA3 /* KshiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 4AECA558F58DEB99A490321C /* KshiftUI */; };
 		5E1AB4FD4A012236D3B71667 /* KshiftUIKitAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = F269D7E9A8C5345CAAAF46AF /* KshiftUIKitAdapter */; };
+		6BA0AF0A424CF48C224FDACA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 790F4D6AFF64F95AAFA587B2 /* Assets.xcassets */; };
 		8CABB5B2DF1294ABBADB94A3 /* KshiftPlanDepthUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4DE03FFDE60368CECFAA0E2 /* KshiftPlanDepthUITests.swift */; };
 		9C6CB4F483011321C757AB96 /* KshiftIOSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AFCE71B6AD48FCFFDE43BF6 /* KshiftIOSTests.swift */; };
 		A940FCFF69D43DCA32DD87B4 /* KshiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 20D934FD97AC4F10CB3B8C07 /* KshiftUI */; };
@@ -43,13 +45,15 @@
 		41734638E458EDF515508303 /* Kshift-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kshift-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		48779BBA9EE6293471830410 /* KshiftMacOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftMacOSApp.swift; sourceTree = "<group>"; };
 		6B1EEED301D5012C43635AE5 /* KshiftIOSUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSUITests.swift; sourceTree = "<group>"; };
+		790F4D6AFF64F95AAFA587B2 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		7A3F0217B2DC3602D48C8267 /* Kshift-iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "Kshift-iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		844311005036A153C4597595 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8AFCE71B6AD48FCFFDE43BF6 /* KshiftIOSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSTests.swift; sourceTree = "<group>"; };
 		9F39A45AE2415DDC1E0064FD /* Kshift-iOS-PlannerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = "Kshift-iOS-PlannerTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A4DE03FFDE60368CECFAA0E2 /* KshiftPlanDepthUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftPlanDepthUITests.swift; sourceTree = "<group>"; };
 		AAB3FF5A5FC18B63FBFD0848 /* KshiftIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSApp.swift; sourceTree = "<group>"; };
+		C411B9CFD94FB2CB70AF7789 /* Kshift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Kshift; path = .; sourceTree = SOURCE_ROOT; };
 		E719FA3E87A89C8D09210A1E /* KshiftIOSLiveP0Harness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KshiftIOSLiveP0Harness.swift; sourceTree = "<group>"; };
-		F4DBE8425BF72419C15E7503 /* task-8-r3-plan-depth */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "task-8-r3-plan-depth"; path = .; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +83,7 @@
 		8055378E8D49EC484123A1B8 /* KshiftMacOS */ = {
 			isa = PBXGroup;
 			children = (
+				790F4D6AFF64F95AAFA587B2 /* Assets.xcassets */,
 				48779BBA9EE6293471830410 /* KshiftMacOSApp.swift */,
 			);
 			path = KshiftMacOS;
@@ -96,7 +101,7 @@
 		913F907064FB6F47F615A65E /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				F4DBE8425BF72419C15E7503 /* task-8-r3-plan-depth */,
+				C411B9CFD94FB2CB70AF7789 /* Kshift */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -134,6 +139,7 @@
 		C267F57C36A80A57E596552C /* KshiftIOS */ = {
 			isa = PBXGroup;
 			children = (
+				844311005036A153C4597595 /* Assets.xcassets */,
 				AAB3FF5A5FC18B63FBFD0848 /* KshiftIOSApp.swift */,
 				E719FA3E87A89C8D09210A1E /* KshiftIOSLiveP0Harness.swift */,
 			);
@@ -176,6 +182,7 @@
 			buildPhases = (
 				338C549288599C3F6D6EA3E2 /* Build Rust FFI */,
 				317733A5592BBF54972C46AB /* Sources */,
+				D56A41BFC09064DD4B13FF80 /* Resources */,
 				03D8668D2311188EB205044B /* Frameworks */,
 			);
 			buildRules = (
@@ -216,6 +223,7 @@
 			buildPhases = (
 				0F73623F6BE08B0695053CD3 /* Build Rust FFI */,
 				C864FC82F5413A961F7F7A0B /* Sources */,
+				4EC0B542810F4F0A4C8F2B39 /* Resources */,
 				64FA4D7E052393A9A3A1A8BD /* Frameworks */,
 			);
 			buildRules = (
@@ -270,6 +278,25 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		4EC0B542810F4F0A4C8F2B39 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6BA0AF0A424CF48C224FDACA /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D56A41BFC09064DD4B13FF80 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				04DBC8DDF71A6B0FC1A1B808 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
 		0F73623F6BE08B0695053CD3 /* Build Rust FFI */ = {

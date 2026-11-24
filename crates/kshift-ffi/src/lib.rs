@@ -13,6 +13,8 @@ mod error;
 mod queue;
 mod registry;
 
+pub mod host;
+
 use std::ffi::{c_char, c_void};
 use std::ptr;
 use std::sync::Arc;

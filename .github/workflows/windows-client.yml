@@ -1,0 +1,106 @@
+name: Windows client
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".gitattributes"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-client/**"
+      - "crates/kshift-ffi/**"
+      - "crates/kshift-windows/**"
+      - "crates/kshift-windows-gpui/**"
+      - ".github/workflows/windows-client.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".gitattributes"
+      - "crates/kshift-contract/**"
+      - "crates/kshift-domain/**"
+      - "crates/kshift-client/**"
+      - "crates/kshift-ffi/**"
+      - "crates/kshift-windows/**"
+      - "crates/kshift-windows-gpui/**"
+      - ".github/workflows/windows-client.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-client
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: windows-x86_64
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      RUSTUP_TOOLCHAIN: stable
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: stable
+          components: rustfmt
+          targets: x86_64-pc-windows-msvc
+      - name: Record toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version --verbose
+          cargo --version
+      - name: Check library formatting
+        shell: bash
+        run: cargo fmt -p kshift-windows --check
+      - name: Test layout rules
+        shell: bash
+        run: cargo test -p kshift-windows 2>&1 | tee test.log
+      - name: Lint the library
+        shell: bash
+        run: cargo clippy -p kshift-windows --all-targets -- -D warnings 2>&1 | tee clippy.log
+      - name: Check gpui formatting
+        shell: bash
+        working-directory: crates/kshift-windows-gpui
+        run: cargo fmt --check
+      - name: Lint the gpui client
+        shell: bash
+        working-directory: crates/kshift-windows-gpui
+        run: cargo clippy --all-targets -- -D warnings 2>&1 | tee ../../clippy-gpui.log
+      - name: Build the gpui client
+        shell: bash
+        working-directory: crates/kshift-windows-gpui
+        run: cargo build --release 2>&1 | tee ../../build.log
+      - name: Open the schedule window
+        timeout-minutes: 5
+        shell: bash
+        working-directory: crates/kshift-windows-gpui
+        env:
+          KSHIFT_SMOKE_SECONDS: "3"
+        run: |
+          set -euo pipefail
+          ./target/release/kshift-windows-gpui.exe \
+            --snapshot ../kshift-windows/fixtures/snapshot.json \
+            --today 2026-11-25 2>&1 | tee ../../window.log
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-client-log
+          path: |
+            test.log
+            clippy.log
+            clippy-gpui.log
+            build.log
+            window.log
+          if-no-files-found: warn

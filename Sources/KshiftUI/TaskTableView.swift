@@ -85,6 +85,7 @@ struct TaskTableView: View {
 private struct TaskTableRow: View {
     @ObservedObject var model: AppModel
     let task: TaskItem
+    @State private var editDraft: TaskDraft?
 
     var body: some View {
         HStack(spacing: 0) {
@@ -99,7 +100,7 @@ private struct TaskTableRow: View {
             .accessibilityLabel(isSelected ? "取消选择 \(task.title)" : "选择 \(task.title)")
 
             Button {
-                model.presentDetails(task)
+                editDraft = model.editDraft(for: task)
             } label: {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(task.title)
@@ -117,6 +118,8 @@ private struct TaskTableRow: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .accessibilityHint("编辑任务")
+            .accessibilityIdentifier("table-edit-task-\(task.id)")
 
             Menu {
                 ForEach(TaskStatus.allCases) { status in
@@ -162,13 +165,14 @@ private struct TaskTableRow: View {
         .padding(.horizontal, 12)
         .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear)
         .contextMenu {
-            Button("编辑") { model.presentEdit(task) }
+            Button("编辑") { editDraft = model.editDraft(for: task) }
             Button("详情") { model.presentDetails(task) }
             Divider()
             Button("删除", role: .destructive) { model.requestDelete(task) }
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("table-task-\(task.id)")
+        .taskEditorPopover(model: model, draft: $editDraft)
     }
 
     private var isSelected: Bool {

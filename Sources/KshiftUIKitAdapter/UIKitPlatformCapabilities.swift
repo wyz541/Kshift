@@ -6,6 +6,13 @@
   @MainActor
   public final class UIKitPlatformCapabilities: KshiftPlatformCapabilities {
     public let platform: KshiftPlatform = .iOS
+    public let fetchReleaseResource: KshiftUpdateService.Fetch = { url in
+      let (data, response) = try await URLSession.shared.data(from: url)
+      guard let response = response as? HTTPURLResponse else {
+        throw KshiftUpdateError.network("Expected an HTTP release response.")
+      }
+      return (data, response.statusCode)
+    }
 
     private let openURLHandler: @MainActor (URL) async -> Bool
     private let feedbackHandler: (KshiftPlatformFeedback) -> Void
@@ -55,6 +62,17 @@
         }
         topViewController()?.present(controller, animated: true)
       }
+    }
+
+    public func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult {
+      _ = data
+      guard candidate.asset.signingStatus == "testflight" || candidate.asset.signingStatus == "signed" else {
+        return .rejected("The release is not approved for iOS distribution.")
+      }
+      guard await openExternalURL(candidate.distributionURL) else {
+        return .rejected("The approved iOS distribution destination could not be opened.")
+      }
+      return .opened
     }
 
     public func printHTML(_ html: String, jobName: String) async -> Bool {

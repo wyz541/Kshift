@@ -6,8 +6,9 @@ struct TaskCard: View {
     let task: TaskItem
     let isSelected: Bool
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.colorScheme) private var colorScheme
+    @State private var editDraft: TaskDraft?
+    @State private var showsNotes = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -17,7 +18,7 @@ struct TaskCard: View {
                 } label: {
                     Image(systemName: task.status == .done ? "checkmark.circle.fill" : "circle")
                         .font(.title3)
-                        .foregroundStyle(task.status == .done ? completionTint : .secondary)
+                        .foregroundStyle(task.status == .done ? completionTint : .primary)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -26,19 +27,12 @@ struct TaskCard: View {
                 .accessibilityHint("更新共享任务状态")
                 .accessibilityIdentifier("toggle-task-\(task.id)")
 
-                VStack(alignment: .leading, spacing: 5) {
-                    Text(task.title)
-                        .font(.headline)
-                        .strikethrough(task.status == .done)
-                        .foregroundStyle(.primary)
-
-                    if !task.notes.isEmpty {
-                        Text(task.notes)
-                            .font(.caption)
-                            .foregroundStyle(.primary)
-                    }
-                }
-                .accessibilityHidden(true)
+                Text(task.title)
+                    .font(.headline)
+                    .strikethrough(task.status == .done)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHidden(true)
 
                 Spacer(minLength: 0)
             }
@@ -55,10 +49,23 @@ struct TaskCard: View {
             .accessibilityHidden(true)
 
             HStack {
+                if !task.notes.isEmpty {
+                    Button {
+                        showsNotes = true
+                    } label: {
+                        Image(systemName: "note.text")
+                            .font(.body)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("查看备注")
+                    .accessibilityIdentifier("task-notes-\(task.id)")
+                }
                 Spacer()
                 Menu {
                     Button {
-                        model.presentEdit(task)
+                        editDraft = model.editDraft(for: task)
                     } label: {
                         Label("编辑", systemImage: "pencil")
                     }
@@ -94,11 +101,12 @@ struct TaskCard: View {
         }
         .contentShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .onTapGesture {
-            model.presentDetails(task)
+            editDraft = model.editDraft(for: task)
         }
         .draggable(task.id)
         .contextMenu {
-            Button("编辑") { model.presentEdit(task) }
+            Button("编辑") { editDraft = model.editDraft(for: task) }
+            Button("查看历史和详情") { model.presentDetails(task) }
             Button(task.status == .done ? "标记为待处理" : "标记为已完成") {
                 Swift.Task { await model.toggleDone(task) }
             }
@@ -107,9 +115,26 @@ struct TaskCard: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(task.title)，\(task.status.title)，\(task.priority.title)优先级")
-        .accessibilityValue("负责人 \(assigneeNames)，版本 \(task.version)")
-        .accessibilityHint("打开任务详情")
+        .accessibilityValue("负责人 \(assigneeNames)，版本 \(task.version)\(task.notes.isEmpty ? "" : "，有备注")")
+        .accessibilityHint("编辑任务")
         .accessibilityIdentifier("task-\(task.id)")
+        .taskEditorPopover(model: model, draft: $editDraft)
+        .sheet(isPresented: $showsNotes) {
+            NavigationStack {
+                ScrollView {
+                    KshiftMarkdownText(source: task.notes)
+                        .padding()
+                }
+                .accessibilityIdentifier("board-task-notes")
+                .navigationTitle("任务备注")
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("关闭") { showsNotes = false }
+                    }
+                }
+            }
+            .frame(minWidth: 300, minHeight: 300)
+        }
     }
 
     private var completionTint: Color {
@@ -154,10 +179,11 @@ struct AssigneeAvatarStack: View {
 struct CompactTaskRow: View {
     @ObservedObject var model: AppModel
     let task: TaskItem
+    @State private var editDraft: TaskDraft?
 
     var body: some View {
         Button {
-            model.presentDetails(task)
+            editDraft = model.editDraft(for: task)
         } label: {
             HStack {
                 Image(systemName: task.status.symbol)
@@ -172,6 +198,11 @@ struct CompactTaskRow: View {
             .padding(.vertical, 7)
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button("查看历史和详情") { model.presentDetails(task) }
+        }
+        .accessibilityHint("编辑任务")
         .accessibilityIdentifier("compact-task-\(task.id)")
+        .taskEditorPopover(model: model, draft: $editDraft)
     }
 }

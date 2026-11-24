@@ -35,7 +35,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("筛选", systemImage: model.filter.isActive ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
                 }
-                .buttonStyle(.glass)
+                .labelStyle(.iconOnly)
                 .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
                     FilterPopover(model: model)
                 }
@@ -46,7 +46,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("刷新", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.glass)
+                .labelStyle(.iconOnly)
                 .help("刷新共享快照")
 
                 Button {
@@ -54,7 +54,7 @@ public struct KshiftRootView: View {
                 } label: {
                     Label("审计", systemImage: "clock.arrow.circlepath")
                 }
-                .buttonStyle(.glass)
+                .labelStyle(.iconOnly)
                 .help("查看项目审计")
                 .accessibilityIdentifier("project-audit")
 
@@ -63,16 +63,25 @@ public struct KshiftRootView: View {
                     model.presentNewTask(assigneeIDs: [])
                 } label: {
                     Label("新建任务", systemImage: "plus")
+                        .foregroundStyle(Color.accentColor)
                 }
-                .buttonStyle(.glassProminent)
-                .keyboardShortcut("n", modifiers: .command)
+                .labelStyle(.iconOnly)
+                .tint(Color.accentColor)
+                .popover(
+                    item: newTaskDraftBinding,
+                    attachmentAnchor: .rect(.bounds),
+                    arrowEdge: .top
+                ) { draft in
+                    TaskEditorView(
+                        model: model,
+                        initialDraft: draft,
+                        presentation: .popover
+                    )
+                }
                 .accessibilityIdentifier(
                     dynamicTypeSize.isAccessibilitySize ? "add-task" : "toolbar-add-task"
                 )
             }
-        }
-        .sheet(item: $model.editorDraft) { draft in
-            TaskEditorView(model: model, initialDraft: draft)
         }
         .sheet(item: Binding(
             get: { model.task(withID: model.detailTaskID) },
@@ -147,6 +156,20 @@ public struct KshiftRootView: View {
         }
     }
 
+    private var newTaskDraftBinding: Binding<TaskDraft?> {
+        Binding(
+            get: {
+                guard let draft = model.editorDraft, draft.isNew else { return nil }
+                return draft
+            },
+            set: { draft in
+                if draft == nil {
+                    model.editorDraft = nil
+                }
+            }
+        )
+    }
+
     private var planDepthBoundary: any KshiftPlanDepthBoundary {
         if let boundary = model.client as? any KshiftPlanDepthBoundary {
             return boundary
@@ -165,20 +188,28 @@ public struct KshiftRootView: View {
     private var rootContent: some View {
         if horizontalSizeClass == .compact {
             NavigationStack {
-                PlannerView(model: model) {
-                    isShowingPlanDepth = true
-                }
+                // PlannerView draws its own project title, and the toolbar
+                // items above are attached outside this stack, so the compact
+                // navigation bar is an empty band. `.automatic` is the
+                // navigation bar on iOS; search lives in the bottom toolbar
+                // and stays visible with the bar hidden.
+                planner
+                    .toolbarVisibility(.hidden, for: .automatic)
             }
         } else {
             NavigationSplitView {
                 SidebarView(model: model, usesNavigationLinks: false)
                     .navigationSplitViewColumnWidth(min: 220, ideal: 260, max: 310)
             } detail: {
-                PlannerView(model: model) {
-                    isShowingPlanDepth = true
-                }
+                planner
             }
             .navigationSplitViewStyle(.balanced)
+        }
+    }
+
+    private var planner: some View {
+        PlannerView(model: model) {
+            isShowingPlanDepth = true
         }
     }
 

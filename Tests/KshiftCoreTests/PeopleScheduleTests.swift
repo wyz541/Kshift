@@ -116,6 +116,38 @@ final class PeopleScheduleTests: XCTestCase {
         XCTAssertEqual(PeopleScheduleLayout.laneCount(for: slices), 2)
     }
 
+    func testWeekBucketsCountCrossWeekTasksAndKeepIncludedEmptyWeeks() throws {
+        var calendar = projectCalendar
+        calendar.firstWeekday = 1
+        let tasks = [
+            task(id: "a", title: "A", start: "2026-11-03", due: "2026-11-03"),
+            task(id: "b", title: "B", start: "2026-11-12", due: "2026-11-16"),
+            task(id: "c", title: "C", start: "2026-11-17", due: "2026-11-17"),
+        ]
+        let alwaysInclude = [
+            try XCTUnwrap(FixtureDate.date(from: "2026-11-18", calendar: calendar)),
+            try XCTUnwrap(FixtureDate.date(from: "2026-11-25", calendar: calendar)),
+        ]
+
+        let buckets = PeopleScheduleLayout.weekBuckets(
+            for: tasks,
+            alwaysInclude: alwaysInclude,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(
+            buckets.map { KshiftDate.isoString(from: $0.start, calendar: calendar) },
+            ["2026-11-01", "2026-11-08", "2026-11-15", "2026-11-22"]
+        )
+        XCTAssertEqual(
+            buckets.map { KshiftDate.isoString(from: $0.end, calendar: calendar) },
+            ["2026-11-07", "2026-11-14", "2026-11-21", "2026-11-28"]
+        )
+        // "b" spans two weeks and counts in both; the 11/22 week has no tasks
+        // and appears only because a date inside it is always included.
+        XCTAssertEqual(buckets.map(\.taskCount), [1, 1, 2, 0])
+    }
+
     func testPriorityAndStatusOrderingWithinSameStartDay() throws {
         let calendar = projectCalendar
         let days = makeDays(start: "2026-11-01", count: 4, calendar: calendar)
@@ -128,6 +160,23 @@ final class PeopleScheduleTests: XCTestCase {
 
         let slices = PeopleScheduleLayout.slices(for: tasks, days: days, calendar: calendar)
         XCTAssertEqual(slices.map(\.task.id), ["urgent", "blocked", "todo", "done"])
+    }
+
+    func testClippedTitleWidthStaysInsideTaskBounds() {
+        XCTAssertEqual(
+            PeopleScheduleLayout.clippedTitleWidth(
+                taskWidth: 90,
+                leadingInset: 42
+            ),
+            40
+        )
+        XCTAssertEqual(
+            PeopleScheduleLayout.clippedTitleWidth(
+                taskWidth: 32,
+                leadingInset: 42
+            ),
+            0
+        )
     }
 
     func testStickyTitleMovesFromTaskStartToViewportEdge() {

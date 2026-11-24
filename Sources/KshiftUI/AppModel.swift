@@ -204,6 +204,7 @@ public final class AppModel: ObservableObject {
     @Published public var errorMessage: String?
     @Published public private(set) var isLoading = false
     @Published public private(set) var hasLoaded = false
+    @Published public private(set) var updateState: KshiftUpdateState = .idle
 
     public let client: any KshiftClientProtocol
     private let platform: any KshiftPlatformCapabilities
@@ -212,6 +213,7 @@ public final class AppModel: ObservableObject {
     private let nowProvider: () -> Date
     private let preferencesStore: PlannerViewPreferencesStore
     private let initialViewMode: PlannerViewMode?
+    public let updateService: KshiftUpdateService
     private var hasBootstrapped = false
     private var isApplyingPreferences = false
 
@@ -222,7 +224,8 @@ public final class AppModel: ObservableObject {
         fallbackUserTimeZoneToProject: Bool = false,
         now: @escaping () -> Date = Date.init,
         initialViewMode: PlannerViewMode? = nil,
-        preferencesStore: PlannerViewPreferencesStore = PlannerViewPreferencesStore()
+        preferencesStore: PlannerViewPreferencesStore = PlannerViewPreferencesStore(),
+        updateService: KshiftUpdateService? = nil
     ) {
         self.client = client
         self.platform = platform
@@ -231,6 +234,10 @@ public final class AppModel: ObservableObject {
         self.nowProvider = now
         self.initialViewMode = initialViewMode
         self.preferencesStore = preferencesStore
+        self.updateService = updateService ?? KshiftUpdateService(
+            configuration: KshiftUpdateConfiguration.from(platform: platform.platform),
+            fetch: platform.fetchReleaseResource
+        )
         self.viewMode = initialViewMode ?? .peopleSchedule
     }
 
@@ -407,7 +414,9 @@ public final class AppModel: ObservableObject {
         do {
             let loadedProjects = try await client.projects()
             projects = loadedProjects
-            if selectFirst || selectedProjectID == nil {
+            if selectFirst
+                || selectedProjectID == nil
+                || !loadedProjects.contains(where: { $0.id == selectedProjectID }) {
                 selectedProjectID = loadedProjects.first?.id
             }
             if let selectedProjectID {
@@ -421,6 +430,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func selectProject(_ projectID: String) async {
+        guard projects.contains(where: { $0.id == projectID }) else { return }
         guard projectID != snapshot?.project.id || snapshot == nil else { return }
         persistCurrentPreferences()
         isLoading = true
@@ -441,10 +451,57 @@ public final class AppModel: ObservableObject {
         }
     }
 
+    public func checkForUpdates() async {
+        updateState = .checking
+        let result = await updateService.checkForUpdates()
+        switch result {
+        case let .available(candidate):
+            updateState = .available(candidate)
+        case .noUpdate:
+            updateState = .noUpdate
+        case let .incompatible(version, reason):
+            updateState = .incompatible(version: version, reason: reason)
+        case let .failed(message):
+            updateState = .failed(message)
+        }
+    }
+
+    public func installAvailableUpdate() async {
+        guard case let .available(candidate) = updateState else { return }
+        updateState = .installing
+        do {
+            let data: Data
+            if updateService.configuration.platform == .iOS {
+                data = Data()
+            } else {
+                data = try await updateService.downloadAndVerify(candidate)
+            }
+            let result = await platform.installUpdate(candidate, data: data)
+            switch result {
+            case .opened:
+                updateState = .installed
+                platform.perform(.success)
+            case let .rejected(message), let .unsupported(message):
+                updateState = .failed(message)
+                platform.perform(.error)
+            }
+        } catch {
+            updateState = .failed(error.localizedDescription)
+            platform.perform(.error)
+        }
+    }
+
+    public func resetUpdateState() {
+        updateState = .idle
+    }
+
     public func refresh() async {
-        guard let projectID = selectedProjectID ?? projects.first?.id else {
+        guard let projectID = validSelectedProjectID() else {
             await reloadProjects(selectFirst: true)
             return
+        }
+        if projectID != selectedProjectID {
+            selectedProjectID = projectID
         }
         isLoading = true
         defer { isLoading = false }
@@ -458,8 +515,9 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
-        guard let projectID = selectedProjectID else { return }
+    public func newTaskDraft(assigneeIDs: [String], date: Date? = nil) -> TaskDraft? {
+        guard let projectID = selectedProject?.id else { return nil }
+        let targetDate = KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar)
         let position = selectedDateTasks
             .filter { task in
                 assigneeIDs.isEmpty
@@ -469,13 +527,17 @@ public final class AppModel: ObservableObject {
             .map(\.position)
             .max()
             .map { $0 + 1024 } ?? 1024
-        editorDraft = TaskDraft(
+        return TaskDraft(
             projectID: projectID,
             assigneeIDs: assigneeIDs,
-            startDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
-            dueDate: KshiftDate.startOfDay(date ?? selectedDate, calendar: projectCalendar),
+            startDate: targetDate,
+            dueDate: targetDate,
             position: position
         )
+    }
+
+    public func presentNewTask(assigneeIDs: [String], date: Date? = nil) {
+        editorDraft = newTaskDraft(assigneeIDs: assigneeIDs, date: date)
     }
 
     public func selectDate(_ date: Date) {
@@ -562,7 +624,7 @@ public final class AppModel: ObservableObject {
     }
 
     public func presentEdit(_ task: TaskItem) {
-        editorDraft = draft(from: task)
+        editorDraft = editDraft(for: task)
     }
 
     public func presentDetails(_ task: TaskItem) {
@@ -785,8 +847,16 @@ public final class AppModel: ObservableObject {
         _ = await platform.openExternalURL(url)
     }
 
+    private func validSelectedProjectID() -> String? {
+        if let selectedProjectID,
+           projects.contains(where: { $0.id == selectedProjectID }) {
+            return selectedProjectID
+        }
+        return snapshot?.project.id ?? projects.first?.id
+    }
+
     private func send(_ command: TaskCommand) async -> CommandResponse? {
-        guard let projectID = selectedProjectID, let revision = snapshot?.project.revision else {
+        guard let projectID = snapshot?.project.id, let revision = snapshot?.project.revision else {
             errorMessage = "项目尚未加载。"
             return nil
         }
@@ -823,7 +893,7 @@ public final class AppModel: ObservableObject {
         }
     }
 
-    private func draft(from task: TaskItem) -> TaskDraft {
+    func editDraft(for task: TaskItem) -> TaskDraft {
         TaskDraft(
             projectID: task.projectID,
             taskID: task.id,

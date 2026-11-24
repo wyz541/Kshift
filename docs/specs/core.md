@@ -3,7 +3,7 @@ slug: /specs/core
 title: KS-CORE Kshift 产品核心规范
 type: standard
 status: active
-updated: "2026-11-14"
+updated: "2026-11-23"
 owner: "@wyz541"
 keywords:
   - 产品范围
@@ -16,7 +16,7 @@ description: 定义 Kshift v1 的产品目标、用户、场景、范围、非�
 
 # KS-CORE Kshift 产品核心规范
 
-> 结论：Kshift v1 是只在内网运行的 macOS/iOS 共享任务工作台。首版解决小团队共享任务、并发编辑和双平台一致性问题。
+> 结论：Kshift v1 是只在内网运行的 macOS、iOS 和 Windows 共享任务工作台。首版解决小团队共享任务、并发编辑和多平台一致性问题。
 
 ## 1. 适用范围
 
@@ -78,7 +78,8 @@ Kshift 对齐 `wooduan-taskboard` 的可观察用户能力。Kshift 不复制参
 
 首版范围如下。
 
-- macOS 和 iOS 客户端。
+- macOS、iOS 和 Windows 客户端。
+- Windows 客户端使用 Rust 和 gpui。Windows 首版只进入 Preview 通道。
 - Rust server 和 Rust client。
 - PostgreSQL 18 共享数据库。
 - 项目、成员、任务、状态、优先级、负责人和日期。
@@ -94,7 +95,6 @@ Kshift 对齐 `wooduan-taskboard` 的可观察用户能力。Kshift 不复制参
 以下内容状态为 `rejected`。
 
 - Web 产品。
-- Windows 客户端。
 - Android 客户端。
 - 外部平台导入。
 - 公网部署。

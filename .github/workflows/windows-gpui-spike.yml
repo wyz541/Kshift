@@ -1,0 +1,65 @@
+name: Windows GPUI spike
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [issue/120-windows-gpui-spike]
+    paths:
+      - "spike/windows-gpui/**"
+      - ".github/workflows/windows-gpui-spike.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-gpui-spike
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: windows-x86_64
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      RUSTUP_TOOLCHAIN: stable
+    defaults:
+      run:
+        working-directory: spike/windows-gpui
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: stable
+          targets: x86_64-pc-windows-msvc
+      - name: Record toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version --verbose
+          cargo --version
+          rustc --print target-list | grep -x 'x86_64-pc-windows-msvc'
+      - name: Build gpui spike
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --release 2>&1 | tee spike-build.log
+      - name: Run window spike
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./target/release/kshift-windows-gpui-spike.exe 2>&1 | tee window-spike.log
+      - name: Record resolved gpui version
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo tree -e normal --depth 1 2>&1 | head -40 || true
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-gpui-spike-log
+          path: spike/windows-gpui/spike-build.log
+          if-no-files-found: warn

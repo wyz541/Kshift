@@ -19,7 +19,12 @@ struct PlannerView: View {
     }
 
     private var projectTitleFont: Font {
-        usesAccessibilityLayout ? .title3.weight(.bold) : .largeTitle.weight(.bold)
+        if usesAccessibilityLayout {
+            return .title3.weight(.bold)
+        }
+        return horizontalSizeClass == .compact
+            ? .title2.weight(.bold)
+            : .title.weight(.bold)
     }
 
     private var selectedDateTitle: String {
@@ -33,65 +38,92 @@ struct PlannerView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            VStack(alignment: .leading, spacing: 0) {
-                header
-                    .padding(.horizontal, 24)
-                    .padding(.top, 20)
-                    .padding(.bottom, 14)
-
-                SummaryStrip(model: model)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 14)
-
-                Divider()
-                    .opacity(0.5)
-
-                Group {
-                    switch model.viewMode {
-                    case .peopleSchedule:
-                        PeopleScheduleView(model: model)
-                    case .board:
-                        BoardView(model: model)
-                    case .calendar:
-                        CalendarView(model: model)
-                    case .table:
-                        TaskTableView(model: model)
+            if usesAccessibilityLayout && model.viewMode == .board {
+                ScrollView(.vertical) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        plannerHeader
+                        BoardView(model: model, scrollsWithinColumns: false)
                     }
                 }
-                .padding(.bottom, showsFloatingAddButton ? 76 : 0)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                plannerLayout(in: proxy.size)
             }
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .topLeading)
-            .clipped()
-            .background(.clear)
-            .overlay(alignment: .bottomTrailing) {
-                if showsFloatingAddButton {
-                    Button {
-                        model.presentNewTask(assigneeIDs: [])
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.title3.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .frame(width: 48, height: 48)
-                            .background(Color(hex: "#003F80"), in: Circle())
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(.regular, in: Capsule())
-                    .padding(20)
-                    .accessibilityLabel("添加任务")
-                    .accessibilityIdentifier("add-task")
+        }
+    }
+
+    private var plannerHeader: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+                .padding(.horizontal, horizontalSizeClass == .compact ? 16 : 20)
+                .padding(.top, horizontalSizeClass == .compact ? 8 : 12)
+                .padding(.bottom, horizontalSizeClass == .compact ? 8 : 10)
+
+            if model.viewMode != .peopleSchedule {
+                SummaryStrip(model: model)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 10)
+            }
+
+            Divider()
+                .opacity(0.5)
+        }
+    }
+
+    private func plannerLayout(in size: CGSize) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            plannerHeader
+
+            Group {
+                switch model.viewMode {
+                case .peopleSchedule:
+                    PeopleScheduleView(model: model)
+                case .board:
+                    BoardView(model: model)
+                case .calendar:
+                    CalendarView(model: model)
+                case .table:
+                    TaskTableView(model: model)
                 }
+            }
+            .padding(.bottom, showsFloatingAddButton ? floatingAddButtonBottomPadding : 0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .clipped()
+        .background(.clear)
+        .overlay(alignment: .bottomTrailing) {
+            if showsFloatingAddButton {
+                TaskCreationButton(
+                    model: model,
+                    assigneeIDs: [],
+                    arrowEdge: .bottom
+                ) {
+                    Image(systemName: "plus")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .frame(width: 48, height: 48)
+                        .background(Color(hex: "#003F80"), in: Circle())
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular, in: Capsule())
+                .padding(20)
+                .accessibilityLabel("添加任务")
+                .accessibilityIdentifier("add-task")
             }
         }
     }
 
     private var showsFloatingAddButton: Bool {
-        horizontalSizeClass != .regular && !usesAccessibilityLayout
+        horizontalSizeClass != .regular
+    }
+
+    private var floatingAddButtonBottomPadding: CGFloat {
+        usesAccessibilityLayout ? 132 : 76
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: usesAccessibilityLayout ? 12 : 8) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 4) {
                     if horizontalSizeClass == .regular {
@@ -136,22 +168,24 @@ struct PlannerView: View {
                         }
                     }
                     Text(selectedDateTitle)
-                        .font(.title3.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(horizontalSizeClass == .compact ? .body.weight(.medium) : .title3.weight(.medium))
+                        .foregroundStyle(.primary)
                         .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("selected-date")
                 }
                 Spacer()
-                Button(action: onOpenPlanDepth) {
-                    Image(systemName: "chart.bar.doc.horizontal")
-                        .font(.title3.weight(.semibold))
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
+                if model.viewMode != .peopleSchedule {
+                    Button(action: onOpenPlanDepth) {
+                        Image(systemName: "chart.bar.doc.horizontal")
+                            .font(.title3.weight(.semibold))
+                            .frame(width: 30, height: 30)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(KshiftCompactGlassButtonStyle())
+                    .accessibilityLabel("计划深度")
+                    .accessibilityHint("打开甘特、历史、附件和报告")
+                    .accessibilityIdentifier("open-plan-depth")
                 }
-                .buttonStyle(.glass)
-                .accessibilityLabel("计划深度")
-                .accessibilityHint("打开甘特、历史、附件和报告")
-                .accessibilityIdentifier("open-plan-depth")
                 if model.isLoading {
                     ProgressView()
                         .controlSize(.small)
@@ -165,25 +199,26 @@ struct PlannerView: View {
 
     @ViewBuilder
     private var plannerControls: some View {
-        if usesAccessibilityLayout {
+        if model.viewMode == .peopleSchedule {
+            // Compact People Schedule carries sort, filter, refresh and
+            // settings in its own single toolbar row (UI-PPL-021), so the
+            // planner header keeps only the view picker.
+            if horizontalSizeClass == .compact {
+                viewModePicker
+            }
+        } else if usesAccessibilityLayout {
             accessibilityControls
         } else if horizontalSizeClass == .regular {
             HStack(spacing: 10) {
                 dateNavigation
                 Spacer()
-                utilityControls
+                PlannerUtilityControls(model: model)
             }
         } else {
             VStack(alignment: .leading, spacing: 10) {
                 dateNavigation
 
-                Picker("规划视图", selection: $model.viewMode) {
-                    ForEach(PlannerViewMode.allCases) { mode in
-                        Label(mode.title, systemImage: mode.symbol)
-                            .tag(mode)
-                    }
-                }
-                .pickerStyle(.segmented)
+                viewModePicker
 
                 compactActionBar
             }
@@ -195,16 +230,20 @@ struct PlannerView: View {
             dateStepButtons
             datePickerControl
 
-            Picker("规划视图", selection: $model.viewMode) {
-                ForEach(PlannerViewMode.allCases) { mode in
-                    Label(mode.title, systemImage: mode.symbol)
-                        .tag(mode)
-                }
-            }
-            .pickerStyle(.segmented)
+            viewModePicker
 
             compactActionBar
         }
+    }
+
+    private var viewModePicker: some View {
+        Picker("规划视图", selection: $model.viewMode) {
+            ForEach(PlannerViewMode.allCases) { mode in
+                Label(mode.title, systemImage: mode.symbol)
+                    .tag(mode)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 
     private var compactActionBar: some View {
@@ -212,7 +251,7 @@ struct PlannerView: View {
             filterButton
             refreshButton
             Spacer()
-            utilityControls
+            PlannerUtilityControls(model: model, showsFilter: false)
         }
     }
 
@@ -223,9 +262,11 @@ struct PlannerView: View {
             Image(systemName: model.filter.isActive
                 ? "line.3.horizontal.decrease.circle.fill"
                 : "line.3.horizontal.decrease.circle")
-                .frame(width: 44, height: 44)
+                .frame(width: 30, height: 30)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(KshiftCompactGlassButtonStyle())
+        .frame(minWidth: 44, minHeight: 44)
+        .contentShape(Rectangle())
         .accessibilityLabel("筛选任务")
         .accessibilityIdentifier("filter-button")
         .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
@@ -238,9 +279,9 @@ struct PlannerView: View {
             Swift.Task { await model.refresh() }
         } label: {
             Image(systemName: "arrow.clockwise")
-                .frame(width: 44, height: 44)
+                .frame(width: 30, height: 30)
         }
-        .buttonStyle(.glass)
+        .buttonStyle(KshiftCompactGlassButtonStyle())
         .accessibilityLabel("刷新共享快照")
         .accessibilityIdentifier("refresh-button")
     }
@@ -258,27 +299,27 @@ struct PlannerView: View {
                 model.addDaysToSelection(-1)
             } label: {
                 Image(systemName: "chevron.left")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("前一天")
 
             Button {
                 model.selectToday()
             } label: {
                 Image(systemName: "calendar.badge.clock")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("今天")
 
             Button {
                 model.addDaysToSelection(1)
             } label: {
                 Image(systemName: "chevron.right")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("后一天")
         }
     }
@@ -297,34 +338,55 @@ struct PlannerView: View {
         .fixedSize()
     }
 
-    private var utilityControls: some View {
+
+}
+
+struct PlannerUtilityControls: View {
+    @ObservedObject var model: AppModel
+    var showsFilter: Bool = true
+    @State private var isShowingFilters = false
+
+    var body: some View {
         HStack(spacing: 8) {
             Menu {
-                Picker("排序", selection: $model.sortOption) {
-                    ForEach(TaskSortOption.allCases) { option in
-                        Text(option.title).tag(option)
-                    }
+                ForEach(TaskSortOption.allCases) { option in
+                    Toggle(option.title, isOn: Binding(
+                        get: { model.sortOption == option },
+                        set: { isSelected in
+                            if isSelected {
+                                model.sortOption = option
+                            }
+                        }
+                    ))
                 }
             } label: {
                 Image(systemName: "arrow.up.arrow.down")
-                    .frame(width: 44, height: 44)
+                    .frame(width: 30, height: 30)
             }
             .menuStyle(.button)
-            .buttonStyle(.glass)
+            .buttonStyle(KshiftCompactGlassButtonStyle())
             .accessibilityLabel("排序")
             .accessibilityIdentifier("sort-menu")
 
-            Button {
-                model.clearSelection()
-            } label: {
-                Image(systemName: "xmark.circle")
-                    .frame(width: 44, height: 44)
+            if showsFilter {
+                Button {
+                    isShowingFilters.toggle()
+                } label: {
+                    Image(systemName: model.filter.isActive
+                        ? "line.3.horizontal.decrease.circle.fill"
+                        : "line.3.horizontal.decrease.circle")
+                        .frame(width: 30, height: 30)
+                }
+                .buttonStyle(KshiftCompactGlassButtonStyle())
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Rectangle())
+                .help("筛选任务")
+                .accessibilityLabel("筛选任务")
+                .accessibilityIdentifier("filter-button")
+                .popover(isPresented: $isShowingFilters, arrowEdge: .bottom) {
+                    FilterPopover(model: model)
+                }
             }
-            .buttonStyle(.glass)
-            .disabled(model.selectedTaskIDs.isEmpty)
-            .help("清除任务选择")
-            .accessibilityLabel("清除选择")
-            .accessibilityIdentifier("clear-selection")
         }
     }
 }
@@ -341,6 +403,7 @@ struct SummaryStrip: View {
                     symbol: "checklist",
                     tint: .blue
                 )
+                .accessibilityIdentifier("daily-task-count")
                 SummaryMetric(
                     title: "已完成",
                     value: String(model.completedToday),

@@ -84,10 +84,15 @@ struct ContentBoard: ViewModifier {
 }
 
 struct GlassCardSurface: ViewModifier {
+    var tint: Color?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.kshiftForceReduceTransparency) private var forceReduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
+
+    init(tint: Color? = nil) {
+        self.tint = tint
+    }
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -99,6 +104,16 @@ struct GlassCardSurface: ViewModifier {
                 .overlay {
                     shape.strokeBorder(.separator, lineWidth: contrast == .increased ? 2 : 1)
                 }
+        } else if let tint {
+            content
+                .padding(3)
+                .glassEffect(.regular.tint(tint), in: shape)
+                .overlay {
+                    if contrast == .increased {
+                        shape.strokeBorder(.primary, lineWidth: 2)
+                    }
+                }
+                .animation(reduceMotion ? nil : .snappy(duration: 0.22), value: false)
         } else {
             content
                 .padding(3)
@@ -118,7 +133,7 @@ extension View {
         modifier(ContentBoard())
     }
 
-    func kshiftGlassCard() -> some View {
-        modifier(GlassCardSurface())
+    func kshiftGlassCard(tint: Color? = nil) -> some View {
+        modifier(GlassCardSurface(tint: tint))
     }
 }

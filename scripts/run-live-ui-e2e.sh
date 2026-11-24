@@ -65,13 +65,16 @@ if [[ "${KSHIFT_CARGO_OFFLINE:-1}" == "1" ]]; then
   cargo_flags+=(--offline)
 fi
 
-docker compose up -d --wait postgres >/dev/null
+if [[ -z "${KSHIFT_LIVE_UI_ADMIN_URL:-}" ]]; then
+  docker compose up -d --wait postgres >/dev/null
+fi
 for _ in {1..30}; do
-  if pg_isready -h 127.0.0.1 -p 54329 -U postgres >/dev/null 2>&1; then
+  if psql "$admin_url" -Atc 'SELECT 1' >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
+psql "$admin_url" -Atc 'SELECT 1' >/dev/null
 
 psql "$admin_url" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE \"$database_name\""
 "$cargo_bin" build "${cargo_flags[@]}" -p kshift-server >/dev/null
@@ -149,7 +152,7 @@ KSHIFT_CARGO_OFFLINE=1 ./scripts/build-ffi.sh macos >/dev/null
 env "${p0_env[@]}" \
   KSHIFT_FFI_PATH="$root/.build/ffi/macos/libkshift_ffi.a" \
   KSHIFT_P0_E2E_REPORT="$scratch/macos-p0-report.json" \
-  swift test --filter 'LiveP0E2ETests/testMacOSLiveP0Scenario' \
+  swift test --filter LiveP0E2ETests \
   >"$scratch/macos-p0-test.log" 2>&1
 xcodegen generate >/dev/null
 ios_result="$scratch/ios-live.xcresult"
@@ -163,9 +166,32 @@ env "${test_runner_env[@]}" \
     -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
     -derivedDataPath "$ios_derived" \
     -only-testing:Kshift-iOS-PlannerTests/KshiftIOSTests/testIOSLiveP0Scenario \
+    -only-testing:Kshift-iOS-PlannerUITests/KshiftIOSUITests/testDefaultClientOpensRemoteProject \
     -only-testing:Kshift-iOS-PlannerUITests/KshiftIOSUITests/testBothProjectTimeZonesAndLiveUIWriteE2E \
     -resultBundlePath "$ios_result" \
     test >"$scratch/ios-test.log" 2>&1
+
+primary_project_id="$(python3 -c 'import json, sys; print(json.load(sys.stdin)["alpha_project_id"])' < "$scratch/fixture.json")"
+persisted_task_count="$(psql "$database_url" -v ON_ERROR_STOP=1 \
+  -v primary_project_id="$primary_project_id" -v primary_date="$primary_date" -At <<'SQL'
+  SELECT count(*)
+    FROM kshift.task AS task
+    JOIN kshift.project AS project ON project.id = task.project_id
+    JOIN kshift.audit_log AS audit
+      ON audit.project_id = project.id AND audit.entity_id = task.id
+    JOIN kshift.change_event AS event
+      ON event.project_id = project.id AND event.command_id = audit.command_id
+   WHERE project.id = :'primary_project_id'::uuid
+     AND task.title = 'Live UI created task'
+     AND task.planned_on = :'primary_date'::date
+     AND task.deleted_at IS NULL
+     AND audit.command_name = 'create_task';
+SQL
+)"
+if [[ "$persisted_task_count" != 1 ]]; then
+  echo 'Expected one iOS UI task with a matching audit record and change event.' >&2
+  exit 1
+fi
 
 for command in create_project add_project_member create_task update_task batch_update_tasks delete_task; do
   if ! rg -q "\"command\":\"$command\"" "$server_log"; then
@@ -177,6 +203,8 @@ if [[ ! -s "$scratch/macos-p0-report.json" ]]; then
   echo "macOS P0 report is missing." >&2
   exit 1
 fi
+
+if [[ "${KSHIFT_LIVE_UI_SKIP_CAPTURE:-0}" != "1" ]]; then
 
 macos_derived="$root/build/DerivedData"
 xcodebuild \
@@ -222,7 +250,6 @@ run_macos_capture() {
 run_macos_capture "$scratch/macos-board.png" KSHIFT_DEMO_MODE=1
 run_macos_capture \
   "$scratch/macos-live-server.png" \
-  KSHIFT_USE_FFI=1 \
   KSHIFT_ENDPOINT="$endpoint" \
   KSHIFT_CA_PATH="$ca_path" \
   KSHIFT_TOKEN="$token" \
@@ -258,9 +285,14 @@ PY
 cp "$scratch/macos-board.png" "$root/docs/evidence/macos-board.png"
 cp "$scratch/macos-live-server.png" "$root/docs/evidence/macos-live-server.png"
 cp "$scratch/ios-live-server.png" "$root/docs/evidence/ios-live-server.png"
+fi
 
 printf 'scratch=%s\n' "$scratch"
 printf 'ios_result=%s\n' "$ios_result"
-printf 'macos_board=%s\n' "$root/docs/evidence/macos-board.png"
-printf 'macos_live_server=%s\n' "$root/docs/evidence/macos-live-server.png"
-printf 'ios_live_server=%s\n' "$root/docs/evidence/ios-live-server.png"
+if [[ "${KSHIFT_LIVE_UI_SKIP_CAPTURE:-0}" == "1" ]]; then
+  printf 'captures=skipped\n'
+else
+  printf 'macos_board=%s\n' "$root/docs/evidence/macos-board.png"
+  printf 'macos_live_server=%s\n' "$root/docs/evidence/macos-live-server.png"
+  printf 'ios_live_server=%s\n' "$root/docs/evidence/ios-live-server.png"
+fi

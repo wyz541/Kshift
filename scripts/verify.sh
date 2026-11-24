@@ -12,7 +12,8 @@ if rg -n '#if os\(' Sources/KshiftCore Sources/KshiftUI; then
   exit 1
 fi
 
-if rg -n 'URLSession|NWConnection|postgres|sqlx|tonic|prost' Sources/KshiftCore Sources/KshiftPresentation Sources/KshiftFFI Sources/KshiftUI; then
+# Match transport usage, not the literal PostgreSQL engine name in release metadata.
+if rg -n '\b(URLSession|NWConnection)\b|^\s*import\s+(PostgresNIO|SQLKit|GRPC|SwiftProtobuf)\b' Sources/KshiftCore Sources/KshiftPresentation Sources/KshiftFFI Sources/KshiftUI; then
   echo "Swift host crosses the Rust client boundary." >&2
   exit 1
 fi

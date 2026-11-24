@@ -30,7 +30,11 @@ public enum KshiftRuntimeEnvironment {
             fallbackUserTimeZoneToProject: fallbackToProject,
             now: fixedNow.map { value in { value } } ?? Date.init,
             initialViewMode: initialViewMode,
-            preferencesStore: preferencesStore
+            preferencesStore: preferencesStore,
+            updateService: KshiftUpdateService(
+                configuration: KshiftUpdateConfiguration.from(platform: platform.platform, environment: environment),
+                fetch: platform.fetchReleaseResource
+            )
         )
     }
 
