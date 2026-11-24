@@ -569,7 +569,7 @@ final class KshiftIOSUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments += [
             "-UIPreferredContentSizeCategoryName",
-            "UICTContentSizeCategoryAccessibilityExtraExtraExtraLarge",
+            "UICTContentSizeCategoryAccessibilityXXXL",
         ]
         app.launchEnvironment["KSHIFT_DEMO_MODE"] = "1"
         app.launchEnvironment["KSHIFT_RESET_PLANNER_VIEW_STATE"] = "1"
@@ -598,6 +598,43 @@ final class KshiftIOSUITests: XCTestCase {
         )
         XCTAssertEqual(app.buttons.matching(identifier: "前一天").count, 0)
 
+        let window = app.windows.firstMatch
+        let toolbarActions = [
+            app.descendants(matching: .any)["schedule-previous"].firstMatch,
+            app.descendants(matching: .any)["schedule-today"].firstMatch,
+            app.descendants(matching: .any)["schedule-next"].firstMatch,
+            app.descendants(matching: .any)["sort-menu"].firstMatch,
+            app.descendants(matching: .any)["filter-button"].firstMatch,
+            app.descendants(matching: .any)["schedule-overflow"].firstMatch,
+        ]
+        for action in toolbarActions {
+            XCTAssertTrue(action.waitForExistence(timeout: 8), app.debugDescription)
+            XCTAssertTrue(action.isHittable, app.debugDescription)
+            XCTAssertGreaterThanOrEqual(action.frame.width, 44 - 0.01)
+            XCTAssertGreaterThanOrEqual(action.frame.height, 44 - 0.01)
+            XCTAssertGreaterThanOrEqual(action.frame.minX, window.frame.minX - 1)
+            XCTAssertLessThanOrEqual(action.frame.maxX, window.frame.maxX + 1)
+        }
+        for left in toolbarActions.indices {
+            for right in toolbarActions.index(after: left)..<toolbarActions.endIndex {
+                XCTAssertFalse(
+                    toolbarActions[left].frame.intersects(toolbarActions[right].frame),
+                    "Accessibility toolbar actions overlap: \(left) and \(right)"
+                )
+            }
+        }
+
+        let weekChip = app.buttons.matching(
+            NSPredicate(
+                format: "identifier BEGINSWITH %@ AND label CONTAINS %@",
+                "schedule-week-",
+                "本周"
+            )
+        ).firstMatch
+        XCTAssertTrue(weekChip.waitForExistence(timeout: 8), app.debugDescription)
+        XCTAssertGreaterThanOrEqual(weekChip.frame.minX, window.frame.minX - 1)
+        XCTAssertLessThanOrEqual(weekChip.frame.maxX, window.frame.maxX + 1)
+
         let mia = app.descendants(matching: .any)["schedule-person-person-mia"].firstMatch
         XCTAssertTrue(mia.waitForExistence(timeout: 8))
         XCTAssertLessThanOrEqual(mia.frame.maxX, app.windows.firstMatch.frame.maxX + 1)
@@ -605,6 +642,22 @@ final class KshiftIOSUITests: XCTestCase {
         XCTAssertTrue(
             app.staticTexts["Mia Chen"].firstMatch.waitForExistence(timeout: 8)
         )
+        attachScreenshot(app, named: "ios-accessibility-xxxl-toolbar")
+
+        var visibleTask: XCUIElement?
+        for _ in 0..<6 {
+            let tasks = app.buttons.matching(
+                NSPredicate(format: "identifier BEGINSWITH %@", "schedule-task-")
+            ).allElementsBoundByIndex
+            visibleTask = tasks.first(where: { $0.isHittable })
+            if visibleTask != nil { break }
+            app.swipeUp()
+        }
+        XCTAssertNotNil(visibleTask, app.debugDescription)
+        if let visibleTask {
+            XCTAssertLessThanOrEqual(visibleTask.frame.maxX, window.frame.maxX + 1)
+        }
+        attachScreenshot(app, named: "ios-accessibility-xxxl-task")
     }
 
     func testBothProjectTimeZonesAndLiveUIWriteE2E() throws {

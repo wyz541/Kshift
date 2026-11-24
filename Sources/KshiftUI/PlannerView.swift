@@ -85,7 +85,7 @@ struct PlannerView: View {
                     TaskTableView(model: model)
                 }
             }
-            .padding(.bottom, showsFloatingAddButton ? 76 : 0)
+            .padding(.bottom, showsFloatingAddButton ? floatingAddButtonBottomPadding : 0)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -115,7 +115,11 @@ struct PlannerView: View {
     }
 
     private var showsFloatingAddButton: Bool {
-        horizontalSizeClass != .regular && !usesAccessibilityLayout
+        horizontalSizeClass != .regular
+    }
+
+    private var floatingAddButtonBottomPadding: CGFloat {
+        usesAccessibilityLayout ? 132 : 76
     }
 
     private var header: some View {
