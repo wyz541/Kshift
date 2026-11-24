@@ -66,6 +66,8 @@ flowchart LR
 | `migrations` | PostgreSQL schema migration |
 | `proto` | `buf` 管理的 protobuf source |
 | `scripts/recovery-test.sh` | migration rollback 和 restore 演练 |
+| `make close-issue ISSUE=<N>` | 校验清理记录和审计，dry-run 后合规关闭 Issue |
+| `make audit-closed-issues` | 审计已关闭但缺少 `kshift-close-gate` 记录的 Issue |
 
 ### 服务启动
 

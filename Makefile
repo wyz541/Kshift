@@ -8,8 +8,10 @@ DERIVED_DATA := $(BUILD_DIR)/DerivedData
 MACOS_APP := $(DERIVED_DATA)/Build/Products/Debug/Kshift-macOS.app
 IOS_APP := $(DERIVED_DATA)/Build/Products/Debug-iphonesimulator/Kshift-iOS.app
 DRY_RUN ?= 0
+APPLY ?= 0
+STRICT ?= 0
 
-.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test postgres-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e r4-load preview-lifecycle launchd-restart server-launchd-restart test verify app-paths clean-build check-build-governance legacy-deriveddata-manifest clean
+.PHONY: prepare-cargo-home bootstrap rust-fmt rust-lint rust-test postgres-test ffi swift-build swift-test project mac-build ios-build ios-test live-ui-e2e r4-load preview-lifecycle launchd-restart server-launchd-restart test verify app-paths clean-build check-build-governance legacy-deriveddata-manifest close-issue audit-closed-issues clean
 
 prepare-cargo-home:
 	@mkdir -p "$(CARGO_HOME)"
@@ -85,6 +87,13 @@ check-build-governance:
 
 legacy-deriveddata-manifest:
 	@./scripts/list-legacy-deriveddata.sh
+
+close-issue:
+	@test -n "$(ISSUE)" || (printf 'ISSUE is required, for example: make close-issue ISSUE=65\n' >&2; exit 2)
+	@python3 scripts/close_issue.py --repo-path . --issue "$(ISSUE)" $(if $(filter 1 true yes,$(APPLY)),--apply,--dry-run)
+
+audit-closed-issues:
+	@python3 scripts/audit_closed_issues.py --repo wyz541/Kshift --limit "$${LIMIT:-100}" $(if $(filter 1 true yes,$(STRICT)),--strict,)
 
 clean: clean-build
 	rm -rf .build target
