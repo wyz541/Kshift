@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "supervisor": "LaunchAgent",
+  "transport": "tls",
+  "server_bundle": "release",
+  "source_commit": "d3ebc56fb10fb1f25cad710599170ef7e31ade1d",
+  "source_tree_state": "clean",
+  "label": "com.wyz541.kshift.server-test.16239",
+  "restart_signal": "SIGKILL",
+  "runs": 2,
+  "old_pid": "17690",
+  "new_pid": "17719",
+  "health_before_restart": "SERVING",
+  "health_after_restart": "SERVING",
+  "prepared": {
+    "health": "SERVING",
+    "phase": "prepared",
+    "project_id": "1806223e-ca7c-473c-8daa-efcd24c59c62",
+    "revision": 2,
+    "tasks": 1
+  },
+  "verified": {
+    "event_revision_after_restart": 3,
+    "health": "SERVING",
+    "new_revision": 3,
+    "phase": "verified",
+    "project_id": "1806223e-ca7c-473c-8daa-efcd24c59c62",
+    "replayed_pre_restart_event": true,
+    "snapshot_revision_before_restart": 2,
+    "snapshot_tasks_after_restart": 2,
+    "snapshot_tasks_before_restart": 1
+  }
+}
