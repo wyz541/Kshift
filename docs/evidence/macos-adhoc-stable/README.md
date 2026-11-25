@@ -42,6 +42,7 @@ Date: 2026-11-25
 | Full Swift suite | `make swift-test` | PASS: 68 core + 6 adapter tests; 3 live-only core tests skipped |
 | R0 | `./scripts/check-r0.sh` | PASS |
 | R4/R5 | `./scripts/check-r4-r5.sh` | PASS; 7 PostgreSQL tests skipped because `TEST_DATABASE_URL` is unset |
+| iOS app build | `make ios-build` | PASS |
 
 Covered assertions:
 
