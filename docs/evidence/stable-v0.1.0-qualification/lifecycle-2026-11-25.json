@@ -1,0 +1,20 @@
+{
+  "status": "passed",
+  "scope": "preview-ad-hoc",
+  "ios": {
+    "simulator": "iPhone 18 Pro",
+    "install": "passed",
+    "upgrade": "passed",
+    "rollback": "passed"
+  },
+  "macos": {
+    "install": "bundle-copy",
+    "upgrade": "passed",
+    "rollback": "passed",
+    "signing": "adhoc"
+  },
+  "limitations": [
+    "macOS signed install/upgrade is not covered by this preview test.",
+    "iOS distribution signing is not covered by this simulator test."
+  ]
+}
