@@ -55,11 +55,11 @@ function approvedPolicy(root) {
     },
     stable_signing: {
       server: ['not-applicable'],
-      macos: ['signed', 'notarized'],
+      macos: ['ad-hoc', 'signed', 'notarized'],
       ios: ['signed', 'testflight'],
       source: ['not-applicable'],
     },
-    stable_signing_global: ['signed', 'testflight'],
+    stable_signing_global: ['ad-hoc', 'signed', 'testflight'],
   })
   return path
 }
@@ -143,11 +143,11 @@ function fragment(root, platform, options = {}) {
   run(['fragment', '--spec', specPath, '--assets-dir', platformDir, '--output', join(root, `${platform}.fragment.json`)])
 }
 
-function completeCandidate(root, policy) {
+function completeCandidate(root, policy, macosSigning = 'signed', expectedMergeStatus = 0) {
   const candidatePath = candidate(root, 'stable')
   const specs = {
     server: { role: 'server-bundle', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['build', 'health'] },
-    macos: { role: 'application', signingStatus: 'signed', assetSigningStatus: 'signed', gates: ['build', 'signature'] },
+    macos: { role: 'application', signingStatus: macosSigning, assetSigningStatus: macosSigning, gates: ['build', 'signature'] },
     ios: { role: 'application', signingStatus: 'testflight', assetSigningStatus: 'testflight', gates: ['build', 'distribution-signature'] },
     source: { role: 'source', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['source-archive'] },
   }
@@ -157,7 +157,7 @@ function completeCandidate(root, policy) {
   const notes = join(root, 'release-notes.md')
   writeFileSync(notes, '# Kshift 0.1.0\n')
   const manifest = join(root, 'release-manifest.json')
-  run([
+  const result = run([
     'merge',
     '--candidate', candidatePath,
     '--fragments-dir', root,
@@ -166,8 +166,8 @@ function completeCandidate(root, policy) {
     '--output', manifest,
     '--mode', 'stable',
     '--policy', policy,
-  ])
-  return manifest
+  ], expectedMergeStatus)
+  return expectedMergeStatus === 0 ? manifest : result
 }
 
 function flattenAssets(root, manifest) {
@@ -191,6 +191,12 @@ function flattenAssets(root, manifest) {
   }
   return releaseAssets
 }
+
+test('repository policy permits ad-hoc macOS without notarization', () => {
+  const policy = JSON.parse(readFileSync(join(REPO, 'release/policy.json'), 'utf8'))
+  assert.ok(policy.stable_signing.macos.includes('ad-hoc'))
+  assert.ok(policy.stable_signing_global.includes('ad-hoc'))
+})
 
 test('builds a contract-v1 fragment with byte count and SHA-256', () => {
   const root = tempRoot()
@@ -217,6 +223,24 @@ test('merges and validates a fully gated stable release with approved policy', (
   writeFileSync(join(releaseAssets, tamperName), 'tampered')
   const tampered = run(['verify-assets', '--manifest', manifestPath, '--assets-dir', releaseAssets], 2)
   assert.match(tampered.stderr, /size mismatch|sha256 mismatch/)
+})
+
+test('stable merge accepts an ad-hoc macOS release with policy approval', () => {
+  const root = tempRoot()
+  const policy = approvedPolicy(root)
+  const manifestPath = completeCandidate(root, policy, 'ad-hoc')
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+  assert.equal(manifest.signing.status, 'ad-hoc')
+  assert.equal(manifest.signing.notarization, 'not-requested')
+  assert.equal(manifest.assets.find((asset) => asset.platform === 'macos').signing_status, 'ad-hoc')
+  run(['validate', '--manifest', manifestPath, '--mode', 'stable', '--policy', policy])
+})
+
+test('stable merge rejects an unsigned macOS release', () => {
+  const root = tempRoot()
+  const policy = approvedPolicy(root)
+  const result = completeCandidate(root, policy, 'unsigned', 2)
+  assert.match(result.stderr, /stable signing status is not allowed for macos: unsigned/)
 })
 
 test('stable merge rejects a pending signing policy', () => {

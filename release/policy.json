@@ -18,9 +18,9 @@
   },
   "stable_signing": {
     "server": ["not-applicable"],
-    "macos": ["signed", "notarized"],
+    "macos": ["ad-hoc", "signed", "notarized"],
     "ios": ["signed", "testflight"],
     "source": ["not-applicable"]
   },
-  "stable_signing_global": ["signed", "testflight"]
+  "stable_signing_global": ["ad-hoc", "signed", "testflight"]
 }

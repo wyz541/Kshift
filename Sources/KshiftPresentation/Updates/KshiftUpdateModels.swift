@@ -512,12 +512,14 @@ public struct KshiftUpdateService: Sendable {
             let signingAllowed: Bool
             switch platform {
             case .macOS:
-                signingAllowed = ["signed", "notarized"].contains(asset.signingStatus) && manifest.signingStatus == "signed"
+                let developerID = ["signed", "notarized"].contains(asset.signingStatus) && manifest.signingStatus == "signed"
+                let adHoc = asset.signingStatus == "ad-hoc" && manifest.signingStatus == "ad-hoc"
+                signingAllowed = developerID || adHoc
             case .iOS:
                 signingAllowed = ["signed", "testflight"].contains(asset.signingStatus) && ["signed", "testflight"].contains(manifest.signingStatus)
             }
             guard signingAllowed else {
-                return .incompatible(version: manifest.version, reason: "The release is not signed for this platform.")
+                return .incompatible(version: manifest.version, reason: "The release signing status is not allowed for this platform.")
             }
             let distributionURL = manifest.releaseURL
                 ?? configuration.releaseBaseURL.appendingPathComponent("tag").appendingPathComponent(manifest.tag)

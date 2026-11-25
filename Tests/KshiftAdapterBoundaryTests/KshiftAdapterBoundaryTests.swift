@@ -68,6 +68,39 @@ final class KshiftAdapterBoundaryTests: XCTestCase {
     }
 
     @MainActor
+    func testAppKitVerifiesAdHocCodeSignatureAndRejectsTamper() throws {
+      let root = FileManager.default.temporaryDirectory
+        .appendingPathComponent("KshiftAdHocSignature-\(UUID().uuidString)", isDirectory: true)
+      defer { try? FileManager.default.removeItem(at: root) }
+      let app = root.appendingPathComponent("Kshift.app", isDirectory: true)
+      let executableDirectory = app.appendingPathComponent("Contents/MacOS", isDirectory: true)
+      try FileManager.default.createDirectory(at: executableDirectory, withIntermediateDirectories: true)
+      try FileManager.default.copyItem(at: URL(fileURLWithPath: "/usr/bin/true"), to: executableDirectory.appendingPathComponent("Kshift"))
+      let info: [String: Any] = [
+        "CFBundleExecutable": "Kshift",
+        "CFBundleIdentifier": "com.wyz541.kshift.signature-fixture",
+        "CFBundlePackageType": "APPL",
+      ]
+      let infoData = try PropertyListSerialization.data(fromPropertyList: info, format: .xml, options: 0)
+      try infoData.write(to: app.appendingPathComponent("Contents/Info.plist"))
+
+      let codesign = Process()
+      codesign.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+      codesign.arguments = ["--force", "--deep", "--sign", "-", app.path]
+      try codesign.run()
+      codesign.waitUntilExit()
+      XCTAssertEqual(codesign.terminationStatus, 0)
+
+      let adapter = AppKitPlatformCapabilities()
+      XCTAssertTrue(adapter.verifyInstallerSignature(at: app))
+      let handle = try FileHandle(forWritingTo: app.appendingPathComponent("Contents/Info.plist"))
+      try handle.seekToEnd()
+      try handle.write(contentsOf: Data("\n".utf8))
+      try handle.close()
+      XCTAssertFalse(adapter.verifyInstallerSignature(at: app))
+    }
+
+    @MainActor
     func testAppKitAdapterUsesInjectedSystemBoundary() async {
       let url = URL(string: "https://example.com/appkit")!
       var openedURL: URL?

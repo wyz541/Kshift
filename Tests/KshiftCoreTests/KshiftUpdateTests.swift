@@ -69,6 +69,40 @@ final class KshiftUpdateTests: XCTestCase {
         }
     }
 
+    func testAdHocStableReleaseIsAvailable() async throws {
+        let data = try manifestData(
+            version: "1.1.0",
+            channel: "stable",
+            releaseStatus: "promoted",
+            assetSigningStatus: "ad-hoc",
+            manifestSigningStatus: "ad-hoc"
+        )
+        let service = KshiftUpdateService(
+            configuration: configuration(platform: .macOS),
+            fetch: { _ in (data, 200) }
+        )
+        guard case .available = await service.checkForUpdates() else {
+            return XCTFail("Expected an ad-hoc Stable release to be available")
+        }
+    }
+
+    func testAdHocSigningStatusMismatchIsIncompatible() async throws {
+        let data = try manifestData(
+            version: "1.1.0",
+            channel: "stable",
+            releaseStatus: "promoted",
+            assetSigningStatus: "ad-hoc",
+            manifestSigningStatus: "signed"
+        )
+        let service = KshiftUpdateService(
+            configuration: configuration(platform: .macOS),
+            fetch: { _ in (data, 200) }
+        )
+        guard case .incompatible = await service.checkForUpdates() else {
+            return XCTFail("Expected a signing-status mismatch to be incompatible")
+        }
+    }
+
     func testUnsignedStableReleaseIsIncompatible() async throws {
         let data = try manifestData(version: "1.1.0", channel: "stable", releaseStatus: "promoted", assetSigningStatus: "unsigned", manifestSigningStatus: "unsigned")
         let service = KshiftUpdateService(
@@ -145,6 +179,7 @@ final class KshiftUpdateTests: XCTestCase {
         timestamp: String = "2026-11-18T00:00:00Z"
     ) throws -> Data {
         let assetDigest = String(repeating: "a", count: 64)
+        let signingIdentity: Any = manifestSigningStatus == "signed" ? "Developer ID Application" : NSNull()
         let manifest: [String: Any] = [
             "schema_version": "1",
             "product": "Kshift",
@@ -160,7 +195,11 @@ final class KshiftUpdateTests: XCTestCase {
                 ["name": "release-notes.md", "platform": "source", "architecture": "all", "role": "notes", "size_bytes": 9, "sha256": String(repeating: "d", count: 64), "signing_status": "not-applicable"],
                 ["name": "kshift-server.tar.gz", "platform": "server", "architecture": "arm64", "role": "server-bundle", "size_bytes": 32, "sha256": assetDigest, "signing_status": "unsigned"]
             ],
-            "signing": ["status": manifestSigningStatus, "identity": "Developer ID Application", "notarization": "passed"],
+            "signing": [
+                "status": manifestSigningStatus,
+                "identity": signingIdentity,
+                "notarization": manifestSigningStatus == "signed" ? "passed" : "not-requested"
+            ],
             "sbom": ["format": "spdx-json", "file": "sbom.json", "sha256": String(repeating: "e", count: 64)],
             "provenance": ["workflow": "release.yml", "run_id": "100", "run_attempt": 1, "artifact_id": "artifact"],
             "gates": [["name": "macos:signature", "status": "passed", "evidence": "fixture"]],

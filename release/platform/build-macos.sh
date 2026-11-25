@@ -26,10 +26,6 @@ if [[ ! -d "$project" ]]; then
 fi
 
 signing_args=(CODE_SIGN_IDENTITY="$identity")
-if [[ "$channel" == 'stable' || "$channel" == 'hotfix' ]] && [[ "$identity" == '-' ]]; then
-  echo 'stable macOS build requires MACOS_SIGN_IDENTITY' >&2
-  exit 2
-fi
 if [[ "$channel" == 'preview' ]]; then
   signing_args+=(CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO)
 fi
@@ -54,6 +50,10 @@ if [[ -z "$app" || ! -d "$app" ]]; then
   exit 2
 fi
 if [[ "$channel" == 'stable' || "$channel" == 'hotfix' ]]; then
+  if [[ "$identity" == '-' ]]; then
+    echo 'signing macOS application ad-hoc'
+    codesign --force --deep --sign - "$app"
+  fi
   codesign --verify --deep --strict --verbose=2 "$app"
 fi
 

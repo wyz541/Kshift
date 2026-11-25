@@ -71,7 +71,7 @@ flowchart TD
 - `REL-004`：只有一个 release orchestrator 可以写 Release。
 - `REL-005`：Draft 验证通过后只提升同一个 Draft。
 - `REL-006`：已发布标签和同名 Stable 资产禁止覆盖。
-- `REL-007`：Stable 禁止包含 debug、ad-hoc 或 unsigned 资产。
+- `REL-007`：Stable 禁止包含 debug 或 unsigned application 资产。macOS Stable 允许通过 `codesign` 验证的 `ad-hoc` 签名；Developer ID 和 notarization 可选，不是 Promote 的必需条件。
 - `REL-008`：Release manager 必须在受保护环境批准 Promote。
 - `REL-009`：macOS 和 iOS 的最低系统版本必须写入 manifest 和 Release notes。
 - `REL-011`：Windows 资产首版只允许进入 Preview 通道。Windows 进入 Stable 前，必须先确认签名方式和 `release/policy.json` 的决策状态。
@@ -84,7 +84,7 @@ flowchart TD
 | 通道 | 版本格式 | GitHub Release | Stable 资产 |
 | --- | --- | --- | --- |
 | Preview | `0.x.y-preview.n` | Prerelease | 不适用 |
-| Stable | `x.y.z` | 正式 Release | 必须签名 |
+| Stable | `x.y.z` | 正式 Release | 必须符合 policy 允许的签名状态 |
 | Hotfix | `x.y.z` | 正式 Release | 使用新 patch |
 
 - Update feed 只读取 Stable Release。

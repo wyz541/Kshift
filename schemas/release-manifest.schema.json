@@ -161,7 +161,7 @@
         "sha256": { "$ref": "#/$defs/sha256" },
         "signing_status": {
           "type": "string",
-          "enum": ["signed", "notarized", "testflight", "unsigned", "not-applicable"]
+          "enum": ["ad-hoc", "signed", "notarized", "testflight", "unsigned", "not-applicable"]
         }
       }
     },

@@ -58,8 +58,28 @@ jobs:
         with:
           toolchain: 1.99.1
           targets: aarch64-apple-darwin
-      - name: Import macOS signing identity
-        if: ${{ inputs.channel == 'stable' }}
+      - name: Detect optional macOS signing identity
+        id: macos-signing
+        if: ${{ inputs.channel == 'stable' || inputs.channel == 'hotfix' }}
+        shell: bash
+        env:
+          CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$CERTIFICATE_BASE64$CERTIFICATE_PASSWORD$KEYCHAIN_PASSWORD$SIGN_IDENTITY" ]]; then
+            test -n "$CERTIFICATE_BASE64"
+            test -n "$CERTIFICATE_PASSWORD"
+            test -n "$KEYCHAIN_PASSWORD"
+            test -n "$SIGN_IDENTITY"
+            echo 'configured=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'configured=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Import optional macOS signing identity
+        if: ${{ steps.macos-signing.outputs.configured == 'true' }}
         shell: bash
         env:
           CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
@@ -67,9 +87,6 @@ jobs:
           KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
           set -euo pipefail
-          test -n "$CERTIFICATE_BASE64"
-          test -n "$CERTIFICATE_PASSWORD"
-          test -n "$KEYCHAIN_PASSWORD"
           certificate="$RUNNER_TEMP/macos-signing.p12"
           python3 -c 'import base64, os; open(os.environ["RUNNER_TEMP"] + "/macos-signing.p12", "wb").write(base64.b64decode(os.environ["CERTIFICATE_BASE64"]))'
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
@@ -88,7 +105,11 @@ jobs:
           dmg="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-macos-arm64.dmg"
           zip="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-macos-arm64.zip"
           if [[ "$KSHIFT_CHANNEL" == "stable" || "$KSHIFT_CHANNEL" == "hotfix" ]]; then
-            signing_status="signed"
+            if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
+              signing_status="signed"
+            else
+              signing_status="ad-hoc"
+            fi
             signature_gate="passed"
           else
             signing_status="unsigned"
@@ -133,7 +154,7 @@ jobs:
               ],
               gates: [
                 {name: "build", status: "passed", evidence: "xcodebuild completed"},
-                {name: "signature", status: $signature_gate, evidence: "codesign gate"},
+                {name: "signature", status: $signature_gate, evidence: "codesign verification"},
                 {name: "install", status: "skipped", evidence: "requires clean macOS host"},
                 {name: "upgrade", status: "skipped", evidence: "requires clean macOS host"},
                 {name: "uninstall", status: "skipped", evidence: "requires clean macOS host"},
@@ -142,7 +163,10 @@ jobs:
                 {name: "accessibility", status: "skipped", evidence: "requires R2 UI evidence"},
                 {name: "performance", status: "skipped", evidence: "requires R2 performance evidence"}
               ],
-              limitations: ["Runtime install and accessibility gates are required before stable promotion."]
+              limitations: [
+                "Ad-hoc builds are intended for internal distribution and may be blocked by Gatekeeper outside the managed environment.",
+                "Runtime install and accessibility gates are required before stable promotion."
+              ]
             }' > "$KSHIFT_OUTPUT_DIR/macos.fragment.spec.json"
           node release/tools/kshift-release.mjs fragment \
             --spec "$KSHIFT_OUTPUT_DIR/macos.fragment.spec.json" \
