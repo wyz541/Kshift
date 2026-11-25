@@ -67,7 +67,11 @@
     }
 
     public func installUpdate(_ candidate: KshiftUpdateCandidate, data: Data) async -> KshiftUpdateInstallationResult {
-      guard candidate.manifest.signingStatus == "signed" || candidate.asset.signingStatus == "signed" || candidate.asset.signingStatus == "notarized" else {
+      let developerID =
+        candidate.manifest.signingStatus == "signed"
+        && ["signed", "notarized"].contains(candidate.asset.signingStatus)
+      let adHoc = candidate.manifest.signingStatus == "ad-hoc" && candidate.asset.signingStatus == "ad-hoc"
+      guard developerID || adHoc else {
         return .rejected("The release is not signed for macOS.")
       }
       let directory = FileManager.default.temporaryDirectory.appendingPathComponent("KshiftUpdate", isDirectory: true)
@@ -112,12 +116,12 @@
       }
     }
 
-    private func verifyInstallerSignature(at url: URL) -> Bool {
+    func verifyInstallerSignature(at url: URL) -> Bool {
       switch url.pathExtension.lowercased() {
       case "app":
         return verifyCodeSignature(at: url)
       case "dmg":
-        return runSecurityAssessment(at: url, type: "open")
+        return verifyDiskImageSignature(at: url)
       case "pkg":
         return runSecurityAssessment(at: url, type: "install")
       case "zip":
@@ -143,6 +147,42 @@
       default:
         return false
       }
+    }
+
+    private func verifyDiskImageSignature(at url: URL) -> Bool {
+      let mountPoint = FileManager.default.temporaryDirectory
+        .appendingPathComponent("KshiftUpdateMount-\(UUID().uuidString)", isDirectory: true)
+      do {
+        try FileManager.default.createDirectory(at: mountPoint, withIntermediateDirectories: true)
+      } catch {
+        return false
+      }
+      defer { try? FileManager.default.removeItem(at: mountPoint) }
+
+      let attach = Process()
+      attach.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+      attach.arguments = ["attach", "-nobrowse", "-readonly", "-mountpoint", mountPoint.path, url.path]
+      do {
+        try attach.run()
+        attach.waitUntilExit()
+      } catch {
+        return false
+      }
+      guard attach.terminationStatus == 0 else { return false }
+      defer {
+        let detach = Process()
+        detach.executableURL = URL(fileURLWithPath: "/usr/bin/hdiutil")
+        detach.arguments = ["detach", mountPoint.path, "-quiet"]
+        if (try? detach.run()) != nil {
+          detach.waitUntilExit()
+        }
+      }
+
+      guard let app = FileManager.default.enumerator(at: mountPoint, includingPropertiesForKeys: nil)?
+        .compactMap({ $0 as? URL })
+        .first(where: { $0.pathExtension == "app" })
+      else { return false }
+      return verifyCodeSignature(at: app)
     }
 
     private func verifyCodeSignature(at url: URL) -> Bool {

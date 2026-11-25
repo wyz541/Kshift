@@ -40,7 +40,7 @@ Schema version 为 `1`。
 - `REL-C-001`：版本使用 SemVer 核心。
 - `REL-C-002`：标签必须为 `v<version>`。
 - `REL-C-003`：Preview 标签必须包含 `-preview.<n>`。
-- `REL-C-004`：Stable 禁止 debug、ad-hoc 或 unsigned 资产。
+- `REL-C-004`：Stable 禁止 debug 或 unsigned application 资产。macOS Stable 允许 `ad-hoc` 签名；Developer ID 和 notarization 可选。
 - `REL-C-005`：Ops channel 尚未确认。`OQ-005` 关闭前不生成正式 Stable。
 
 ## 3. Manifest
@@ -95,7 +95,7 @@ Release orchestrator 按以下顺序校验。
 4. 校验 version、channel 和 tag 相同。
 5. 校验平台资产是否完整。
 6. 校验文件名、大小和 SHA-256。
-7. 校验签名和 notarization 状态。
+7. 校验签名状态和 Stable policy；notarization 仅在 policy 要求时校验。
 8. 校验 gate 结果。
 9. 校验 SBOM 和 provenance。
 10. 校验 manifest 没有秘密和本机路径。
@@ -113,7 +113,7 @@ Stable manifest 必须满足以下条件。
 - [ ] 所有必需平台存在。
 - [ ] 所有平台使用同一 source commit。
 - [ ] 所有资产 digest 唯一且有效。
-- [ ] macOS 签名和分发策略已批准。
+- [ ] macOS 签名和分发策略已批准；`ad-hoc` 或 Developer ID 签名均按当前 policy 接受，notarization 不是必需项。
 - [ ] iOS 分发策略已批准。
 - [ ] macOS 安装、升级、卸载和回滚证据存在。
 - [ ] iOS 安装和升级证据存在。
@@ -146,7 +146,7 @@ Stable manifest 必须满足以下条件。
 - Update feed 只读取 Stable Release。
 - Update checker 只接受 GitHub Release URL。
 - 下载后必须校验 byte count 和 SHA-256。
-- 安装前必须校验签名和最低系统版本。
+- 安装前必须校验 code signature 和最低系统版本；Developer ID 与 notarization 不作为通用必需项。
 - Schema migration 默认只向前。
 - 已发布 Stable 的回滚使用新 patch Release。
 - 不能原地更新的平台打开 Release 页面。
