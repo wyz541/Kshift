@@ -46,13 +46,55 @@ jobs:
       - name: Build server bundle
         shell: bash
         run: release/platform/build-server.sh
+      - name: Verify server runtime evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-server-macos-arm64.tar.gz"
+          test -f "$archive"
+          mkdir -p "$RUNNER_TEMP/server-bundle"
+          tar -xzf "$archive" -C "$RUNNER_TEMP/server-bundle"
+          if [[ "$KSHIFT_CHANNEL" == "stable" || "$KSHIFT_CHANNEL" == "hotfix" ]]; then
+            evidence="$GITHUB_WORKSPACE/release/evidence/server-runtime.json"
+            test -s "$evidence"
+            evidence_asset="kshift-$KSHIFT_VERSION-server-runtime-evidence.json"
+            cp "$evidence" "$KSHIFT_OUTPUT_DIR/$evidence_asset"
+            expected_gates="$(jq -r '.stable_required_gates.server | map(select(. != "build")) | join(",")' release/policy.json)"
+            node release/tools/runtime-evidence.mjs verify \
+              --root "$GITHUB_WORKSPACE" \
+              --evidence "$evidence" \
+              --platform server \
+              --version "$KSHIFT_VERSION" \
+              --channel "$KSHIFT_CHANNEL" \
+              --candidate-commit "$KSHIFT_SOURCE_COMMIT" \
+              --bundle "$RUNNER_TEMP/server-bundle" \
+              --expected-gates "$expected_gates" \
+              --output "$RUNNER_TEMP/server-runtime-gates.json"
+            jq '[{"name":"build","status":"passed","evidence":"cargo build and archive creation"}] + .gates' \
+              "$RUNNER_TEMP/server-runtime-gates.json" > "$RUNNER_TEMP/server-gates.json"
+            jq -n --arg name "$evidence_asset" \
+              '[{name: $name, platform: "server", architecture: "arm64", role: "evidence", signing_status: "not-applicable"}]' \
+              > "$RUNNER_TEMP/server-evidence-asset.json"
+          else
+            jq -n '[{"name":"build","status":"passed","evidence":"cargo build and archive creation"}]' \
+              > "$RUNNER_TEMP/server-gates.json"
+            for gate in $(jq -r '.stable_required_gates.server[] | select(. != "build")' release/policy.json); do
+              jq --arg gate "$gate" \
+                '. + [{name: $gate, status: "skipped", evidence: "runtime evidence is required only for Stable or Hotfix"}]' \
+                "$RUNNER_TEMP/server-gates.json" > "$RUNNER_TEMP/server-gates.next.json"
+              mv "$RUNNER_TEMP/server-gates.next.json" "$RUNNER_TEMP/server-gates.json"
+            done
+            printf '%s\n' '[]' > "$RUNNER_TEMP/server-evidence-asset.json"
+          fi
       - name: Create server fragment
         shell: bash
         run: |
           set -euo pipefail
           archive="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-server-macos-arm64.tar.gz"
           test -f "$archive"
-          jq -n \
+          jq --slurpfile gates "$RUNNER_TEMP/server-gates.json" \
+             --slurpfile evidence_asset "$RUNNER_TEMP/server-evidence-asset.json" \
+            -n \
             --arg version "$KSHIFT_VERSION" \
             --arg channel "$KSHIFT_CHANNEL" \
             --arg source "$KSHIFT_SOURCE_COMMIT" \
@@ -83,16 +125,9 @@ jobs:
                 architecture: "arm64",
                 role: "server-bundle",
                 signing_status: "not-applicable"
-              }],
-              gates: [
-                {name: "build", status: "passed", evidence: "cargo build and archive creation"},
-                {name: "health", status: "skipped", evidence: "requires target host runtime"},
-                {name: "migration", status: "skipped", evidence: "requires PostgreSQL 18 target host"},
-                {name: "backup-restore", status: "skipped", evidence: "requires PostgreSQL 18 target host"},
-                {name: "startup-recovery", status: "skipped", evidence: "requires launchd target host"},
-                {name: "logs", status: "skipped", evidence: "requires installed newsyslog configuration"}
-              ],
-              limitations: ["Stable promotion remains blocked until runtime gates run on the internal host."]
+              }] + $evidence_asset[0],
+              gates: $gates[0],
+              limitations: (if $channel == "stable" or $channel == "hotfix" then [] else ["Stable promotion requires target-host runtime evidence."] end)
             }' > "$KSHIFT_OUTPUT_DIR/server.fragment.spec.json"
           node release/tools/kshift-release.mjs fragment \
             --spec "$KSHIFT_OUTPUT_DIR/server.fragment.spec.json" \
@@ -109,4 +144,5 @@ jobs:
           path: |
             ${{ github.workspace }}/dist/kshift-*-server-macos-*.tar.gz
             ${{ github.workspace }}/dist/server.fragment.json
+            ${{ github.workspace }}/dist/kshift-*-server-runtime-evidence.json
           if-no-files-found: error

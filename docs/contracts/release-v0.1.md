@@ -86,6 +86,29 @@ Manifest 禁止包含以下内容。
 
 文件名必须匹配 `^[A-Za-z0-9][A-Za-z0-9._-]*$`。禁止路径分隔符和控制字符。
 
+### 4.1 Runtime evidence
+
+Stable server 和 macOS fragment 必须引用对应平台的 runtime evidence 资产。
+
+| 文件 | 平台 | 必需 gate |
+| --- | --- | --- |
+| `release/evidence/server-runtime.json` | `server` | `health`、`migration`、`backup-restore`、`startup-recovery`、`logs` |
+| `release/evidence/macos-runtime.json` | `macos` | `install`、`upgrade`、`uninstall`、`rollback`、`liquid-glass`、`accessibility`、`performance` |
+
+runtime evidence 使用 schema version `1`，至少包含以下内容。
+
+| 字段 | 规则 |
+| --- | --- |
+| `source.commit` | 生成证据时的 clean source commit，必须位于候选 commit 的历史中 |
+| `source.input_algorithm` | 固定为 `kshift-runtime-inputs-v1` |
+| `source.input_sha256` | 必须与候选 checkout 的运行时输入摘要一致 |
+| `artifact` | Server 二进制摘要，或 macOS bundle ID、版本、签名和 executable 摘要 |
+| `host` | macOS、arm64、系统版本；server 还包含 PostgreSQL 18 信息 |
+| `gates` | 每个必需 gate 的 `passed` 状态和结构化观测 |
+| `limitations` | 目标 host 和未覆盖范围 |
+
+平台 workflow 使用 `release/tools/runtime-evidence.mjs verify` 校验 evidence。预览通道允许把这些 gate 标为 `skipped`；Stable 和 Hotfix 必须全部 `passed`。
+
 ## 5. 校验顺序
 
 Release orchestrator 按以下顺序校验。
@@ -97,7 +120,7 @@ Release orchestrator 按以下顺序校验。
 5. 校验平台资产是否完整。
 6. 校验文件名、大小和 SHA-256。
 7. 校验签名状态和 Stable policy；notarization 仅在 policy 要求时校验。
-8. 校验 gate 结果。
+8. 校验 gate 结果，并确认 Stable fragment 引用平台 runtime evidence 资产。
 9. 校验 SBOM 和 provenance。
 10. 校验 manifest 没有秘密和本机路径。
 11. 创建 Draft。
@@ -158,6 +181,7 @@ Stable manifest 必须满足以下条件。
 - Draft 和 Promote 的 workflow run ID。
 - Manifest、fragment、checksums、SBOM 和 attestation。
 - 平台构建日志和 gate 结果。
+- Server 和 macOS runtime evidence，包括输入摘要、制品摘要和逐 gate 观测。
 - macOS 安装、升级、卸载和回滚记录。
 - iOS 内部测试构建和模拟器记录（仅保留为非 Stable 证据；没有时写明原因）。
 - Server 启动、健康、日志和恢复记录。

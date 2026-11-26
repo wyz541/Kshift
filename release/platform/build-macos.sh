@@ -12,8 +12,13 @@ output_dir="${KSHIFT_OUTPUT_DIR:-$root/dist}"
 project="${KSHIFT_XCODE_PROJECT:-$root/Kshift.xcodeproj}"
 scheme="${KSHIFT_MACOS_SCHEME:-Kshift-macOS}"
 identity="${MACOS_SIGN_IDENTITY:--}"
-build_root="$(mktemp -d "$TMPDIR/kshift-macos-build.XXXXXX")"
-trap 'rm -rf "$build_root"' EXIT
+if [[ -n "${KSHIFT_MACOS_DERIVED_DATA:-}" ]]; then
+  build_root="$KSHIFT_MACOS_DERIVED_DATA"
+  mkdir -p "$build_root"
+else
+  build_root="$(mktemp -d "$TMPDIR/kshift-macos-build.XXXXXX")"
+  trap 'rm -rf "$build_root"' EXIT
+fi
 
 cd "$root"
 if [[ ! -d "$project" ]]; then
@@ -35,6 +40,8 @@ xcodebuild \
   -destination 'platform=macOS' \
   ARCHS=arm64 \
   ONLY_ACTIVE_ARCH=YES \
+  MARKETING_VERSION="$version" \
+  CURRENT_PROJECT_VERSION="$version" \
   "${signing_args[@]}" \
   build
 

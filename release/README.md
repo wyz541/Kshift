@@ -39,6 +39,17 @@ node release/tools/kshift-release.mjs validate \
 node release/tools/kshift-release.mjs verify-assets \
   --manifest release-manifest.json \
   --assets-dir release-assets
+
+node release/tools/runtime-evidence.mjs verify \
+  --root . \
+  --evidence release/evidence/server-runtime.json \
+  --platform server \
+  --version 0.1.0 \
+  --channel stable \
+  --candidate-commit "$(git rev-parse HEAD)" \
+  --bundle /path/to/server-bundle \
+  --expected-gates health,migration,backup-restore,startup-recovery,logs \
+  --output server-runtime-gates.json
 ```
 
 ## 平台
@@ -53,6 +64,19 @@ node release/tools/kshift-release.mjs verify-assets \
 ## Stable 状态
 
 `release/policy.json` 控制 Stable 必需平台、角色、gate 和签名状态。当前决策已批准为 server、macOS、source；iOS 没有 Apple Developer Program，仅保留内部测试证据，不属于 Stable required platform。Stable 合并和验证仍会 fail closed，直到 server 与 macOS 的运行时 gate 通过。
+
+## Runtime evidence
+
+Stable runtime evidence 固定位于 `release/evidence/server-runtime.json` 和 `release/evidence/macos-runtime.json`，目录规则见 [`evidence/README.md`](evidence/README.md)。平台 workflow 在校验源码输入摘要和实际制品摘要后，才把对应 gate 写入 fragment。
+
+生成入口：
+
+```bash
+./scripts/run-server-release-gates.sh
+./scripts/run-macos-release-gates.sh
+```
+
+生成脚本要求 clean source tree。证据文件本身和 `docs/evidence/` 中的截图在生成后提交；不得手工把 `skipped` 改成 `passed`。
 
 ## 资产规则
 

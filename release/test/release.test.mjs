@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -7,11 +8,25 @@ import test from 'node:test'
 
 const REPO = resolve(import.meta.dirname, '../..')
 const TOOL = join(REPO, 'release/tools/kshift-release.mjs')
+const RUNTIME_EVIDENCE_TOOL = join(REPO, 'release/tools/runtime-evidence.mjs')
 const COMMIT = 'a'.repeat(40)
 const DIGEST = 'b'.repeat(64)
 
 function run(args, expected = 0) {
   const result = spawnSync(process.execPath, [TOOL, ...args], {
+    cwd: REPO,
+    encoding: 'utf8',
+  })
+  assert.equal(
+    result.status,
+    expected,
+    `unexpected exit ${result.status}\nstdout=${result.stdout}\nstderr=${result.stderr}`,
+  )
+  return result
+}
+
+function runRuntimeEvidence(args, expected = 0) {
+  const result = spawnSync(process.execPath, [RUNTIME_EVIDENCE_TOOL, ...args], {
     cwd: REPO,
     encoding: 'utf8',
   })
@@ -401,4 +416,111 @@ test('checksums are deterministic', () => {
   run(['checksums', '--dir', assets, '--output', sums])
   const lines = readFileSync(sums, 'utf8').trim().split('\n')
   assert.deepEqual(lines.map((line) => line.slice(66)), ['a.bin', 'b.bin'])
+})
+
+function runtimeFixture(root) {
+  const bundle = join(root, 'server-bundle')
+  mkdirSync(join(bundle, 'bin'), { recursive: true })
+  writeFileSync(join(bundle, 'bin/kshift-server'), 'server-binary')
+  writeFileSync(join(bundle, 'bin/kshift-ops'), 'ops-binary')
+  writeFileSync(join(bundle, 'BUILD_INFO.json'), '{"built_at":"ignored"}\n')
+  const source = JSON.parse(runRuntimeEvidence(['source-digest', '--root', REPO]).stdout)
+  const bundleDigest = JSON.parse(runRuntimeEvidence([
+    'tree-digest', '--root', bundle, '--exclude', 'BUILD_INFO.json',
+  ]).stdout).sha256
+  const digest = (value) => createHash('sha256').update(value).digest('hex')
+  const candidateCommit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).stdout.trim()
+  const evidence = {
+    schema_version: '1',
+    kind: 'runtime-release-evidence',
+    product: 'Kshift',
+    version: '0.1.0',
+    channel: 'stable',
+    platform: 'server',
+    generated_at: new Date().toISOString(),
+    source: {
+      commit: candidateCommit,
+      tree_state: 'clean',
+      input_algorithm: source.algorithm,
+      input_sha256: source.sha256,
+    },
+    host: { os: 'macOS', architecture: 'arm64', os_version: '27.0.1' },
+    artifact: {
+      server_sha256: digest('server-binary'),
+      ops_sha256: digest('ops-binary'),
+      bundle_payload_sha256: bundleDigest,
+    },
+    gates: [
+      {
+        name: 'health',
+        status: 'passed',
+        detail: { before: 'SERVING', after: 'SERVING' },
+      },
+    ],
+    limitations: [],
+  }
+  const evidencePath = join(root, 'server-runtime.json')
+  writeJson(evidencePath, evidence)
+  return { bundle, evidence, evidencePath, candidateCommit }
+}
+
+test('runtime evidence binds source inputs and server artifact digests', () => {
+  const root = tempRoot()
+  const fixture = runtimeFixture(root)
+  const output = join(root, 'server-gates.json')
+  runRuntimeEvidence([
+    'verify',
+    '--root', REPO,
+    '--evidence', fixture.evidencePath,
+    '--platform', 'server',
+    '--version', '0.1.0',
+    '--channel', 'stable',
+    '--candidate-commit', fixture.candidateCommit,
+    '--bundle', fixture.bundle,
+    '--expected-gates', 'health',
+    '--output', output,
+  ])
+  const gates = JSON.parse(readFileSync(output, 'utf8'))
+  assert.equal(gates.status, 'passed')
+  assert.deepEqual(gates.gates.map((gate) => gate.name), ['health'])
+})
+
+test('runtime evidence fails closed when source inputs changed', () => {
+  const root = tempRoot()
+  const fixture = runtimeFixture(root)
+  fixture.evidence.source.input_sha256 = 'c'.repeat(64)
+  writeJson(fixture.evidencePath, fixture.evidence)
+  const result = runRuntimeEvidence([
+    'verify',
+    '--root', REPO,
+    '--evidence', fixture.evidencePath,
+    '--platform', 'server',
+    '--version', '0.1.0',
+    '--channel', 'stable',
+    '--candidate-commit', fixture.candidateCommit,
+    '--bundle', fixture.bundle,
+    '--expected-gates', 'health',
+    '--output', join(root, 'server-gates.json'),
+  ], 2)
+  assert.match(result.stderr, /source inputs do not match/)
+})
+
+test('runtime evidence rejects incomplete gate detail', () => {
+  const root = tempRoot()
+  const fixture = runtimeFixture(root)
+  fixture.evidence.gates[0].detail.after = 'NOT_SERVING'
+  writeJson(fixture.evidencePath, fixture.evidence)
+  const result = runRuntimeEvidence([
+    'verify',
+    '--root', REPO,
+    '--evidence', fixture.evidencePath,
+    '--platform', 'server',
+    '--version', '0.1.0',
+    '--channel', 'stable',
+    '--candidate-commit', fixture.candidateCommit,
+    '--bundle', fixture.bundle,
+    '--expected-gates', 'health',
+    '--output', join(root, 'server-gates.json'),
+  ], 2)
+  assert.match(result.stderr, /SERVING before and after restart/)
 })
