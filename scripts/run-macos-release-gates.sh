@@ -8,12 +8,17 @@ fi
 : "${KSHIFT_MACOS_STABLE_DMG:?KSHIFT_MACOS_STABLE_DMG must point to the Stable DMG}"
 : "${KSHIFT_MACOS_STABLE_ZIP:?KSHIFT_MACOS_STABLE_ZIP must point to the Stable ZIP}"
 : "${KSHIFT_MACOS_PREVIOUS_ZIP:?KSHIFT_MACOS_PREVIOUS_ZIP must point to the previous macOS ZIP}"
-for command in hdiutil ditto unzip codesign plutil jq python3 git node shasum rg open pgrep; do
+for command in hdiutil ditto unzip codesign plutil jq python3 git node shasum rg open pgrep ioreg; do
   command -v "$command" >/dev/null 2>&1 || {
     echo "missing required command: $command" >&2
     exit 2
   }
 done
+
+if [[ "$(ioreg -n Root -d1 -a | plutil -extract IOConsoleLocked raw -o - - 2>/dev/null)" == 'true' ]]; then
+  echo 'macOS release gates require an unlocked console session for window and accessibility evidence' >&2
+  exit 2
+fi
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
