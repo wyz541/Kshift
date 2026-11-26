@@ -938,6 +938,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "kshift-mcp"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "kshift-client",
+ "kshift-core",
+ "kshift-domain",
+ "serde",
+ "serde_json",
+ "thiserror",
+ "tokio",
+ "tokio-util",
+ "uuid",
+]
+
+[[package]]
 name = "kshift-plan-store"
 version = "0.1.0"
 dependencies = [
