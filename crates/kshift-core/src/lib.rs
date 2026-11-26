@@ -1,9 +1,14 @@
 //! Authoritative Kshift domain and in-memory transport for the R2 MVP.
 
+mod mind_map;
 mod model;
 mod plan_depth;
 mod store;
 
+pub use mind_map::{
+    DEFAULT_MIND_MAP_NODE_LIMIT, MAX_MIND_MAP_NODE_LIMIT, MindMapEdge, MindMapEdgeKind,
+    MindMapError, MindMapNode, MindMapProjection, project_task_mind_map,
+};
 pub use model::{
     CommandEnvelope, CommandError, CommandResponse, CreateTaskCommand, MoveTaskCommand, Person,
     ProjectAuditEntry, ProjectSnapshot, ProjectSummary, SetTasksStatusCommand, TaskCommand,

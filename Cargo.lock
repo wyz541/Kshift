@@ -902,6 +902,7 @@ name = "kshift-core"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "kshift-domain",
  "serde",
  "serde_json",
  "sha2",
