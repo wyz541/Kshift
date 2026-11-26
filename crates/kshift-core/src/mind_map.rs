@@ -126,14 +126,15 @@ pub fn project_task_mind_map(
         if !included.contains(&task.id) {
             continue;
         }
-        if let Some(parent_task_id) = task.parent_task_id {
-            if included.contains(&parent_task_id) {
-                edges.push(MindMapEdge {
-                    from_task_id: parent_task_id,
-                    to_task_id: task.id,
-                    kind: MindMapEdgeKind::Parent,
-                });
-            }
+        if let Some(parent_task_id) = task
+            .parent_task_id
+            .filter(|parent_task_id| included.contains(parent_task_id))
+        {
+            edges.push(MindMapEdge {
+                from_task_id: parent_task_id,
+                to_task_id: task.id,
+                kind: MindMapEdgeKind::Parent,
+            });
         }
         for dependency_task_id in &task.dependency_task_ids {
             if included.contains(dependency_task_id) {
