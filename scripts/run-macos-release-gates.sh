@@ -136,7 +136,6 @@ launch_previous_app() {
 }
 
 ditto "$previous_app" "$installed_app"
-launch_previous_app "$installed_app"
 rm -rf "$installed_app"
 ditto "$stable_app" "$installed_app"
 install_screenshot="$(launch_with_evidence "$installed_app" macos-liquid-glass-light no)"
@@ -197,7 +196,7 @@ fi
 
 rm -rf "$installed_app"
 ditto "$previous_app" "$installed_app"
-rollback_screenshot="$(launch_with_evidence "$installed_app" macos-rollback no)"
+launch_previous_app "$installed_app"
 cmp -s "$installed_app/Contents/MacOS/$stable_executable" "$previous_app/Contents/MacOS/$stable_executable" && {
   echo 'rollback application unexpectedly matches the Stable executable' >&2
   exit 1
