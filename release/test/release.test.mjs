@@ -40,26 +40,23 @@ function approvedPolicy(root) {
     decision_status: 'approved',
     decision_owner: 'test',
     decision_deadline: '2026-11-20',
-    stable_required_platforms: ['server', 'macos', 'ios', 'source'],
+    stable_required_platforms: ['server', 'macos', 'source'],
     stable_required_roles: {
       server: ['server-bundle'],
       macos: ['application'],
-      ios: ['application'],
       source: ['source'],
     },
     stable_required_gates: {
       server: ['build', 'health'],
       macos: ['build', 'signature'],
-      ios: ['build', 'distribution-signature'],
       source: ['source-archive'],
     },
     stable_signing: {
       server: ['not-applicable'],
       macos: ['ad-hoc', 'signed', 'notarized'],
-      ios: ['signed', 'testflight'],
       source: ['not-applicable'],
     },
-    stable_signing_global: ['ad-hoc', 'signed', 'testflight'],
+    stable_signing_global: ['ad-hoc', 'signed'],
   })
   return path
 }
@@ -91,7 +88,7 @@ function candidate(root, channel = 'stable') {
       strategy: 'new-patch-release',
       notes: 'Publish a new patch release.',
     },
-    required_platforms: ['server', 'macos', 'ios', 'source'],
+    required_platforms: channel === 'stable' ? ['server', 'macos', 'source'] : ['server', 'macos', 'ios', 'source'],
     limitations: ['Internal network only.'],
   })
   return path
@@ -148,7 +145,6 @@ function completeCandidate(root, policy, macosSigning = 'signed', expectedMergeS
   const specs = {
     server: { role: 'server-bundle', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['build', 'health'] },
     macos: { role: 'application', signingStatus: macosSigning, assetSigningStatus: macosSigning, gates: ['build', 'signature'] },
-    ios: { role: 'application', signingStatus: 'testflight', assetSigningStatus: 'testflight', gates: ['build', 'distribution-signature'] },
     source: { role: 'source', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['source-archive'] },
   }
   for (const [platform, options] of Object.entries(specs)) fragment(root, platform, options)
@@ -215,7 +211,7 @@ test('merges and validates a fully gated stable release with approved policy', (
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
   assert.equal(manifest.schema_version, '1')
   assert.equal(manifest.release_status, 'draft')
-  assert.equal(manifest.signing.status, 'testflight')
+  assert.equal(manifest.signing.status, 'signed')
   run(['validate', '--manifest', manifestPath, '--mode', 'stable', '--policy', policy])
   const releaseAssets = flattenAssets(root, manifest)
   run(['verify-assets', '--manifest', manifestPath, '--assets-dir', releaseAssets])
@@ -223,6 +219,21 @@ test('merges and validates a fully gated stable release with approved policy', (
   writeFileSync(join(releaseAssets, tamperName), 'tampered')
   const tampered = run(['verify-assets', '--manifest', manifestPath, '--assets-dir', releaseAssets], 2)
   assert.match(tampered.stderr, /size mismatch|sha256 mismatch/)
+})
+
+test('stable merge rejects iOS assets when policy marks iOS internal-test only', () => {
+  const root = tempRoot()
+  const policy = approvedPolicy(root)
+  const candidatePath = candidate(root, 'stable')
+  writeJson(candidatePath, { ...JSON.parse(readFileSync(candidatePath, 'utf8')), required_platforms: ['server', 'macos', 'ios', 'source'] })
+  fragment(root, 'server', { role: 'server-bundle', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['build', 'health'] })
+  fragment(root, 'macos', { role: 'application', signingStatus: 'signed', assetSigningStatus: 'signed', gates: ['build', 'signature'] })
+  fragment(root, 'ios', { role: 'application', signingStatus: 'testflight', assetSigningStatus: 'testflight', gates: ['build', 'distribution-signature'] })
+  fragment(root, 'source', { role: 'source', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['source-archive'] })
+  const sbom = join(root, 'sbom.spdx.json')
+  writeFileSync(sbom, '{}')
+  const result = run(['merge', '--candidate', candidatePath, '--fragments-dir', root, '--sbom', sbom, '--output', join(root, 'out.json'), '--mode', 'stable', '--policy', policy], 2)
+  assert.match(result.stderr, /stable candidate contains non-required platform: ios/)
 })
 
 test('stable merge accepts an ad-hoc macOS release with policy approval', () => {
