@@ -16,6 +16,7 @@ on:
       - "crates/kshift-windows/**"
       - "crates/kshift-windows-gpui/**"
       - ".github/workflows/windows-client.yml"
+      - "scripts/run-windows-ui-evidence.ps1"
   push:
     branches: [main]
     paths:
@@ -30,6 +31,7 @@ on:
       - "crates/kshift-windows/**"
       - "crates/kshift-windows-gpui/**"
       - ".github/workflows/windows-client.yml"
+      - "scripts/run-windows-ui-evidence.ps1"
 
 permissions:
   contents: read
@@ -84,6 +86,9 @@ jobs:
         shell: bash
         working-directory: crates/kshift-windows-gpui
         run: cargo build --release 2>&1 | tee ../../build.log
+      - name: Build the TLS mock server
+        shell: bash
+        run: cargo build --release -p kshift-client --example mock_server 2>&1 | tee mock-server-build.log
       - name: Open the schedule window
         timeout-minutes: 5
         shell: bash
@@ -108,6 +113,14 @@ jobs:
             --today 2026-11-25 \
             --open-task aaaaaaaa-0000-4000-8000-000000000001 \
             2>&1 | tee ../../editor-window.log
+      - name: Capture successful save evidence
+        timeout-minutes: 5
+        shell: pwsh
+        run: ./scripts/run-windows-ui-evidence.ps1 -Scenario success -EvidenceDir evidence/windows-save
+      - name: Capture conflict evidence
+        timeout-minutes: 5
+        shell: pwsh
+        run: ./scripts/run-windows-ui-evidence.ps1 -Scenario conflict -EvidenceDir evidence/windows-conflict
       - name: Upload logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -121,4 +134,6 @@ jobs:
             build.log
             window.log
             editor-window.log
+            mock-server-build.log
+            evidence/**
           if-no-files-found: warn
