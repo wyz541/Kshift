@@ -422,6 +422,10 @@ impl ScheduleView {
                             "已保存任务 · Revision {} · Command {}",
                             outcome.revision, outcome.command_id
                         ));
+                        println!(
+                            "kshift-windows: save committed task={} revision={} command={}",
+                            task_id, outcome.revision, outcome.command_id
+                        );
                     }
                     Err(message) => {
                         if let Some(editor) = self.editor.as_mut() {
@@ -440,11 +444,19 @@ impl ScheduleView {
                 if editor.task_id != task_id {
                     return;
                 }
-                editor.status = if failure.is_conflict() {
-                    EditorStatus::Conflict(failure)
+                if failure.is_conflict() {
+                    println!(
+                        "kshift-windows: save conflict task={} current_revision={:?} current_entity_version={:?} draft_preserved=true",
+                        task_id, failure.current_revision, failure.entity_version
+                    );
+                    editor.status = EditorStatus::Conflict(failure);
                 } else {
-                    EditorStatus::SaveFailed(failure.message)
-                };
+                    eprintln!(
+                        "kshift-windows: save failed task={} code={} message={}",
+                        task_id, failure.code, failure.message
+                    );
+                    editor.status = EditorStatus::SaveFailed(failure.message);
+                }
             }
         }
     }
@@ -1284,6 +1296,7 @@ struct CliArgs {
     snapshot: Option<String>,
     today: Option<NaiveDate>,
     open_task: Option<String>,
+    smoke_edit: bool,
 }
 
 fn parse_args() -> CliArgs {
@@ -1294,6 +1307,7 @@ fn parse_args() -> CliArgs {
             "--snapshot" => parsed.snapshot = args.next(),
             "--today" => parsed.today = args.next().and_then(|value| schedule::parse_date(&value)),
             "--open-task" => parsed.open_task = args.next(),
+            "--smoke-edit" => parsed.smoke_edit = true,
             other => parsed.snapshot = Some(other.to_owned()),
         }
     }
@@ -1359,6 +1373,9 @@ fn main() {
         .today
         .unwrap_or_else(|| chrono::Local::now().date_naive());
     let open_task = args.open_task.clone();
+    let smoke_edit = args.smoke_edit
+        || std::env::var("KSHIFT_SMOKE_EDIT")
+            .is_ok_and(|value| matches!(value.as_str(), "1" | "true" | "yes"));
     let loaded = match load_snapshot(&args) {
         Ok(loaded) => {
             println!(
@@ -1411,6 +1428,13 @@ fn main() {
                                 editor.task_id, editor.editable
                             );
                         }
+                    }
+                    if smoke_edit {
+                        if let Some(editor) = &mut view.editor {
+                            editor.draft.title = format!("{} [smoke]", editor.draft.title);
+                            editor.cursor = editor.draft.title.len();
+                        }
+                        view.save_editor(cx);
                     }
                     view
                 });

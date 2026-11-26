@@ -29,11 +29,35 @@ fn now() -> chrono::DateTime<Utc> {
         .expect("valid timestamp")
 }
 
+fn seed_task() -> Task {
+    Task {
+        id: Uuid::from_u128(0xaaaaaaaa_0000_4000_8000_000000000001),
+        project_id: project_id(),
+        title: "Windows smoke task".to_owned(),
+        description_markdown: "Edit this task through the Windows smoke flow.".to_owned(),
+        status: domain::TaskStatus::InProgress,
+        priority: domain::TaskPriority::High,
+        assignee_ids: vec![user_id()],
+        planned_on: NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
+        starts_on: None,
+        due_on: Some(NaiveDate::from_ymd_opt(2026, 11, 20).unwrap()),
+        tags: vec!["windows".to_owned()],
+        parent_task_id: None,
+        dependency_task_ids: Vec::new(),
+        version: 1,
+        created_by: user_id(),
+        updated_by: user_id(),
+        created_at: now(),
+        updated_at: now(),
+    }
+}
+
 struct State {
     revision: AtomicU64,
     tasks: std::sync::Mutex<Vec<Task>>,
     plan_task_version: AtomicU64,
     plan_status: std::sync::Mutex<kshift_core::TaskStatus>,
+    conflict_on_update: bool,
 }
 
 #[derive(Clone)]
@@ -180,21 +204,44 @@ impl contract::KshiftService for MockService {
                 created_at: now(),
                 updated_at: now(),
             },
+            Command::UpdateTask {
+                task_id,
+                expected_entity_version,
+                patch,
+            } => {
+                let mut tasks = self
+                    .state
+                    .tasks
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                let index = tasks
+                    .iter()
+                    .position(|task| task.id == task_id)
+                    .ok_or_else(|| Status::not_found("task not found"))?;
+                let current = tasks[index].clone();
+                if self.state.conflict_on_update || expected_entity_version != current.version {
+                    return Err(contract::ApiError::Conflict {
+                        current_revision: Some(self.state.revision.load(Ordering::SeqCst) + 1),
+                        entity_id: Some(task_id),
+                        current_entity_version: Some(current.version + 1),
+                    }
+                    .to_status());
+                }
+                let updated = domain::update_task(&current, &patch, user_id())
+                    .map_err(contract::ApiError::from)
+                    .map_err(|error| error.to_status())?;
+                tasks[index] = updated.clone();
+                updated
+            }
             Command::CreateProject { .. }
             | Command::AddProjectMember { .. }
-            | Command::UpdateTask { .. }
             | Command::DeleteTask { .. }
             | Command::BatchUpdateTasks { .. } => {
                 return Err(Status::invalid_argument(
-                    "smoke server only accepts create_task",
+                    "smoke server only accepts create_task and update_task",
                 ));
             }
         };
-        self.state
-            .tasks
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .push(task.clone());
         let revision = self.state.revision.fetch_add(1, Ordering::SeqCst) + 1;
         let event = ChangeEvent {
             project_id: project_id(),
@@ -202,7 +249,11 @@ impl contract::KshiftService for MockService {
             schema_version: domain::SCHEMA_VERSION,
             command_id: parsed.envelope.command_id,
             occurred_at: now(),
-            changes: vec![Change::TaskCreated { task }],
+            changes: vec![if task.version == 1 {
+                Change::TaskCreated { task }
+            } else {
+                Change::TaskUpdated { task }
+            }],
         };
         Ok(Response::new(v1::ExecuteCommandResponse {
             result: Some(v1::CommandResult {
@@ -379,9 +430,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = listener.local_addr()?;
     let state = Arc::new(State {
         revision: AtomicU64::new(1),
-        tasks: std::sync::Mutex::new(Vec::new()),
+        tasks: std::sync::Mutex::new(vec![seed_task()]),
         plan_task_version: AtomicU64::new(1),
         plan_status: std::sync::Mutex::new(kshift_core::TaskStatus::Todo),
+        conflict_on_update: args.iter().any(|arg| arg == "--conflict-on-update"),
     });
     let service = MockService { state };
     std::fs::write(
