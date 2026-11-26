@@ -1,0 +1,32 @@
+[package]
+name = "kshift-mcp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+description = "Read-only MCP stdio adapter for Kshift"
+
+[lib]
+name = "kshift_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kshift-mcp"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+domain.workspace = true
+kshift-client = { path = "../kshift-client" }
+kshift-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["io-std", "io-util"] }
+tokio-util.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+chrono.workspace = true

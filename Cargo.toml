@@ -8,6 +8,7 @@ members = [
     "crates/kshift-ffi",
     "crates/kshift-core",
     "crates/kshift-plan-store",
+    "crates/kshift-mcp",
     "crates/kshift-windows",
 ]
 
