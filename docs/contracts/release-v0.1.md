@@ -4,7 +4,7 @@ title: Kshift Release Contract v0.1
 type: reference
 status: active
 version: "0.1"
-updated: "2026-11-13"
+updated: "2026-11-26"
 keywords:
   - GitHub Release
   - manifest
@@ -34,7 +34,7 @@ Schema version 为 `1`。
 | 通道 | 版本格式 | GitHub Release | Stable 资产 |
 | --- | --- | --- | --- |
 | Preview | `0.x.y-preview.n` | Prerelease | 不适用 |
-| Stable | `x.y.z` | 正式 Release | 必须签名 |
+| Stable | `x.y.z` | 正式 Release | 必须符合 policy 允许的签名状态 |
 | Hotfix | `x.y.z` | 正式 Release | 使用新 patch |
 
 - `REL-C-001`：版本使用 SemVer 核心。
@@ -42,6 +42,7 @@ Schema version 为 `1`。
 - `REL-C-003`：Preview 标签必须包含 `-preview.<n>`。
 - `REL-C-004`：Stable 禁止 debug 或 unsigned application 资产。macOS Stable 允许 `ad-hoc` 签名；Developer ID 和 notarization 可选。
 - `REL-C-005`：Ops channel 尚未确认。`OQ-005` 关闭前不生成正式 Stable。
+- `REL-C-006`：Stable required platforms 由 `release/policy.json` 决定。没有 iOS Program 分发环境时，iOS 不能是 required platform 或 Stable asset；内部测试构建不得写入 Stable manifest。
 
 ## 3. Manifest
 
@@ -114,9 +115,8 @@ Stable manifest 必须满足以下条件。
 - [ ] 所有平台使用同一 source commit。
 - [ ] 所有资产 digest 唯一且有效。
 - [ ] macOS 签名和分发策略已批准；`ad-hoc` 或 Developer ID 签名均按当前 policy 接受，notarization 不是必需项。
-- [ ] iOS 分发策略已批准。
+- [ ] iOS 未出现在 Stable required platforms；内部测试证据若存在，明确标记 `NOT STABLE` 且不进入 manifest。
 - [ ] macOS 安装、升级、卸载和回滚证据存在。
-- [ ] iOS 安装和升级证据存在。
 - [ ] Server 健康检查、启动恢复和日志检查通过。
 - [ ] PostgreSQL 18 版本在支持范围内。
 - [ ] Migration 从上一发布版本成功执行。
@@ -159,7 +159,7 @@ Stable manifest 必须满足以下条件。
 - Manifest、fragment、checksums、SBOM 和 attestation。
 - 平台构建日志和 gate 结果。
 - macOS 安装、升级、卸载和回滚记录。
-- iOS 安装和升级记录。
+- iOS 内部测试构建和模拟器记录（仅保留为非 Stable 证据；没有时写明原因）。
 - Server 启动、健康、日志和恢复记录。
 - PostgreSQL 版本、schema 和 migration digest。
 - 备份和恢复演练记录。
@@ -174,7 +174,7 @@ Stable manifest 必须满足以下条件。
 | ID | 问题 |
 | --- | --- |
 | `OQ-002` | macOS 签名和分发 |
-| `OQ-003` | iOS 分发 |
+| `OQ-003` | iOS 分发（已由 #139 决定为 internal test only；不进入 Stable，不再阻塞 Stable） |
 | `OQ-004` | Release 仓库 |
 | `OQ-005` | Release 通道 |
 | `OQ-006` | Release 审批人数 |

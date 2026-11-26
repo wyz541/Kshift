@@ -461,6 +461,14 @@ function mergeFragments(values) {
     ? policy.stable_required_platforms
     : (candidate.required_platforms ?? [...presentPlatforms])
   if (!Array.isArray(requiredPlatforms)) fail('required platform policy is invalid')
+  if (mode === 'stable' && Array.isArray(candidate.required_platforms)) {
+    const unexpected = candidate.required_platforms.filter(
+      (platform) => !policy.stable_required_platforms.includes(platform),
+    )
+    if (unexpected.length > 0) {
+      fail(`stable candidate contains non-required platform: ${unexpected.join(', ')}`)
+    }
+  }
   const missingAll = requiredPlatforms
     .filter((platform) => !presentPlatforms.has(platform))
     .map((platform) => ({ platform, reason: 'required fragment is missing' }))
@@ -523,6 +531,12 @@ function validateStableManifest(manifest, policy) {
   for (const [platform, requiredGates] of Object.entries(policy.stable_required_gates)) {
     for (const gateName of requiredGates) {
       if (!passed.has(`${platform}:${gateName}`)) fail(`required stable gate is missing or failed: ${platform}:${gateName}`)
+    }
+  }
+  const presentPlatforms = new Set(manifest.assets.map((asset) => asset.platform))
+  for (const platform of presentPlatforms) {
+    if (!policy.stable_required_platforms.includes(platform)) {
+      fail(`stable release contains non-required platform: ${platform}`)
     }
   }
   for (const [platform, requiredRoles] of Object.entries(policy.stable_required_roles)) {

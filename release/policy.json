@@ -1,26 +1,23 @@
 {
   "schema_version": "1",
-  "decision_status": "pending",
-  "decision_owner": "R0 Spec owner",
-  "decision_deadline": "2026-11-20",
-  "stable_required_platforms": ["server", "macos", "ios", "source"],
+  "decision_status": "approved",
+  "decision_owner": "@wyz541",
+  "decision_deadline": "2026-11-26",
+  "stable_required_platforms": ["server", "macos", "source"],
   "stable_required_roles": {
     "server": ["server-bundle"],
     "macos": ["application"],
-    "ios": ["application"],
     "source": ["source"]
   },
   "stable_required_gates": {
     "server": ["build", "health", "migration", "backup-restore", "startup-recovery", "logs"],
     "macos": ["build", "signature", "install", "upgrade", "uninstall", "rollback", "liquid-glass", "accessibility", "performance"],
-    "ios": ["build", "distribution-signature", "install", "upgrade", "rollback", "liquid-glass", "accessibility", "performance"],
     "source": ["source-archive"]
   },
   "stable_signing": {
     "server": ["not-applicable"],
     "macos": ["ad-hoc", "signed", "notarized"],
-    "ios": ["signed", "testflight"],
     "source": ["not-applicable"]
   },
-  "stable_signing_global": ["ad-hoc", "signed", "testflight"]
+  "stable_signing_global": ["ad-hoc", "signed"]
 }

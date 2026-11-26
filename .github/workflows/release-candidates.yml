@@ -23,7 +23,7 @@ on:
         type: boolean
         default: true
       build_ios:
-        description: 'Build an iOS fragment'
+        description: 'Build an iOS internal-test fragment (not part of Stable)'
         required: true
         type: boolean
         default: true
@@ -66,7 +66,7 @@ jobs:
           if [[ "$channel" == 'stable' || "$channel" == 'hotfix' ]]; then
             tag="v$version"
             test "${{ inputs.build_macos }}" = true
-            test "${{ inputs.build_ios }}" = true
+            test "${{ inputs.build_ios }}" = false
           else
             if [[ ! "$preview_number" =~ ^[1-9][0-9]*$ ]]; then
               echo 'preview_number must be a positive integer' >&2

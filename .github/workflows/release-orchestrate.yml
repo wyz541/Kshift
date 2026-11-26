@@ -155,7 +155,7 @@ jobs:
                 strategy: "new-patch-release",
                 notes: "Publish a new patch release and keep the original Stable release unchanged."
               },
-              required_platforms: ["server", "macos", "ios", "source"],
+              required_platforms: (if $channel == "stable" or $channel == "hotfix" then ["server", "macos", "source"] else ["server", "macos", "ios", "source"] end),
               limitations: ["Internal network only.", "External platform import is not supported."]
             }' > "$candidate"
           notes_commit="${RELEASE_NOTES_COMMIT:-$SOURCE_COMMIT}"

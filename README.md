@@ -288,9 +288,9 @@ xcodebuild -project Kshift.xcodeproj -scheme Kshift-iOS \
 
 ## App update checks
 
-The macOS and iOS Settings screen reads the installed `CFBundleShortVersionString` and `CFBundleVersion`. `Check for Updates` fetches the promoted Stable `release-manifest.json`; the app rejects Preview, Draft, older, incompatible, unsigned, signing-status mismatch, and invalid releases. macOS Stable accepts Developer ID signatures or policy-approved `ad-hoc` signatures.
+The macOS Settings screen reads the installed `CFBundleShortVersionString` and `CFBundleVersion`. `Check for Updates` fetches the promoted Stable `release-manifest.json`; the app rejects Preview, Draft, older, incompatible, unsigned, signing-status mismatch, and invalid releases. macOS Stable accepts Developer ID signatures or policy-approved `ad-hoc` signatures.
 
-The manifest endpoint defaults to `https://github.com/wyz541/Kshift/releases/latest/download/release-manifest.json`. Set `KSHIFT_UPDATE_MANIFEST_URL`, `KSHIFT_UPDATE_RELEASE_BASE_URL`, `KSHIFT_APP_VERSION`, and `KSHIFT_APP_BUILD` for local fixtures. macOS verifies the asset SHA-256 and code signature before it opens the installer after confirmation; Developer ID/notarization is optional and `ad-hoc` is accepted only when the Stable policy allows it. iOS opens the release destination and does not install an IPA directly.
+The manifest endpoint defaults to `https://github.com/wyz541/Kshift/releases/latest/download/release-manifest.json`. Set `KSHIFT_UPDATE_MANIFEST_URL`, `KSHIFT_UPDATE_RELEASE_BASE_URL`, `KSHIFT_APP_VERSION`, and `KSHIFT_APP_BUILD` for local fixtures. macOS verifies the asset SHA-256 and code signature before it opens the installer after confirmation; Developer ID/notarization is optional and `ad-hoc` is accepted only when the Stable policy allows it. iOS remains an internal-test build and is not a Stable release asset.
 
 ## R4/R5 运维与发布
 
@@ -340,12 +340,12 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 - 身份认证数据源尚未最终确认。R1 使用可控 bearer token hash。
 - 客户端仍需要通过启动环境配置 endpoint、CA 和 token。应用内登录和连接配置尚未实现。
 - UI 已通过 `kshift-ffi` 读取真实 gRPC/PostgreSQL server 数据。
-- macOS 和 iOS 分发方式尚未确认。
+- iOS 没有 Apple Developer Program 分发环境，只做内部测试；iOS 不进入 Stable 资产。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
 - PostgreSQL 高可用集群不在首版范围。
 - R4/R5 的 30 分钟负载、真实 server launchd 重启和签名平台安装证据尚未运行。
-- Stable 签名和分发策略仍为 `pending`。
+- Stable policy 已批准 server、macOS、source；iOS 仅内部测试，不要求 TestFlight 或 distribution signature。
 
 ## 安全边界
 
