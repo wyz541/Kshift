@@ -69,6 +69,8 @@ flowchart LR
 - `ARC-013`：所有适配器必须保留 command/request ID、trace ID、deadline、取消信号、项目 revision 和实体版本，并返回结构化业务错误及恢复线索。
 - `ARC-014`：跨适配器验收必须覆盖成功、幂等重放、revision 冲突、实体冲突、权限拒绝、取消和错误映射；同一语义不得因入口不同而改变。
 - `ARC-015`：Core API 先作为 `kshift-server` 内的 shell 无关应用服务模块；是否需要独立 crate 由后续评审决定。现有 `kshift-core` 继续承载 R3 共享投影和内存参考 store，不得成为生产写入路径，也不得被提升为第二套业务内核。
+- `ARC-016`：MCP 首版必须是只读 adapter。不得注册 MCP 写工具；开放任何 MCP 写能力前必须建立新的 Research、更新本 Spec 并增加人工确认与审计合同。
+- `ARC-017`：MCP 默认输出必须是紧凑摘要或分页结果，不得返回完整 project snapshot。列表、搜索和导图节点必须有明确上限。
 
 ## 3. Rust workspace
 
