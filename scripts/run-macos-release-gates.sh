@@ -38,7 +38,7 @@ mounted=no
 
 cleanup() {
   if [[ "$mounted" == 'yes' ]]; then
-    hdiutil detach "$dmg_mount" -quiet >/dev/null 2>&1 || true
+    hdiutil detach "$dmg_mount" -force -quiet >/dev/null 2>&1 || true
   fi
   rm -rf "$scratch"
 }
