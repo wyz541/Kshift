@@ -17,7 +17,7 @@ description: 记录 Issue #143 的 Internal Preview 4 本地 macOS ad-hoc 与 un
 # Kshift v0.1.0 Internal Preview 4 evidence
 
 Issue: #143
-Source commit: `e194a5c24f9148eb70ab0fed4adeeaf3dbd26409`
+Source commit: `67aba479ad34abfe08f7b2d25b1b4085635f0553`
 Date: 2026-11-26
 
 ## Decision
@@ -59,12 +59,22 @@ Both builds completed with `BUILD SUCCEEDED`.
 
 ## Release output
 
-- Candidate workflow run: pending
-- Prepare Draft run: pending
-- Verify Draft run: pending
-- Promote Prerelease run: pending
-- Published Release URL: pending
-- Final Release must remain `prerelease=true`.
+- Candidate workflow: [45747000193](https://github.com/wyz541/Kshift/actions/runs/45747000193)
+- Prepare Draft: [45747586390](https://github.com/wyz541/Kshift/actions/runs/45747586390)
+- Verify Draft: [45747706409](https://github.com/wyz541/Kshift/actions/runs/45747706409)
+- Promote same Draft: [45747800931](https://github.com/wyz541/Kshift/actions/runs/45747800931)
+- Published Release: [v0.1.0-preview.4](https://github.com/wyz541/Kshift/releases/tag/v0.1.0-preview.4)
+- State: `draft=false`, `prerelease=true`
+- Channel: `preview`
+- Manifest status: `promoted`
+
+## Post-release verification
+
+- Full asset download and `sha256sum -c SHA256SUMS`: PASS for all 13 released entries.
+- GitHub attestation verification: PASS in `verify-draft`.
+- Remote macOS DMG app: `Signature=adhoc`; `codesign --verify --deep --strict` PASS.
+- Remote iOS IPA: unsigned; embedded provisioning profile absent.
+- `/releases/latest`: HTTP 404 because no Stable Release exists; Preview did not enter the Stable feed.
 
 ## Not run
 
