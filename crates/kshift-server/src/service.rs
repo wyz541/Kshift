@@ -31,6 +31,9 @@ use uuid::Uuid;
 use crate::{
     auth::{load_user, AuthenticatedUser, TokenAuthenticator},
     config::{ApiLimits, ApiTimeouts},
+    core_api::{
+        run_with_context, CommandOutcome, CoreApi, CoreCommandRequest, CoreError, ExecutionContext,
+    },
     notifications::{NotificationHub, NOTIFICATION_CHANNEL},
 };
 
@@ -456,6 +459,143 @@ impl KshiftApi {
     }
 }
 
+#[async_trait::async_trait]
+impl CoreApi for KshiftApi {
+    async fn list_projects(
+        &self,
+        context: &ExecutionContext,
+    ) -> Result<Vec<domain::Project>, CoreError> {
+        let actor = actor_from_context(context);
+        run_with_context(context, async {
+            load_visible_projects(&self.inner.pool, &actor)
+                .await
+                .map_err(api_error_to_core)
+        })
+        .await
+    }
+
+    async fn project_snapshot(
+        &self,
+        context: &ExecutionContext,
+        project_id: Uuid,
+    ) -> Result<ProjectSnapshot, CoreError> {
+        let actor = actor_from_context(context);
+        run_with_context(context, async {
+            self.snapshot(&actor, project_id)
+                .await
+                .map_err(api_error_to_core)
+        })
+        .await
+    }
+
+    async fn execute_command(
+        &self,
+        context: &ExecutionContext,
+        request: CoreCommandRequest,
+    ) -> Result<CommandOutcome, CoreError> {
+        let parsed = ParsedCommand {
+            envelope: request.envelope,
+            request_digest: request.request_digest,
+        };
+        let actor = actor_from_context(context);
+        let request_id = context.request_id;
+        run_with_context(context, async move {
+            let response = self
+                .execute_transaction(&actor, &parsed, request_id)
+                .await
+                .map_err(api_error_to_core)?;
+            let result = response.result.ok_or(CoreError::Internal)?;
+            let event = result.event.ok_or(CoreError::Internal)?;
+            let event = collapse_change_event(event, parsed.envelope.project_id)
+                .map_err(api_error_to_core)?;
+            Ok(CommandOutcome {
+                command_id: event.command_id,
+                project_revision: event.revision,
+                event,
+            })
+        })
+        .await
+    }
+}
+
+fn actor_from_context(context: &ExecutionContext) -> AuthenticatedUser {
+    AuthenticatedUser {
+        id: context.actor_id,
+        display_name: String::new(),
+        is_admin: context.is_admin,
+    }
+}
+
+fn api_error_to_core(error: ApiError) -> CoreError {
+    match error {
+        ApiError::InvalidArgument(message) => CoreError::InvalidArgument(message),
+        ApiError::Unauthenticated => CoreError::Unauthenticated,
+        ApiError::PermissionDenied => CoreError::PermissionDenied,
+        ApiError::NotFound(message) => CoreError::NotFound(message),
+        ApiError::Conflict {
+            current_revision,
+            entity_id,
+            current_entity_version,
+        } => CoreError::Conflict {
+            current_revision,
+            entity_id,
+            current_entity_version,
+        },
+        ApiError::ResetRequired {
+            current_revision,
+            minimum_retained_revision,
+            reason,
+        } => CoreError::ResetRequired {
+            current_revision,
+            minimum_retained_revision,
+            reason,
+        },
+        ApiError::AlreadyExists(message) => CoreError::AlreadyExists(message),
+        ApiError::ResourceExhausted(message) => CoreError::ResourceExhausted(message),
+        ApiError::FailedPrecondition(message) => CoreError::FailedPrecondition(message),
+        ApiError::Unavailable(message) => CoreError::Unavailable(message),
+        ApiError::Unsupported(message) => CoreError::Unsupported(message),
+        ApiError::DeadlineExceeded => CoreError::DeadlineExceeded,
+        ApiError::Cancelled => CoreError::Cancelled,
+        ApiError::Internal => CoreError::Internal,
+    }
+}
+
+fn core_error_to_api(error: CoreError) -> ApiError {
+    match error {
+        CoreError::InvalidArgument(message) => ApiError::InvalidArgument(message),
+        CoreError::Unauthenticated => ApiError::Unauthenticated,
+        CoreError::PermissionDenied => ApiError::PermissionDenied,
+        CoreError::NotFound(message) => ApiError::NotFound(message),
+        CoreError::Conflict {
+            current_revision,
+            entity_id,
+            current_entity_version,
+        } => ApiError::Conflict {
+            current_revision,
+            entity_id,
+            current_entity_version,
+        },
+        CoreError::ResetRequired {
+            current_revision,
+            minimum_retained_revision,
+            reason,
+        } => ApiError::ResetRequired {
+            current_revision,
+            minimum_retained_revision,
+            reason,
+        },
+        CoreError::AlreadyExists(message) => ApiError::AlreadyExists(message),
+        CoreError::FailedPrecondition(message) => ApiError::FailedPrecondition(message),
+        CoreError::ResourceExhausted(message) => ApiError::ResourceExhausted(message),
+        CoreError::Unavailable(message) => ApiError::Unavailable(message),
+        CoreError::Unsupported(message) => ApiError::Unsupported(message),
+        CoreError::DeadlineExceeded => ApiError::DeadlineExceeded,
+        CoreError::Cancelled => ApiError::Cancelled,
+        CoreError::Internal => ApiError::Internal,
+    }
+}
+
 #[tonic::async_trait]
 impl contract::KshiftService for KshiftApi {
     async fn list_projects(
@@ -754,12 +894,12 @@ impl KshiftApi {
     ) -> Result<v1::ListProjectsResponse, ApiError> {
         let _rpc_permit = self.acquire_rpc_slot().await?;
         let actor = self.authenticate(&request).await?;
-        let projects = tokio::time::timeout(
-            self.inner.settings.timeouts.unary_request,
-            load_visible_projects(&self.inner.pool, &actor),
-        )
-        .await
-        .map_err(|_| ApiError::DeadlineExceeded)??;
+        let context = ExecutionContext::new(actor.id, actor.is_admin, request_id).with_deadline(
+            tokio::time::Instant::now() + self.inner.settings.timeouts.unary_request,
+        );
+        let projects = <Self as CoreApi>::list_projects(self, &context)
+            .await
+            .map_err(core_error_to_api)?;
         tracing::info!(
             request_id = %request_id,
             user_id = %actor.id,
@@ -780,12 +920,12 @@ impl KshiftApi {
         let actor = self.authenticate(&request).await?;
         tracing::info!(request_id = %request_id, user_id = %actor.id, "snapshot started");
         let project_id = parse_uuid(&request.into_inner().project_id, "project_id")?;
-        let result = tokio::time::timeout(
-            self.inner.settings.timeouts.unary_request,
-            self.snapshot(&actor, project_id),
-        )
-        .await
-        .map_err(|_| ApiError::DeadlineExceeded)??;
+        let context = ExecutionContext::new(actor.id, actor.is_admin, request_id).with_deadline(
+            tokio::time::Instant::now() + self.inner.settings.timeouts.unary_request,
+        );
+        let result = <Self as CoreApi>::project_snapshot(self, &context, project_id)
+            .await
+            .map_err(core_error_to_api)?;
         tracing::info!(
             request_id = %request_id,
             user_id = %actor.id,
@@ -805,12 +945,15 @@ impl KshiftApi {
         let actor = self.authenticate(&request).await?;
         let parsed = parse_execute_command(request.get_ref())?;
         let command_name = parsed.envelope.command.name();
+        let project_id = parsed.envelope.project_id;
+        let client_id = parsed.envelope.client_id;
+        let command_id = parsed.envelope.command_id;
         tracing::info!(
             request_id = %request_id,
             user_id = %actor.id,
-            project_id = %parsed.envelope.project_id,
-            client_id = %parsed.envelope.client_id,
-            command_id = %parsed.envelope.command_id,
+            project_id = %project_id,
+            client_id = %client_id,
+            command_id = %command_id,
             command = command_name,
             "command started"
         );
@@ -823,19 +966,27 @@ impl KshiftApi {
             .map_err(|_| {
                 ApiError::ResourceExhausted("write transaction limit reached".to_owned())
             })?;
-        let response = tokio::time::timeout(
-            self.inner.settings.timeouts.write_transaction,
-            self.execute_transaction(&actor, &parsed, request_id),
+        let context = ExecutionContext::new(actor.id, actor.is_admin, request_id).with_deadline(
+            tokio::time::Instant::now() + self.inner.settings.timeouts.write_transaction,
+        );
+        let outcome = <Self as CoreApi>::execute_command(
+            self,
+            &context,
+            CoreCommandRequest {
+                envelope: parsed.envelope,
+                request_digest: parsed.request_digest,
+            },
         )
         .await
-        .map_err(|_| ApiError::DeadlineExceeded)??;
+        .map_err(core_error_to_api)?;
+        let response = command_response(&outcome.event);
 
         tracing::info!(
             request_id = %request_id,
             user_id = %actor.id,
-            project_id = %parsed.envelope.project_id,
-            client_id = %parsed.envelope.client_id,
-            command_id = %parsed.envelope.command_id,
+            project_id = %project_id,
+            client_id = %client_id,
+            command_id = %command_id,
             command = command_name,
             "command completed"
         );
