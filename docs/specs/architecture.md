@@ -3,7 +3,7 @@ slug: /specs/architecture
 title: KS-ARCH Kshift 架构与同步规范
 type: standard
 status: active
-updated: "2026-11-23"
+updated: "2026-11-26"
 owner: "@wyz541"
 keywords:
   - 架构
@@ -16,7 +16,7 @@ description: 定义 Kshift 的运行时边界、Rust workspace、快照、outbox
 
 # KS-ARCH Kshift 架构与同步规范
 
-> 结论：所有 UI host 只通过 `kshift-ffi` 调用 Rust client。Rust client 和 server 使用 `kshift.v1` protobuf。同步使用 revisioned snapshot 和 transactional outbox。
+> 结论：所有 UI host 只通过 `kshift-ffi` 调用 Rust client。CLI、MCP 等非 UI 外壳通过共享 client 调用唯一的 Core Runtime。Core API 先作为 server 内的 shell 无关应用服务边界，拥有业务用例编排；server 负责协议、事务和持久化适配。Rust client 和 server 使用 `kshift.v1` protobuf，同步使用 revisioned snapshot 和 transactional outbox。
 
 ## 1. 适用范围
 
@@ -48,14 +48,37 @@ flowchart LR
 - `ARC-007`：UI host 只拥有渲染、输入、焦点、无障碍、动画和临时 UI 状态。
 - `ARC-008`：Windows host 以 rlib 方式依赖 `kshift-ffi`。它禁止直接依赖 `kshift-client`、`tonic`、`sqlx` 或数据库类型。
 
+### 2.1 Core API 与多端外壳
+
+```mermaid
+flowchart LR
+  SW["macOS / iOS SwiftUI"] -->|"C ABI"| FFI["kshift-ffi"]
+  WIN["Windows gpui"] -->|"rlib"| FFI
+  CLI["CLI / MCP adapter"] -->|"shared client"| CL["kshift-client"]
+  FFI --> CL
+  CL -->|"gRPC / TLS"| GRPC["kshift-server gRPC adapter"]
+  GRPC --> CORE["Core API"]
+  CORE --> REPO["PostgreSQL adapter / transaction / outbox"]
+  REPO --> DB[("PostgreSQL 18")]
+```
+
+- `ARC-009`：Core API 是 shell 无关的应用服务层，拥有用例编排、权限上下文、幂等、事务边界、冲突处理、状态推进和领域结果。
+- `ARC-010`：领域不变量属于 `kshift-domain`。Core API 不得暴露 protobuf、JSON-RPC、MCP 消息、SQLx 类型、数据库连接或 UI 类型。
+- `ARC-011`：首版只有一个权威 Core Runtime。CLI 和 MCP 必须通过共享 client 调用 Core Runtime，不得直接连接 PostgreSQL，也不得在每个外壳内嵌第二套业务内核。
+- `ARC-012`：gRPC、FFI、CLI 和 MCP 都是适配器。适配器只负责输入转换、上下文构造、输出裁剪和错误呈现，不得复制业务校验或状态机。
+- `ARC-013`：所有适配器必须保留 command/request ID、trace ID、deadline、取消信号、项目 revision 和实体版本，并返回结构化业务错误及恢复线索。
+- `ARC-014`：跨适配器验收必须覆盖成功、幂等重放、revision 冲突、实体冲突、权限拒绝、取消和错误映射；同一语义不得因入口不同而改变。
+- `ARC-015`：Core API 先作为 `kshift-server` 内的 shell 无关应用服务模块；是否需要独立 crate 由后续评审决定。现有 `kshift-core` 继续承载 R3 共享投影和内存参考 store，不得成为生产写入路径，也不得被提升为第二套业务内核。
+
 ## 3. Rust workspace
 
 | Crate | 责任 | 禁止事项 |
 | --- | --- | --- |
 | `kshift-domain` | entity、command、业务不变量和纯 Rust 类型 | 不执行 I/O |
-| `kshift-contract` | protobuf、error、snapshot、event 和 schema version | 不包含 UI 类型 |
-| `kshift-client` | TLS、认证、deadline、取消、重试、revision 和缓存 | 不持有数据库凭据 |
-| `kshift-server` | tonic service、鉴权、事务、审计和 outbox | 不包含 UI 状态 |
+| `kshift-core` | R3 计划深度类型、共享投影和内存参考 store | 不包含协议、UI、SQLx 或生产数据库连接；不得成为第二写入路径 |
+| `kshift-contract` | protobuf、error、snapshot、event 和 schema version | 不包含 UI 类型或业务编排 |
+| `kshift-client` | TLS、认证、deadline、取消、重试、revision 和缓存 | 不持有数据库凭据或业务规则 |
+| `kshift-server` | 托管唯一 Core Runtime；gRPC、鉴权、PostgreSQL repository、事务、审计和 outbox 适配 | 不包含 UI 状态或第二套业务规则 |
 | `kshift-ffi` | C ABI、opaque handle、bounded buffer 和错误映射；同时提供 rlib 供 Windows host 使用 | 不承载产品页面 |
 | migrations | `sqlx` migration 和 digest | 不在 server 启动时自动执行 |
 
@@ -63,6 +86,7 @@ flowchart LR
 - `ARC-102`：`unsafe` 只允许出现在 `kshift-ffi` 的 FFI 适配层。
 - `ARC-103`：FFI 必须捕获 panic。panic 不得跨 C ABI。
 - `ARC-104`：UI host 不接收 protobuf、tonic、sqlx 或数据库类型。
+- `ARC-105`：Core API 的输出必须包含最新 revision、变更摘要和结构化错误；适配器不得从数据库或缓存自行重建业务结果。
 
 ## 4. 服务与数据库边界
 
@@ -160,6 +184,7 @@ sequenceDiagram
 - Rust workspace 和集成测试：`cargo test --workspace`
 - 协议检查：`buf lint`
 - 生成代码检查：`buf generate` 和差异检查
+- Core API 跨适配器一致性测试：纳入 `cargo test --workspace`
 - client/FFI 检查：`cargo test --locked -p kshift-client -p kshift-ffi`
 - 迁移来源：[ADR-0001](../adr/0001-rust-authority-and-swiftui-host.md)、[ADR-0005](../adr/0005-revisioned-snapshot-outbox.md)、[ADR-0006](../adr/0006-grpc-protobuf-ffi.md)
 
