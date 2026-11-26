@@ -16,7 +16,7 @@ description: 定义 Kshift 的运行时边界、Rust workspace、快照、outbox
 
 # KS-ARCH Kshift 架构与同步规范
 
-> 结论：所有 UI host 只通过 `kshift-ffi` 调用 Rust client。CLI、MCP 等非 UI 外壳通过共享 client 调用唯一的 Core Runtime。Core API 拥有业务用例编排，server 负责协议、事务和持久化适配。Rust client 和 server 使用 `kshift.v1` protobuf，同步使用 revisioned snapshot 和 transactional outbox。
+> 结论：所有 UI host 只通过 `kshift-ffi` 调用 Rust client。CLI、MCP 等非 UI 外壳通过共享 client 调用唯一的 Core Runtime。Core API 先作为 server 内的 shell 无关应用服务边界，拥有业务用例编排；server 负责协议、事务和持久化适配。Rust client 和 server 使用 `kshift.v1` protobuf，同步使用 revisioned snapshot 和 transactional outbox。
 
 ## 1. 适用范围
 
@@ -68,14 +68,14 @@ flowchart LR
 - `ARC-012`：gRPC、FFI、CLI 和 MCP 都是适配器。适配器只负责输入转换、上下文构造、输出裁剪和错误呈现，不得复制业务校验或状态机。
 - `ARC-013`：所有适配器必须保留 command/request ID、trace ID、deadline、取消信号、项目 revision 和实体版本，并返回结构化业务错误及恢复线索。
 - `ARC-014`：跨适配器验收必须覆盖成功、幂等重放、revision 冲突、实体冲突、权限拒绝、取消和错误映射；同一语义不得因入口不同而改变。
-- `ARC-015`：`kshift-core` 作为共享 Core API 和用例边界演化；现有内存 store 不得成为生产写入路径。`kshift-server` 托管唯一 Core Runtime，并拥有 gRPC、鉴权、PostgreSQL repository、事务和 outbox 适配。
+- `ARC-015`：Core API 先作为 `kshift-server` 内的 shell 无关应用服务模块；是否需要独立 crate 由后续评审决定。现有 `kshift-core` 继续承载 R3 共享投影和内存参考 store，不得成为生产写入路径，也不得被提升为第二套业务内核。
 
 ## 3. Rust workspace
 
 | Crate | 责任 | 禁止事项 |
 | --- | --- | --- |
 | `kshift-domain` | entity、command、业务不变量和纯 Rust 类型 | 不执行 I/O |
-| `kshift-core` | 共享 Core API、typed use case、应用服务和跨外壳结果类型 | 不包含协议、UI、SQLx 或数据库连接 |
+| `kshift-core` | R3 计划深度类型、共享投影和内存参考 store | 不包含协议、UI、SQLx 或生产数据库连接；不得成为第二写入路径 |
 | `kshift-contract` | protobuf、error、snapshot、event 和 schema version | 不包含 UI 类型或业务编排 |
 | `kshift-client` | TLS、认证、deadline、取消、重试、revision 和缓存 | 不持有数据库凭据或业务规则 |
 | `kshift-server` | 托管唯一 Core Runtime；gRPC、鉴权、PostgreSQL repository、事务、审计和 outbox 适配 | 不包含 UI 状态或第二套业务规则 |
