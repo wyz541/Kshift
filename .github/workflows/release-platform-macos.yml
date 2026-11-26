@@ -104,17 +104,12 @@ jobs:
           set -euo pipefail
           dmg="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-macos-arm64.dmg"
           zip="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-macos-arm64.zip"
-          if [[ "$KSHIFT_CHANNEL" == "stable" || "$KSHIFT_CHANNEL" == "hotfix" ]]; then
-            if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
-              signing_status="signed"
-            else
-              signing_status="ad-hoc"
-            fi
-            signature_gate="passed"
+          if [[ -n "${MACOS_SIGN_IDENTITY:-}" ]]; then
+            signing_status="signed"
           else
-            signing_status="unsigned"
-            signature_gate="skipped"
+            signing_status="ad-hoc"
           fi
+          signature_gate="passed"
           jq -n \
             --arg version "$KSHIFT_VERSION" \
             --arg channel "$KSHIFT_CHANNEL" \

@@ -26,9 +26,6 @@ if [[ ! -d "$project" ]]; then
 fi
 
 signing_args=(CODE_SIGN_IDENTITY="$identity")
-if [[ "$channel" == 'preview' ]]; then
-  signing_args+=(CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO)
-fi
 
 xcodebuild \
   -project "$project" \
@@ -49,13 +46,11 @@ if [[ -z "$app" || ! -d "$app" ]]; then
   echo 'macOS application was not produced' >&2
   exit 2
 fi
-if [[ "$channel" == 'stable' || "$channel" == 'hotfix' ]]; then
-  if [[ "$identity" == '-' ]]; then
-    echo 'signing macOS application ad-hoc'
-    codesign --force --deep --sign - "$app"
-  fi
-  codesign --verify --deep --strict --verbose=2 "$app"
+if [[ "$identity" == '-' ]]; then
+  echo 'signing macOS application ad-hoc'
+  codesign --force --deep --sign - "$app"
 fi
+codesign --verify --deep --strict --verbose=2 "$app"
 
 mkdir -p "$output_dir"
 dmg="$output_dir/kshift-$version-macos-arm64.dmg"
