@@ -37,6 +37,7 @@ mkdir -p "$scratch/stable-zip" "$scratch/previous-zip" "$dmg_mount" "$assets"
 mounted=no
 
 cleanup() {
+  pkill -f 'kshift-macos-release-gates\..*/Applications/Kshift-macOS\.app/Contents/MacOS/Kshift-macOS' >/dev/null 2>&1 || true
   if [[ "$mounted" == 'yes' ]]; then
     hdiutil detach "$dmg_mount" -force -quiet >/dev/null 2>&1 || true
   fi
@@ -126,10 +127,12 @@ launch_with_evidence() {
 
 launch_previous_app() {
   local app="$1"
+  local real_app
+  real_app="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$app")"
   open -n "$app"
   sleep 3
-  pgrep -f "$app/Contents/MacOS/Kshift-macOS" >/dev/null
-  pkill -f "$app/Contents/MacOS/Kshift-macOS" >/dev/null 2>&1 || true
+  pgrep -f "$real_app/Contents/MacOS/Kshift-macOS" >/dev/null
+  pkill -f "$real_app/Contents/MacOS/Kshift-macOS" >/dev/null 2>&1 || true
 }
 
 ditto "$previous_app" "$installed_app"
@@ -186,7 +189,8 @@ PY
   -u "$installed_app" >/dev/null 2>&1 || true
 rm -rf "$installed_app"
 [[ ! -e "$installed_app" ]]
-if pgrep -f "$installed_app/Contents/MacOS/Kshift-macOS" >/dev/null; then
+installed_real="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$installed_app")"
+if pgrep -f "$installed_real/Contents/MacOS/Kshift-macOS" >/dev/null; then
   echo 'stable application process is still running after uninstall' >&2
   exit 1
 fi
