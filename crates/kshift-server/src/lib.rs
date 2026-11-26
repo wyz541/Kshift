@@ -1,5 +1,6 @@
 pub mod auth;
 pub mod config;
+pub mod core_api;
 pub mod db;
 pub mod migration;
 pub mod notifications;
