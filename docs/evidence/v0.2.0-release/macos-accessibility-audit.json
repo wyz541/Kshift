@@ -1,0 +1,59 @@
+{
+  "audit_passed" : true,
+  "element_count" : 343,
+  "exemptions" : {
+    "native-stepper" : 2,
+    "native-window-chrome" : 3
+  },
+  "expected_identifiers" : [
+    "filter-button",
+    "schedule-density",
+    "schedule-next",
+    "schedule-previous",
+    "schedule-settings",
+    "schedule-today",
+    "settings-button",
+    "sort-menu",
+    "toolbar-add-task"
+  ],
+  "interactive_element_count" : 38,
+  "issue_count" : 0,
+  "issues" : [
+
+  ],
+  "missing_identifiers" : [
+
+  ],
+  "role_counts" : {
+    "AXApplication" : 1,
+    "AXButton" : 23,
+    "AXCell" : 13,
+    "AXColumn" : 1,
+    "AXDateTimeArea" : 1,
+    "AXGroup" : 14,
+    "AXHeading" : 3,
+    "AXImage" : 1,
+    "AXIncrementor" : 1,
+    "AXMenu" : 13,
+    "AXMenuBar" : 1,
+    "AXMenuBarItem" : 8,
+    "AXMenuButton" : 7,
+    "AXMenuItem" : 189,
+    "AXOutline" : 1,
+    "AXPopUpButton" : 1,
+    "AXProgressIndicator" : 1,
+    "AXRadioButton" : 6,
+    "AXRadioGroup" : 2,
+    "AXRow" : 13,
+    "AXScrollArea" : 4,
+    "AXSplitGroup" : 1,
+    "AXSplitter" : 1,
+    "AXStaticText" : 24,
+    "AXTextField" : 1,
+    "AXToolbar" : 1,
+    "AXUnknown" : 10,
+    "AXWindow" : 1
+  },
+  "scope" : "external-ax-tree",
+  "window_count" : 1
+}

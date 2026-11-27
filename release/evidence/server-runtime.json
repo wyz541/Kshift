@@ -2,16 +2,16 @@
   "schema_version": "1",
   "kind": "runtime-release-evidence",
   "product": "Kshift",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "channel": "stable",
   "platform": "server",
-  "generated_at": "2026-11-27T03:36:17Z",
+  "generated_at": "2026-11-27T06:21:40Z",
   "source": {
-    "commit": "7fff44d7628e9bedcd9c8c49814bc0db8980bb6b",
+    "commit": "0304570c42421bb62b64053e513bb926908c3bd8",
     "tree_state": "clean",
     "input_algorithm": "kshift-runtime-inputs-v1",
     "input_scope": "server",
-    "input_sha256": "6b4243cdb6aadd82e853783990c540a7678b84339c3c4ace45b2c5f87aec764e"
+    "input_sha256": "c1a1712204fb01ad9550485f285be1ee4755f3b23f3fa98859d2cbc354d87234"
   },
   "host": {
     "os": "macOS",
@@ -22,9 +22,9 @@
     "postgresql_version": "18.7 (Debian 18.7-1.pgdg13+2)"
   },
   "artifact": {
-    "server_sha256": "16976650b2d864165dd4c02666e809b33c790dc1498e8841cfe0d58566499697",
+    "server_sha256": "9833b4f00f6e044620ad81496f3bfd6e66fd5b6bcd577658af5155d0ba45d330",
     "ops_sha256": "e38f83da996c5eb9e1e1db36613592105c7ad96ad19d57916bcf12bbaf6730b8",
-    "bundle_payload_sha256": "658908a6404f75b0375aaf09f842f2fb7b68c76ddeea13b26681a0082a3206d3"
+    "bundle_payload_sha256": "47457b31a41f8382fc9ced0101e88af94fe65638eb1065e3a572c800d653bf4a"
   },
   "gates": [
     {
@@ -42,7 +42,7 @@
       "detail": {
         "status": "passed",
         "previous_version": "0.1.0",
-        "previous_source_commit": "67aba479ad34abfe08f7b2d25b1b4085635f0553",
+        "previous_source_commit": "635e7591daa23436f7f21b45fe96d2a12d46e2e0",
         "schema_version": "3",
         "migration_digest": "76d52640b1d854e9d18663b59f08522d6a60c48929b1c69c6424a782836bc164",
         "migration_count": 2,
