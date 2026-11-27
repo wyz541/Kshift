@@ -16,6 +16,8 @@ description: 记录 Issue #139 的 Stable candidate、server LaunchAgent、备�
 
 # Kshift v0.1.0 Stable qualification evidence
 
+> 2026-11-27 update：server 与 macOS 最终 runtime gates 已通过，见 [stable-v0.1.0-final](../stable-v0.1.0-final/README.md)。本页保留 2026-11-25 的阶段性失败记录。
+
 Issue: #139
 Source commit: `d3ebc56fb10fb1f25cad710599170ef7e31ade1d`
 Date: 2026-11-25

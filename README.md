@@ -302,7 +302,7 @@ The manifest endpoint defaults to `https://github.com/wyz541/Kshift/releases/lat
 | 验收状态 | [`docs/r4-r5/acceptance.md`](docs/r4-r5/acceptance.md) |
 | 常用问题 | [`docs/r4-r5/faq.md`](docs/r4-r5/faq.md) |
 
-R4/R5 基座不能替代 R1 至 R3 的产品运行证据。Stable Release 保持关闭。
+R4/R5 基座不能替代 R1 至 R3 的产品运行证据。Server 与 macOS 的 Stable runtime gates 已通过；Stable Release 仍待 candidate、Draft、`verify-draft` 和 Promote。
 
 检查命令：
 
@@ -344,7 +344,7 @@ PostgreSQL 集成测试需要 `KSHIFT_TEST_ADMIN_DATABASE_URL`。
 - Release 仓库、通道和审批人尚未确认。
 - 业务成功指标尚未确认。
 - PostgreSQL 高可用集群不在首版范围。
-- R4/R5 的 30 分钟负载、真实 server launchd 重启和签名平台安装证据尚未运行。
+- Server 与 macOS 的 Stable runtime gates 已通过；最终 Release candidate、Draft、Promote 和公开下载验证尚未运行。
 - Stable policy 已批准 server、macOS、source；iOS 仅内部测试，不要求 TestFlight 或 distribution signature。
 
 ## 安全边界

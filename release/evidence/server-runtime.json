@@ -5,12 +5,13 @@
   "version": "0.1.0",
   "channel": "stable",
   "platform": "server",
-  "generated_at": "2026-11-26T10:42:17Z",
+  "generated_at": "2026-11-27T03:36:17Z",
   "source": {
-    "commit": "482ec36e72e164e385954ca2a8de643fc432baa8",
+    "commit": "7fff44d7628e9bedcd9c8c49814bc0db8980bb6b",
     "tree_state": "clean",
     "input_algorithm": "kshift-runtime-inputs-v1",
-    "input_sha256": "c267e40318ca37a37b600ff7712e40f1a4888eea4077263ca83f93969833e0e0"
+    "input_scope": "server",
+    "input_sha256": "6b4243cdb6aadd82e853783990c540a7678b84339c3c4ace45b2c5f87aec764e"
   },
   "host": {
     "os": "macOS",
