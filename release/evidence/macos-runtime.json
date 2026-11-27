@@ -2,16 +2,16 @@
   "schema_version": "1",
   "kind": "runtime-release-evidence",
   "product": "Kshift",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "channel": "stable",
   "platform": "macos",
-  "generated_at": "2026-11-27T03:36:56Z",
+  "generated_at": "2026-11-27T06:20:15Z",
   "source": {
-    "commit": "7fff44d7628e9bedcd9c8c49814bc0db8980bb6b",
+    "commit": "0304570c42421bb62b64053e513bb926908c3bd8",
     "tree_state": "clean",
     "input_algorithm": "kshift-runtime-inputs-v1",
     "input_scope": "macos",
-    "input_sha256": "d50af23bcc6a7f329829aafdfd66e8d411c40abeb78c170fedcac20bcd62e0e7"
+    "input_sha256": "fb44b9f381e2c62ca8f9d2dbc353a07b944bd743013f69a54dd43edcc5bf05ef"
   },
   "host": {
     "os": "macOS",
@@ -21,11 +21,11 @@
   },
   "artifact": {
     "bundle_id": "com.wyz541.kshift.mac",
-    "short_version": "0.1.0",
-    "build_version": "0.1.0",
+    "short_version": "0.2.0",
+    "build_version": "0.2.0",
     "signature": "ad-hoc",
-    "executable_sha256": "943252a0ec33098cfb8d342da5a3780b2c039c57e401b5c345ee300e7b92bb0a",
-    "application_payload_sha256": "29423144fba02ccca9f87afcb1119e72df7fe9792c3f60c6c7afc1d9169863c5"
+    "executable_sha256": "0b4bf7ee40210b3a89697e04969f314148df861972ce2a368b75d93c9e563f04",
+    "application_payload_sha256": "f11a9438ba4ec38e726bbc2058c500a7e7749a3f0008b52af0ce73df46e718f7"
   },
   "gates": [
     {
@@ -35,8 +35,8 @@
         "installed": true,
         "launched": true,
         "source": "Stable DMG",
-        "candidate_version": "0.1.0",
-        "screenshot_sha256": "ce780c7cae161876fe6965814677644ad6731966452160f5787ed4b107d2b7d5"
+        "candidate_version": "0.2.0",
+        "screenshot_sha256": "b4bc6430055f209e56b5460ac52356b06147fc5e5c462f13026db1f8e5afbd1e"
       }
     },
     {
@@ -45,8 +45,8 @@
       "detail": {
         "replaced": true,
         "launched": true,
-        "previous_version": "0.1.0-preview.4",
-        "candidate_version": "0.1.0"
+        "previous_version": "0.1.0",
+        "candidate_version": "0.2.0"
       }
     },
     {
@@ -64,7 +64,7 @@
       "detail": {
         "restored_previous": true,
         "launched": true,
-        "previous_version": "0.1.0-preview.4"
+        "previous_version": "0.1.0"
       }
     },
     {
@@ -74,7 +74,7 @@
         "glass_container": true,
         "glass_regular": true,
         "reduce_transparency_fallback": true,
-        "screenshot_sha256": "ce780c7cae161876fe6965814677644ad6731966452160f5787ed4b107d2b7d5",
+        "screenshot_sha256": "b4bc6430055f209e56b5460ac52356b06147fc5e5c462f13026db1f8e5afbd1e",
         "modes": [
           "light",
           "dark",
@@ -90,21 +90,21 @@
         "issue_count": 0,
         "element_count": 343,
         "scope": "external-ax-tree",
-        "screenshot_sha256": "ce780c7cae161876fe6965814677644ad6731966452160f5787ed4b107d2b7d5"
+        "screenshot_sha256": "c8ca3a4c506b1b0ba650db221af7e8c67bd0c4d1843410ee049ce842c0bec95f"
       }
     },
     {
       "name": "performance",
       "status": "passed",
       "detail": {
-        "average_ms": 2074.050027721872,
+        "average_ms": 3300.966194442784,
         "iterations": 3,
-        "maximum_ms": 2105.138791492209,
+        "maximum_ms": 5778.790375217795,
         "metric": "launch-to-evidence-ready",
         "samples_ms": [
-          2030.3380831610411,
-          2105.138791492209,
-          2086.673208512366
+          5778.790375217795,
+          1922.7789165452123,
+          2201.3292915653437
         ]
       }
     }

@@ -1,0 +1,11 @@
+13f633ad2bb8e51f7b70d6db3deb77fa66bdb11ba28b48d31d8258d83c9a7cad  release/evidence/server-runtime.json
+05260a4dd01c1dd5a49c08026b07a4c4fe6a9f63b7ae359847f966f68f35c3a5  release/evidence/macos-runtime.json
+e125f58c5b134fcf86f9afea594e9b2da95f3826b67453ee0ed0361b454397de  docs/evidence/v0.2.0-release/macos-accessibility-audit.json
+c8ca3a4c506b1b0ba650db221af7e8c67bd0c4d1843410ee049ce842c0bec95f  docs/evidence/v0.2.0-release/macos-accessibility.png
+3c95c7787ec083c9672057356e214975d5d7751320320041882b92cc3f5dacff  docs/evidence/v0.2.0-release/macos-large-text.png
+b4bc6430055f209e56b5460ac52356b06147fc5e5c462f13026db1f8e5afbd1e  docs/evidence/v0.2.0-release/macos-liquid-glass-dark.png
+b4bc6430055f209e56b5460ac52356b06147fc5e5c462f13026db1f8e5afbd1e  docs/evidence/v0.2.0-release/macos-liquid-glass-light.png
+a0f469c110a9c78baf0d6a0493f665146c6ce6a9cc8df2e4e40812e8c8d9d75f  docs/evidence/v0.2.0-release/macos-performance-1.png
+c8ca3a4c506b1b0ba650db221af7e8c67bd0c4d1843410ee049ce842c0bec95f  docs/evidence/v0.2.0-release/macos-performance-2.png
+1cc5684b8096087848c49b5bdede877453e55c06404178c5283c5578e4aecd0c  docs/evidence/v0.2.0-release/macos-performance-3.png
+1cc5684b8096087848c49b5bdede877453e55c06404178c5283c5578e4aecd0c  docs/evidence/v0.2.0-release/macos-upgrade.png
