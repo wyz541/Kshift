@@ -119,6 +119,16 @@ function fragment(root, platform, options = {}) {
     status: options.gateStatus ?? 'passed',
     evidence: `${name} evidence`,
   }))
+  const extraAssets = (options.extraAssets ?? []).map((asset) => {
+    writeFileSync(join(platformDir, asset.name), `fixture-${asset.name}`)
+    return {
+      name: asset.name,
+      platform,
+      architecture: 'arm64',
+      role: asset.role,
+      signing_status: asset.signingStatus,
+    }
+  })
   const spec = {
     schema_version: '1',
     product: 'Kshift',
@@ -146,6 +156,7 @@ function fragment(root, platform, options = {}) {
         role: options.role,
         signing_status: options.assetSigningStatus ?? options.signingStatus ?? 'unsigned',
       },
+      ...extraAssets,
     ],
     gates,
     limitations: [],
@@ -155,11 +166,17 @@ function fragment(root, platform, options = {}) {
   run(['fragment', '--spec', specPath, '--assets-dir', platformDir, '--output', join(root, `${platform}.fragment.json`)])
 }
 
-function completeCandidate(root, policy, macosSigning = 'signed', expectedMergeStatus = 0) {
+function completeCandidate(root, policy, macosSigning = 'signed', expectedMergeStatus = 0, options = {}) {
   const candidatePath = candidate(root, 'stable')
   const specs = {
     server: { role: 'server-bundle', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['build', 'health'] },
-    macos: { role: 'application', signingStatus: macosSigning, assetSigningStatus: macosSigning, gates: ['build', 'signature'] },
+    macos: {
+      role: 'application',
+      signingStatus: macosSigning,
+      assetSigningStatus: macosSigning,
+      gates: ['build', 'signature'],
+      extraAssets: options.macosExtraAssets,
+    },
     source: { role: 'source', signingStatus: 'unsigned', assetSigningStatus: 'not-applicable', gates: ['source-archive'] },
   }
   for (const [platform, options] of Object.entries(specs)) fragment(root, platform, options)
@@ -259,6 +276,21 @@ test('stable merge accepts an ad-hoc macOS release with policy approval', () => 
   assert.equal(manifest.signing.status, 'ad-hoc')
   assert.equal(manifest.signing.notarization, 'not-requested')
   assert.equal(manifest.assets.find((asset) => asset.platform === 'macos').signing_status, 'ad-hoc')
+  run(['validate', '--manifest', manifestPath, '--mode', 'stable', '--policy', policy])
+})
+
+test('stable merge does not apply application signing policy to evidence assets', () => {
+  const root = tempRoot()
+  const policy = approvedPolicy(root)
+  const manifestPath = completeCandidate(root, policy, 'ad-hoc', 0, {
+    macosExtraAssets: [
+      {
+        name: 'kshift-0.1.0-macos-runtime-evidence.json',
+        role: 'evidence',
+        signingStatus: 'not-applicable',
+      },
+    ],
+  })
   run(['validate', '--manifest', manifestPath, '--mode', 'stable', '--policy', policy])
 })
 
