@@ -116,7 +116,7 @@ env TEST_DATABASE_URL="$TEST_DATABASE_URL" \
 [[ "$(jq -r '.source_tree_state' "$scratch/launchd.json")" == 'clean' ]]
 [[ "$(jq -r '.source_commit' "$scratch/launchd.json")" == "$source_commit" ]]
 
-source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root")"
+source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root" --platform server)"
 source_inputs_sha256="$(jq -r '.sha256' <<<"$source_inputs")"
 server_sha256="$(shasum -a 256 "$scratch/candidate/bin/kshift-server" | awk '{print $1}')"
 ops_sha256="$(shasum -a 256 "$scratch/candidate/bin/kshift-ops" | awk '{print $1}')"
@@ -156,6 +156,7 @@ jq -n \
       commit: $source_commit,
       tree_state: "clean",
       input_algorithm: "kshift-runtime-inputs-v1",
+      input_scope: "server",
       input_sha256: $source_inputs_sha256
     },
     host: {

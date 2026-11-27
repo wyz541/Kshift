@@ -101,6 +101,7 @@ runtime evidence 使用 schema version `1`，至少包含以下内容。
 | --- | --- |
 | `source.commit` | 生成证据时的 clean source commit，必须位于候选 commit 的历史中 |
 | `source.input_algorithm` | 固定为 `kshift-runtime-inputs-v1` |
+| `source.input_scope` | 必须为 `server` 或 `macos`，只覆盖该平台制品实际依赖的输入 |
 | `source.input_sha256` | 必须与候选 checkout 的运行时输入摘要一致 |
 | `artifact` | Server 二进制摘要，或 macOS bundle ID、版本、签名和 executable 摘要 |
 | `host` | macOS、arm64、系统版本；server 还包含 PostgreSQL 18 信息 |

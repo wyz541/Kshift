@@ -424,7 +424,7 @@ function runtimeFixture(root) {
   writeFileSync(join(bundle, 'bin/kshift-server'), 'server-binary')
   writeFileSync(join(bundle, 'bin/kshift-ops'), 'ops-binary')
   writeFileSync(join(bundle, 'BUILD_INFO.json'), '{"built_at":"ignored"}\n')
-  const source = JSON.parse(runRuntimeEvidence(['source-digest', '--root', REPO]).stdout)
+  const source = JSON.parse(runRuntimeEvidence(['source-digest', '--root', REPO, '--platform', 'server']).stdout)
   const bundleDigest = JSON.parse(runRuntimeEvidence([
     'tree-digest', '--root', bundle, '--exclude', 'BUILD_INFO.json',
   ]).stdout).sha256
@@ -442,6 +442,7 @@ function runtimeFixture(root) {
       commit: candidateCommit,
       tree_state: 'clean',
       input_algorithm: source.algorithm,
+      input_scope: source.scope,
       input_sha256: source.sha256,
     },
     host: { os: 'macOS', architecture: 'arm64', os_version: '27.0.1' },

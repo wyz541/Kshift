@@ -15,10 +15,8 @@ import { basename, dirname, join, relative, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 const INPUT_ALGORITHM = 'kshift-runtime-inputs-v1'
-const INPUT_PATHS = [
+const COMMON_INPUT_PATHS = [
   '.gitattributes',
-  'Apps/KshiftMacOS',
-  'Assets',
   'Cargo.lock',
   'Cargo.toml',
   'Package.resolved',
@@ -28,15 +26,22 @@ const INPUT_PATHS = [
   'include',
   'migrations',
   'ops',
-  'project.yml',
   'proto',
-  'release/platform/build-macos.sh',
-  'release/platform/build-server.sh',
   'rust-toolchain.toml',
   'rustfmt.toml',
   'schemas',
-  'scripts/build-ffi.sh',
 ]
+const INPUT_PATHS = {
+  server: [...COMMON_INPUT_PATHS, 'release/platform/build-server.sh'],
+  macos: [
+    ...COMMON_INPUT_PATHS,
+    'Apps/KshiftMacOS',
+    'Assets',
+    'project.yml',
+    'release/platform/build-macos.sh',
+    'scripts/build-ffi.sh',
+  ],
+}
 const COMMIT_RE = /^[0-9a-f]{40}$/
 const SHA256_RE = /^[0-9a-f]{64}$/
 const SECRET_VALUE_RE = /(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]+PRIVATE KEY-----)/
@@ -115,8 +120,8 @@ function run(command, args, options = {}) {
   return result
 }
 
-function gitTrackedFiles(root) {
-  const result = run('git', ['ls-files', '-z', '--', ...INPUT_PATHS], { cwd: root, encoding: null })
+function gitTrackedFiles(root, paths) {
+  const result = run('git', ['ls-files', '-z', '--', ...paths], { cwd: root, encoding: null })
   return result.stdout
     .toString('utf8')
     .split('\0')
@@ -124,11 +129,12 @@ function gitTrackedFiles(root) {
     .sort()
 }
 
-export function sourceInputsDigest(root) {
-  const files = gitTrackedFiles(root)
+export function sourceInputsDigest(root, platform) {
+  if (!Object.hasOwn(INPUT_PATHS, platform)) fail('runtime input platform must be server or macos')
+  const files = gitTrackedFiles(root, INPUT_PATHS[platform])
   if (files.length === 0) fail('runtime input inventory is empty')
   const digest = createHash('sha256')
-  digest.update(`${INPUT_ALGORITHM}\0`)
+  digest.update(`${INPUT_ALGORITHM}:${platform}\0`)
   for (const file of files) {
     const absolute = join(root, file)
     digest.update(file)
@@ -139,7 +145,7 @@ export function sourceInputsDigest(root) {
     else digest.update(readFileSync(absolute))
     digest.update('\0')
   }
-  return { algorithm: INPUT_ALGORITHM, sha256: digest.digest('hex'), files: files.length }
+  return { algorithm: INPUT_ALGORITHM, scope: platform, sha256: digest.digest('hex'), files: files.length }
 }
 
 function walkEntries(root, current = root, entries = []) {
@@ -334,7 +340,8 @@ function verifyEvidence(values) {
     fail('runtime evidence source is invalid or dirty')
   }
   if (evidence.source.input_algorithm !== INPUT_ALGORITHM) fail('runtime evidence input algorithm mismatch')
-  const currentInputs = sourceInputsDigest(root)
+  if (evidence.source.input_scope !== platform) fail('runtime evidence input scope mismatch')
+  const currentInputs = sourceInputsDigest(root, platform)
   if (evidence.source.input_sha256 !== currentInputs.sha256) fail('runtime evidence source inputs do not match candidate checkout')
   const ancestor = spawnSync('git', ['merge-base', '--is-ancestor', evidence.source.commit, candidateCommit], { cwd: root })
   if (ancestor.status !== 0) fail('runtime evidence source commit is not an ancestor of the candidate source commit')
@@ -364,6 +371,7 @@ function verifyEvidence(values) {
     source_commit: candidateCommit,
     evidence_source_commit: evidence.source.commit,
     input_algorithm: INPUT_ALGORITHM,
+    input_scope: platform,
     input_sha256: currentInputs.sha256,
     gates: outputGates,
   }
@@ -376,7 +384,7 @@ function digestCommand(values, tree = false) {
   const root = resolve(required(values, 'root'))
   const result = tree
     ? { status: 'passed', algorithm: 'kshift-tree-v1', sha256: treeDigest(root, values.exclude ? values.exclude.split(',') : []) }
-    : { status: 'passed', ...sourceInputsDigest(root) }
+    : { status: 'passed', ...sourceInputsDigest(root, required(values, 'platform')) }
   process.stdout.write(`${JSON.stringify(result)}\n`)
 }
 

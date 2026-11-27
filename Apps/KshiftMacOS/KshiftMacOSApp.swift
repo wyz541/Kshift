@@ -50,14 +50,12 @@
           .background {
             let environment = ProcessInfo.processInfo.environment
             let capturePath = environment["KSHIFT_CAPTURE_PNG"]
-            let auditPath = environment["KSHIFT_ACCESSIBILITY_AUDIT_PATH"]
             let metricsPath = environment["KSHIFT_CAPTURE_METRICS_PATH"]
-            if capturePath != nil || auditPath != nil || metricsPath != nil {
+            if capturePath != nil || metricsPath != nil {
               MacReleaseEvidenceCoordinator(
                 model: model,
                 launchUptime: launchUptime,
                 screenshotPath: capturePath,
-                auditPath: auditPath,
                 metricsPath: metricsPath
               )
             }

@@ -30,7 +30,7 @@ source_tree_state='clean'
 if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
   source_tree_state='dirty'
 fi
-source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root")"
+source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root" --platform server)"
 source_inputs_algorithm="$(jq -r '.algorithm' <<<"$source_inputs")"
 source_inputs_sha256="$(jq -r '.sha256' <<<"$source_inputs")"
 

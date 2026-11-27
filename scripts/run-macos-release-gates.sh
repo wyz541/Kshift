@@ -8,7 +8,7 @@ fi
 : "${KSHIFT_MACOS_STABLE_DMG:?KSHIFT_MACOS_STABLE_DMG must point to the Stable DMG}"
 : "${KSHIFT_MACOS_STABLE_ZIP:?KSHIFT_MACOS_STABLE_ZIP must point to the Stable ZIP}"
 : "${KSHIFT_MACOS_PREVIOUS_ZIP:?KSHIFT_MACOS_PREVIOUS_ZIP must point to the previous macOS ZIP}"
-for command in hdiutil ditto unzip codesign plutil jq python3 git node shasum rg open pgrep ioreg; do
+for command in hdiutil ditto unzip codesign plutil jq python3 git node shasum rg open pgrep ioreg swiftc; do
   command -v "$command" >/dev/null 2>&1 || {
     echo "missing required command: $command" >&2
     exit 2
@@ -37,8 +37,10 @@ fi
 scratch="$(mktemp -d "${TMPDIR:-/tmp}/kshift-macos-release-gates.XXXXXX")"
 report="${KSHIFT_MACOS_RUNTIME_EVIDENCE_OUTPUT:-${TMPDIR:-/tmp}/kshift-macos-runtime-evidence-$(date +%Y%m%dT%H%M%SZ).json}"
 assets="${KSHIFT_MACOS_EVIDENCE_ASSET_DIR:-$scratch/assets}"
+accessibility_audit_tool="$scratch/macos-accessibility-audit"
 dmg_mount="$scratch/dmg"
 mkdir -p "$scratch/stable-zip" "$scratch/previous-zip" "$dmg_mount" "$assets"
+swiftc scripts/audit-macos-accessibility.swift -o "$accessibility_audit_tool"
 mounted=no
 
 cleanup() {
@@ -106,10 +108,8 @@ mkdir -p "$install_root"
 launch_with_evidence() {
   local app="$1"
   local prefix="$2"
-  local with_audit="$3"
   local screenshot="$assets/$prefix.png"
   local metrics="$scratch/$prefix-metrics.json"
-  local audit="$scratch/$prefix-audit.json"
   local log="$scratch/$prefix.log"
   local args=(
     -n -W -o "$log" --stderr "$log"
@@ -119,9 +119,6 @@ launch_with_evidence() {
     --env "KSHIFT_CAPTURE_PNG=$screenshot"
     --env "KSHIFT_CAPTURE_METRICS_PATH=$metrics"
   )
-  if [[ "$with_audit" == 'yes' ]]; then
-    args+=(--env "KSHIFT_ACCESSIBILITY_AUDIT_PATH=$audit")
-  fi
   open "${args[@]}" "$app"
   [[ -s "$screenshot" ]]
   [[ -s "$metrics" ]]
@@ -143,31 +140,48 @@ launch_previous_app() {
 ditto "$previous_app" "$installed_app"
 rm -rf "$installed_app"
 ditto "$stable_app" "$installed_app"
-install_screenshot="$(launch_with_evidence "$installed_app" macos-liquid-glass-light no)"
+install_screenshot="$(launch_with_evidence "$installed_app" macos-liquid-glass-light)"
 
 rm -rf "$installed_app"
 ditto "$previous_app" "$installed_app"
 rm -rf "$installed_app"
 ditto "$stable_app" "$installed_app"
-upgrade_screenshot="$(launch_with_evidence "$installed_app" macos-upgrade no)"
+upgrade_screenshot="$(launch_with_evidence "$installed_app" macos-upgrade)"
 
-accessibility_screenshot="$(launch_with_evidence "$installed_app" macos-accessibility yes)"
+accessibility_screenshot="$(launch_with_evidence "$installed_app" macos-accessibility)"
 accessibility_audit="$scratch/macos-accessibility-audit.json"
-cp "$scratch/macos-accessibility-audit.json" "$assets/macos-accessibility-audit.json"
+real_installed_app="$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$installed_app")"
+open -n \
+  --env "KSHIFT_DEMO_MODE=1" \
+  --env "KSHIFT_USE_FFI=0" \
+  --env "KSHIFT_RESET_PLANNER_VIEW_STATE=1" \
+  "$installed_app"
+accessibility_pid=''
+for _ in {1..40}; do
+  accessibility_pid="$(pgrep -f "$real_installed_app/Contents/MacOS/Kshift-macOS" | head -1)"
+  [[ -n "$accessibility_pid" ]] && break
+  sleep 0.25
+done
+[[ -n "$accessibility_pid" ]]
+sleep 2
+"$accessibility_audit_tool" "$accessibility_pid" "$accessibility_audit" >/dev/null
+jq -e '.audit_passed == true and .issue_count == 0' "$accessibility_audit" >/dev/null
+kill "$accessibility_pid" >/dev/null 2>&1 || true
+cp "$accessibility_audit" "$assets/macos-accessibility-audit.json"
 
 export KSHIFT_FORCE_COLOR_SCHEME=dark
-launch_with_evidence "$installed_app" macos-liquid-glass-dark no >/dev/null
+launch_with_evidence "$installed_app" macos-liquid-glass-dark >/dev/null
 unset KSHIFT_FORCE_COLOR_SCHEME
 export KSHIFT_FORCE_DYNAMIC_TYPE=accessibility3
-launch_with_evidence "$installed_app" macos-large-text no >/dev/null
+launch_with_evidence "$installed_app" macos-large-text >/dev/null
 unset KSHIFT_FORCE_DYNAMIC_TYPE
 export KSHIFT_FORCE_REDUCE_TRANSPARENCY=1
-launch_with_evidence "$installed_app" macos-reduce-transparency no >/dev/null
+launch_with_evidence "$installed_app" macos-reduce-transparency >/dev/null
 unset KSHIFT_FORCE_REDUCE_TRANSPARENCY
 
 performance_samples=()
 for iteration in 1 2 3; do
-  launch_with_evidence "$installed_app" "macos-performance-$iteration" no >/dev/null
+  launch_with_evidence "$installed_app" "macos-performance-$iteration" >/dev/null
   performance_samples+=("$(jq -r '.launch_to_evidence_ready_ms' "$scratch/macos-performance-$iteration-metrics.json")")
 done
 performance="$(
@@ -212,7 +226,7 @@ rg -q 'GlassEffectContainer' Sources/KshiftUI
 rg -q 'glassEffect\(\.regular' Sources/KshiftUI
 normal_sha256="$(shasum -a 256 "$install_screenshot" | awk '{print $1}')"
 accessibility_sha256="$(shasum -a 256 "$accessibility_screenshot" | awk '{print $1}')"
-source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root")"
+source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root" --platform macos)"
 source_inputs_sha256="$(jq -r '.sha256' <<<"$source_inputs")"
 
 jq -n \
@@ -246,6 +260,7 @@ jq -n \
       commit: $source_commit,
       tree_state: "clean",
       input_algorithm: "kshift-runtime-inputs-v1",
+      input_scope: "macos",
       input_sha256: $source_inputs_sha256
     },
     host: {
