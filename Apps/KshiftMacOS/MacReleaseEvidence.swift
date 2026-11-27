@@ -15,6 +15,7 @@ struct KshiftEvidenceEnvironmentModifier: ViewModifier {
     content
       .environment(\.colorScheme, forcedColorScheme ?? colorScheme)
       .environment(\.dynamicTypeSize, forcedDynamicTypeSize ?? dynamicTypeSize)
+      .environment(\.kshiftForcedDynamicTypeSize, forcedDynamicTypeSize)
   }
 
   private var forcedColorScheme: ColorScheme? {

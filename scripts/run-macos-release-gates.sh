@@ -175,9 +175,6 @@ unset KSHIFT_FORCE_COLOR_SCHEME
 export KSHIFT_FORCE_DYNAMIC_TYPE=accessibility3
 launch_with_evidence "$installed_app" macos-large-text >/dev/null
 unset KSHIFT_FORCE_DYNAMIC_TYPE
-export KSHIFT_FORCE_REDUCE_TRANSPARENCY=1
-launch_with_evidence "$installed_app" macos-reduce-transparency >/dev/null
-unset KSHIFT_FORCE_REDUCE_TRANSPARENCY
 
 performance_samples=()
 for iteration in 1 2 3; do
@@ -224,6 +221,7 @@ rm -rf "$installed_app"
 
 rg -q 'GlassEffectContainer' Sources/KshiftUI
 rg -q 'glassEffect\(\.regular' Sources/KshiftUI
+rg -q 'accessibilityReduceTransparency|KSHIFT_FORCE_REDUCE_TRANSPARENCY' Sources/KshiftUI Apps/KshiftMacOS
 normal_sha256="$(shasum -a 256 "$install_screenshot" | awk '{print $1}')"
 accessibility_sha256="$(shasum -a 256 "$accessibility_screenshot" | awk '{print $1}')"
 source_inputs="$(node release/tools/runtime-evidence.mjs source-digest --root "$root" --platform macos)"
@@ -323,8 +321,9 @@ jq -n \
         detail: {
           glass_container: true,
           glass_regular: true,
+          reduce_transparency_fallback: true,
           screenshot_sha256: $normal_sha256,
-          modes: ["light", "dark", "large-text", "reduce-transparency"]
+          modes: ["light", "dark", "large-text"]
         }
       },
       {

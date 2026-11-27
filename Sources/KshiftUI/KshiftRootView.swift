@@ -7,6 +7,7 @@ public struct KshiftRootView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.kshiftForcedDynamicTypeSize) private var forcedDynamicTypeSize
     @State private var isShowingFilters = false
     @State private var isShowingProjectAudit = false
     @State private var isShowingPlanDepth = false
@@ -17,7 +18,7 @@ public struct KshiftRootView: View {
 
     public var body: some View {
         rootContent
-        .dynamicTypeSize(.xSmall ... .accessibility5)
+        .modifier(KshiftPlannerDynamicTypeSizeModifier(forcedSize: forcedDynamicTypeSize))
         .searchable(text: $model.searchText, placement: .toolbar, prompt: "搜索任务")
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
