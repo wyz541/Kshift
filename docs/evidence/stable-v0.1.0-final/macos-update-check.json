@@ -1,0 +1,15 @@
+{
+  "checked_at" : "2026-11-27T04:30:40Z",
+  "installer_opened" : true,
+  "pid" : 25782,
+  "result" : "passed",
+  "screenshot_written" : true,
+  "steps" : [
+    "settings-opened",
+    "check-requested",
+    "update-available",
+    "install-confirmed",
+    "installer-opened"
+  ],
+  "update_available" : true
+}
