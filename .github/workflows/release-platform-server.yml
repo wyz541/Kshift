@@ -68,6 +68,7 @@ jobs:
               --channel "$KSHIFT_CHANNEL" \
               --candidate-commit "$KSHIFT_SOURCE_COMMIT" \
               --bundle "$RUNNER_TEMP/server-bundle" \
+              --artifact-mode portable \
               --expected-gates "$expected_gates" \
               --output "$RUNNER_TEMP/server-runtime-gates.json"
             jq '[{"name":"build","status":"passed","evidence":"cargo build and archive creation"}] + .gates' \

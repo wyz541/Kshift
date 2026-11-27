@@ -122,6 +122,7 @@ jobs:
               --channel "$KSHIFT_CHANNEL" \
               --candidate-commit "$KSHIFT_SOURCE_COMMIT" \
               --application "$application" \
+              --artifact-mode portable \
               --expected-gates "$expected_gates" \
               --output "$RUNNER_TEMP/macos-runtime-gates.json"
             jq '[{"name":"build","status":"passed","evidence":"xcodebuild completed"},{"name":"signature","status":"passed","evidence":"codesign verification"}] + .gates' \

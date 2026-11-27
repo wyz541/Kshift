@@ -50,6 +50,7 @@ const SHA256_RE = /^[0-9a-f]{64}$/
 const SECRET_VALUE_RE = /(ghp_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}|-----BEGIN [A-Z ]+PRIVATE KEY-----)/
 const GATE_STATUS = ['passed', 'failed', 'skipped']
 const PLATFORMS = ['server', 'macos']
+const ARTIFACT_MODES = ['exact', 'portable']
 
 function fail(message) {
   throw new Error(message)
@@ -282,8 +283,13 @@ function validateMacosDetail(name, detail) {
   }
 }
 
-function verifyArtifact(platform, applicationOrBundle, evidence) {
+function verifyArtifact(platform, applicationOrBundle, evidence, mode, candidateCommit) {
   if (!isObject(evidence.artifact)) fail('evidence.artifact must be an object')
+  for (const key of ['server_sha256', 'ops_sha256', 'bundle_payload_sha256', 'executable_sha256', 'application_payload_sha256']) {
+    if (key in evidence.artifact && !SHA256_RE.test(evidence.artifact[key] ?? '')) {
+      fail(`evidence.artifact.${key} must be a SHA-256`)
+    }
+  }
   if (platform === 'server') {
     const bundle = applicationOrBundle
     const server = join(bundle, 'bin/kshift-server')
@@ -294,8 +300,16 @@ function verifyArtifact(platform, applicationOrBundle, evidence) {
       ops_sha256: sha256File(ops),
       bundle_payload_sha256: treeDigest(bundle, ['BUILD_INFO.json']),
     }
-    for (const [key, value] of Object.entries(observed)) {
-      if (evidence.artifact[key] !== value) fail(`server artifact digest mismatch: ${key}`)
+    if (mode === 'exact') {
+      for (const [key, value] of Object.entries(observed)) {
+        if (evidence.artifact[key] !== value) fail(`server artifact digest mismatch: ${key}`)
+      }
+    } else {
+      const buildInfo = readJson(join(bundle, 'BUILD_INFO.json'))
+      if (buildInfo.product !== 'Kshift' || buildInfo.version !== evidence.version || buildInfo.channel !== evidence.channel) {
+        fail('server build identity mismatch')
+      }
+      if (buildInfo.source_commit !== candidateCommit) fail('server BUILD_INFO source commit mismatch')
     }
   } else {
     const application = applicationOrBundle
@@ -308,8 +322,14 @@ function verifyArtifact(platform, applicationOrBundle, evidence) {
       executable_sha256: sha256File(join(application, 'Contents/MacOS', executable)),
       application_payload_sha256: treeDigest(application, ['Contents/Info.plist', 'Contents/_CodeSignature']),
     }
-    for (const [key, value] of Object.entries(observed)) {
-      if (evidence.artifact[key] !== value) fail(`macOS artifact digest mismatch: ${key}`)
+    if (mode === 'exact') {
+      for (const [key, value] of Object.entries(observed)) {
+        if (evidence.artifact[key] !== value) fail(`macOS artifact digest mismatch: ${key}`)
+      }
+    } else {
+      for (const key of ['bundle_id', 'short_version', 'build_version']) {
+        if (evidence.artifact[key] !== observed[key]) fail(`macOS build identity mismatch: ${key}`)
+      }
     }
   }
 }
@@ -321,6 +341,7 @@ function verifyEvidence(values) {
   const version = required(values, 'version')
   const channel = required(values, 'channel')
   const candidateCommit = required(values, 'candidate-commit')
+  const artifactMode = values['artifact-mode'] ?? 'exact'
   const expectedGates = required(values, 'expected-gates')
     .split(',')
     .map((name) => name.trim())
@@ -330,6 +351,7 @@ function verifyEvidence(values) {
   if (!PLATFORMS.includes(platform)) fail('--platform must be server or macos')
   if (!['stable', 'hotfix'].includes(channel)) fail('runtime evidence is only valid for stable or hotfix')
   if (!COMMIT_RE.test(candidateCommit)) fail('--candidate-commit must be 40 lowercase hex characters')
+  if (!ARTIFACT_MODES.includes(artifactMode)) fail('--artifact-mode must be exact or portable')
   if (expectedGates.length === 0) fail('--expected-gates must not be empty')
   if (!artifactPath) fail('--bundle or --application is required')
   const evidence = readJson(evidencePath)
@@ -354,7 +376,7 @@ function verifyEvidence(values) {
   if (!Array.isArray(evidence.limitations)) fail('runtime evidence limitations must be an array')
   scanMetadata(evidence, 'evidence')
   const gates = gateMap(evidence.gates)
-  verifyArtifact(platform, artifactPath, evidence)
+  verifyArtifact(platform, artifactPath, evidence, artifactMode, candidateCommit)
   const outputGates = []
   for (const name of expectedGates) {
     const detail = requirePassedGate(gates, name)
@@ -376,6 +398,7 @@ function verifyEvidence(values) {
     input_algorithm: INPUT_ALGORITHM,
     input_scope: platform,
     input_sha256: currentInputs.sha256,
+    artifact_mode: artifactMode,
     gates: outputGates,
   }
   scanMetadata(result, 'runtime evidence result')

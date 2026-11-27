@@ -110,6 +110,13 @@ runtime evidence 使用 schema version `1`，至少包含以下内容。
 
 平台 workflow 使用 `release/tools/runtime-evidence.mjs verify` 校验 evidence。预览通道允许把这些 gate 标为 `skipped`；Stable 和 Hotfix 必须全部 `passed`。
 
+校验支持两种模式：
+
+- `exact`：用于证据生成 host，要求 evidence 中的 server/application SHA-256 与实际制品完全一致。
+- `portable`：用于 CI 重建制品，要求平台源码输入摘要、版本、BUILD_INFO 或 macOS bundle 版本与签名身份一致；每个 CI 制品的具体 SHA-256 由 fragment 独立记录。
+
+portable 模式不会把跨编译 host 的二进制 hash 差异当成源码不匹配。平台源码输入摘要仍是 runtime evidence 的主绑定。
+
 ## 5. 校验顺序
 
 Release orchestrator 按以下顺序校验。
