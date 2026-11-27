@@ -77,6 +77,8 @@ flowchart TD
 - `REL-011`：Windows 资产首版只允许进入 Preview 通道。Windows 进入 Stable 前，必须先确认签名方式和 `release/policy.json` 的决策状态。
 - `REL-010`：Release 必须包含 SHA-256、SBOM、provenance、attestation 和 gate 证据。
 - `REL-012`：没有 Apple Developer Program 分发环境时，iOS 只允许作为内部测试构建，不得成为 Stable required platform 或 Stable 资产。新增 iOS Stable 分发能力必须通过新的 Research/Task 决策并更新 policy。
+- `REL-013`：Stable 的 server 和 macOS 运行时 gate 必须由机器可读证据驱动。证据必须绑定平台独立的 `kshift-runtime-inputs-v1` 源码输入摘要；server 还必须绑定实际二进制摘要，macOS 还必须绑定应用摘要、版本和签名。证据缺失、输入不匹配、制品不匹配或 gate 不完整时，平台 workflow、merge 和 Promote 必须 fail closed。
+- `REL-014`：Stable runtime evidence 固定保存在 `release/evidence/server-runtime.json` 和 `release/evidence/macos-runtime.json`，并作为对应 fragment 的 `evidence` 资产进入 Draft。平台 workflow 不得把 `skipped` 改写为 `passed`。
 
 平台 workflow 使用 `contents: read`。平台 workflow 只上传 fragment。只有 release environment 中的 orchestrator 获得 `contents: write`。
 
@@ -102,6 +104,7 @@ Release 必须保留以下证据。
 - Draft 和 Promote 的 workflow run ID。
 - Manifest、fragment、checksums、SBOM 和 attestation。
 - 平台构建日志和 gate 结果。
+- runtime evidence 的源码输入摘要、制品摘要、目标主机、PostgreSQL 版本和逐 gate 观测结果。
 - macOS 安装、升级、卸载和回滚记录。
 - iOS 内部测试构建和模拟器记录（仅保留为非 Stable 证据；没有时写明原因）。
 - Windows 安装、升级、卸载和回滚记录。Windows 首版只要求 Preview 通道记录。
@@ -109,7 +112,7 @@ Release 必须保留以下证据。
 - PostgreSQL 版本、schema 和 migration digest。
 - 备份和恢复演练记录。
 - 并发、revision gap 和 2 倍负载结果。
-- UI 复用、Liquid Glass、无障碍和性能记录。
+- UI 复用、Liquid Glass、无障碍和性能记录；证据必须来自候选源码和候选制品。
 - Release manager 的批准记录。
 
 ## 7. 验收入口

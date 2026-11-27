@@ -3,7 +3,7 @@ slug: /evidence
 title: R2 证据
 type: report
 status: review
-updated: "2026-11-17"
+updated: "2026-11-27"
 keywords:
   - R2
   - 截图
@@ -82,6 +82,12 @@ Reduce Transparency 的验证方法见 [Accessibility evidence](accessibility/RE
 | Kshift v1 构建与人工验收 | [acceptance-v1](acceptance-v1/README.md) |
 
 v1 验收当前为失败。阻断项见验收报告。
+
+## Stable v0.1.0 final runtime gates
+
+| 项目 | 入口 |
+| --- | --- |
+| Server / macOS runtime gates | [stable-v0.1.0-final](stable-v0.1.0-final/README.md) |
 
 ## Task editor Popover
 

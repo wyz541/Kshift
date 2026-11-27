@@ -9,8 +9,10 @@
   @main
   struct KshiftMacOSApp: App {
     @StateObject private var model: AppModel
+    private let launchUptime: TimeInterval
 
     init() {
+      launchUptime = ProcessInfo.processInfo.systemUptime
       let platform = AppKitPlatformCapabilities()
       platform.installScrollWheelRouting()
       _model = StateObject(
@@ -24,6 +26,11 @@
     var body: some Scene {
       WindowGroup {
         KshiftRootView(model: model)
+          .modifier(
+            KshiftEvidenceEnvironmentModifier(
+              environment: ProcessInfo.processInfo.environment
+            )
+          )
           .environment(\.kshiftScheduleHoverPresenter, { isPresented, preview in
             AnyView(AppKitScheduleHoverPopover(isPresented: isPresented, preview: preview))
           })
@@ -41,10 +48,16 @@
             .accessibilityHidden(true)
           }
           .background {
-            if let capturePath = ProcessInfo.processInfo.environment["KSHIFT_CAPTURE_PNG"],
-               !capturePath.isEmpty
-            {
-              MacWindowCaptureCoordinator(model: model, outputPath: capturePath)
+            let environment = ProcessInfo.processInfo.environment
+            let capturePath = environment["KSHIFT_CAPTURE_PNG"]
+            let metricsPath = environment["KSHIFT_CAPTURE_METRICS_PATH"]
+            if capturePath != nil || metricsPath != nil {
+              MacReleaseEvidenceCoordinator(
+                model: model,
+                launchUptime: launchUptime,
+                screenshotPath: capturePath,
+                metricsPath: metricsPath
+              )
             }
           }
       }
@@ -53,73 +66,6 @@
       .commands {
         KshiftPlannerCommands(model: model)
       }
-    }
-  }
-
-  private struct MacWindowCaptureCoordinator: View {
-    @ObservedObject var model: AppModel
-    let outputPath: String
-    @State private var window: NSWindow?
-
-    var body: some View {
-      Color.clear
-        .frame(width: 0, height: 0)
-        .background {
-          AppKitWindowAccessor { window = $0 }
-        }
-        .task {
-          for _ in 0..<150 {
-            if model.hasLoaded, let window {
-              try? await Task.sleep(for: .milliseconds(750))
-              capture(window)
-              return
-            }
-            try? await Task.sleep(for: .milliseconds(100))
-          }
-          fputs("KSHIFT_CAPTURE_TIMEOUT\n", stderr)
-          NSApplication.shared.terminate(nil)
-        }
-    }
-
-    private func capture(_ window: NSWindow) {
-      NSApplication.shared.activate(ignoringOtherApps: true)
-      window.makeKeyAndOrderFront(nil)
-      window.displayIfNeeded()
-
-      let data = windowImage(window)?.representation(using: .png, properties: [:])
-      guard let data else {
-        fputs("KSHIFT_CAPTURE_PNG_FAILED\n", stderr)
-        NSApplication.shared.terminate(nil)
-        return
-      }
-      do {
-        try data.write(to: URL(fileURLWithPath: outputPath), options: .atomic)
-        print("KSHIFT_CAPTURE_READY \(outputPath)")
-      } catch {
-        fputs("KSHIFT_CAPTURE_WRITE_FAILED \(error)\n", stderr)
-      }
-      NSApplication.shared.terminate(nil)
-    }
-
-    private func windowImage(_ window: NSWindow) -> NSBitmapImageRep? {
-      typealias WindowImageFunction = @convention(c) (CGRect, UInt32, UInt32, UInt32) -> Unmanaged<CGImage>?
-      guard let handle = dlopen(
-        "/System/Library/Frameworks/CoreGraphics.framework/CoreGraphics",
-        RTLD_LAZY
-      ), let symbol = dlsym(handle, "CGWindowListCreateImage") else {
-        return nil
-      }
-      defer { dlclose(handle) }
-      let createImage = unsafeBitCast(symbol, to: WindowImageFunction.self)
-      guard let image = createImage(
-        .null,
-        8,
-        UInt32(window.windowNumber),
-        9
-      )?.takeRetainedValue() else {
-        return nil
-      }
-      return NSBitmapImageRep(cgImage: image)
     }
   }
 

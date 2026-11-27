@@ -98,6 +98,48 @@ jobs:
       - name: Build and package macOS app
         shell: bash
         run: release/platform/build-macos.sh
+      - name: Verify macOS runtime evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip="$KSHIFT_OUTPUT_DIR/kshift-$KSHIFT_VERSION-macos-arm64.zip"
+          test -f "$zip"
+          mkdir -p "$RUNNER_TEMP/macos-bundle"
+          unzip -q "$zip" -d "$RUNNER_TEMP/macos-bundle"
+          application="$(find "$RUNNER_TEMP/macos-bundle" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "$application"
+          if [[ "$KSHIFT_CHANNEL" == "stable" || "$KSHIFT_CHANNEL" == "hotfix" ]]; then
+            evidence="$GITHUB_WORKSPACE/release/evidence/macos-runtime.json"
+            test -s "$evidence"
+            evidence_asset="kshift-$KSHIFT_VERSION-macos-runtime-evidence.json"
+            cp "$evidence" "$KSHIFT_OUTPUT_DIR/$evidence_asset"
+            expected_gates="$(jq -r '.stable_required_gates.macos | map(select(. != "build" and . != "signature")) | join(",")' release/policy.json)"
+            node release/tools/runtime-evidence.mjs verify \
+              --root "$GITHUB_WORKSPACE" \
+              --evidence "$evidence" \
+              --platform macos \
+              --version "$KSHIFT_VERSION" \
+              --channel "$KSHIFT_CHANNEL" \
+              --candidate-commit "$KSHIFT_SOURCE_COMMIT" \
+              --application "$application" \
+              --expected-gates "$expected_gates" \
+              --output "$RUNNER_TEMP/macos-runtime-gates.json"
+            jq '[{"name":"build","status":"passed","evidence":"xcodebuild completed"},{"name":"signature","status":"passed","evidence":"codesign verification"}] + .gates' \
+              "$RUNNER_TEMP/macos-runtime-gates.json" > "$RUNNER_TEMP/macos-gates.json"
+            jq -n --arg name "$evidence_asset" \
+              '[{name: $name, platform: "macos", architecture: "arm64", role: "evidence", signing_status: "not-applicable"}]' \
+              > "$RUNNER_TEMP/macos-evidence-asset.json"
+          else
+            jq -n '[{"name":"build","status":"passed","evidence":"xcodebuild completed"},{"name":"signature","status":"passed","evidence":"codesign verification"}]' \
+              > "$RUNNER_TEMP/macos-gates.json"
+            for gate in $(jq -r '.stable_required_gates.macos[] | select(. != "build" and . != "signature")' release/policy.json); do
+              jq --arg gate "$gate" \
+                '. + [{name: $gate, status: "skipped", evidence: "runtime evidence is required only for Stable or Hotfix"}]' \
+                "$RUNNER_TEMP/macos-gates.json" > "$RUNNER_TEMP/macos-gates.next.json"
+              mv "$RUNNER_TEMP/macos-gates.next.json" "$RUNNER_TEMP/macos-gates.json"
+            done
+            printf '%s\n' '[]' > "$RUNNER_TEMP/macos-evidence-asset.json"
+          fi
       - name: Create macOS fragment
         shell: bash
         run: |
@@ -110,7 +152,9 @@ jobs:
             signing_status="ad-hoc"
           fi
           signature_gate="passed"
-          jq -n \
+          jq --slurpfile gates "$RUNNER_TEMP/macos-gates.json" \
+             --slurpfile evidence_asset "$RUNNER_TEMP/macos-evidence-asset.json" \
+            -n \
             --arg version "$KSHIFT_VERSION" \
             --arg channel "$KSHIFT_CHANNEL" \
             --arg source "$KSHIFT_SOURCE_COMMIT" \
@@ -146,22 +190,14 @@ jobs:
               assets: [
                 {name: $dmg, platform: "macos", architecture: "arm64", role: "application", signing_status: $status},
                 {name: $zip, platform: "macos", architecture: "arm64", role: "application", signing_status: $status}
-              ],
-              gates: [
-                {name: "build", status: "passed", evidence: "xcodebuild completed"},
-                {name: "signature", status: $signature_gate, evidence: "codesign verification"},
-                {name: "install", status: "skipped", evidence: "requires clean macOS host"},
-                {name: "upgrade", status: "skipped", evidence: "requires clean macOS host"},
-                {name: "uninstall", status: "skipped", evidence: "requires clean macOS host"},
-                {name: "rollback", status: "skipped", evidence: "requires clean macOS host"},
-                {name: "liquid-glass", status: "skipped", evidence: "requires R2 UI evidence"},
-                {name: "accessibility", status: "skipped", evidence: "requires R2 UI evidence"},
-                {name: "performance", status: "skipped", evidence: "requires R2 performance evidence"}
-              ],
-              limitations: [
+              ] + $evidence_asset[0],
+              gates: $gates[0],
+              limitations: (if $channel == "stable" or $channel == "hotfix" then [
+                "Ad-hoc builds are intended for internal distribution and may be blocked by Gatekeeper outside the managed environment."
+              ] else [
                 "Ad-hoc builds are intended for internal distribution and may be blocked by Gatekeeper outside the managed environment.",
-                "Runtime install and accessibility gates are required before stable promotion."
-              ]
+                "Stable promotion requires runtime lifecycle, Liquid Glass, accessibility and performance evidence."
+              ] end)
             }' > "$KSHIFT_OUTPUT_DIR/macos.fragment.spec.json"
           node release/tools/kshift-release.mjs fragment \
             --spec "$KSHIFT_OUTPUT_DIR/macos.fragment.spec.json" \
@@ -181,4 +217,5 @@ jobs:
             ${{ github.workspace }}/dist/kshift-*-macos-*.dmg
             ${{ github.workspace }}/dist/kshift-*-macos-*.zip
             ${{ github.workspace }}/dist/macos.fragment.json
+            ${{ github.workspace }}/dist/kshift-*-macos-runtime-evidence.json
           if-no-files-found: error

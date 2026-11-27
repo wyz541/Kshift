@@ -10,6 +10,9 @@ trap 'python3 -c "import shutil,sys; shutil.rmtree(sys.argv[1], ignore_errors=Tr
 python3 scripts/check_docs.py
 PYTHONPATH=ops python3 -m unittest discover -s ops/tests -p 'test_*.py' -v
 node --test release/test/release.test.mjs
+node --check release/tools/runtime-evidence.mjs
+node release/tools/runtime-evidence.mjs source-digest --root . --platform server >/dev/null
+node release/tools/runtime-evidence.mjs source-digest --root . --platform macos >/dev/null
 
 for note in release/notes/v*.md; do
   [[ -s "$note" ]] || {
@@ -18,7 +21,8 @@ for note in release/notes/v*.md; do
   }
 done
 
-for script in deploy/*.sh release/platform/*.sh scripts/test-server-launchd-restart.sh; do
+for script in deploy/*.sh release/platform/*.sh scripts/test-server-launchd-restart.sh \
+  scripts/run-server-release-gates.sh scripts/run-macos-release-gates.sh; do
   zsh -n "$script"
 done
 
