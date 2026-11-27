@@ -216,7 +216,7 @@ fi
 rm -rf "$installed_app"
 ditto "$previous_app" "$installed_app"
 launch_previous_app "$installed_app"
-cmp -s "$installed_app/Contents/MacOS/$stable_executable" "$previous_app/Contents/MacOS/$stable_executable" && {
+cmp -s "$stable_app/Contents/MacOS/$stable_executable" "$previous_app/Contents/MacOS/$stable_executable" && {
   echo 'rollback application unexpectedly matches the Stable executable' >&2
   exit 1
 }
