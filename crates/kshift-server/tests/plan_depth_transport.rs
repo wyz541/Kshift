@@ -61,16 +61,48 @@ async fn plan_depth_transport_reads_writes_and_reports_the_same_revision() {
     assert_eq!(snapshot.project.as_ref().expect("project").revision, 2);
     assert_eq!(snapshot.tasks.len(), 1);
 
+    let rescheduled = api
+        .api
+        .execute_plan_depth_command(request(
+            v1::ExecutePlanDepthCommandRequest {
+                request_id: Uuid::new_v4().to_string(),
+                project_id: project_id.to_string(),
+                expected_revision: 2,
+                command: Some(v1::PlanCommand {
+                    command: Some(v1::plan_command::Command::RescheduleTask(
+                        v1::ReschedulePlanTaskCommand {
+                            task_id: task_id.to_string(),
+                            expected_version: 1,
+                            starts_on: "2026-11-13".to_owned(),
+                            due_on: "2026-11-15".to_owned(),
+                            reason: "等待依赖任务".to_owned(),
+                        },
+                    )),
+                }),
+            },
+            api.token(admin_id),
+        ))
+        .await
+        .expect("plan depth reschedule should commit")
+        .into_inner()
+        .snapshot
+        .expect("rescheduled snapshot should be present");
+    assert_eq!(rescheduled.project.as_ref().expect("project").revision, 3);
+    assert_eq!(rescheduled.tasks[0].version, 2);
+    assert_eq!(rescheduled.reschedules.len(), 1);
+    assert_eq!(rescheduled.reschedules[0].delay_days, 2);
+    assert_eq!(rescheduled.reschedules[0].reason, "等待依赖任务");
+
     let command = v1::ExecutePlanDepthCommandRequest {
         request_id: Uuid::new_v4().to_string(),
         project_id: project_id.to_string(),
-        expected_revision: 2,
+        expected_revision: 3,
         command: Some(v1::PlanCommand {
             command: Some(v1::plan_command::Command::SetTaskStatus(
                 v1::SetPlanTaskStatusCommand {
                     task_id: task_id.to_string(),
                     status: v1::TaskStatus::Done as i32,
-                    expected_version: 1,
+                    expected_version: 2,
                 },
             )),
         }),
@@ -84,9 +116,9 @@ async fn plan_depth_transport_reads_writes_and_reports_the_same_revision() {
     let updated = updated
         .snapshot
         .expect("updated snapshot should be present");
-    assert_eq!(updated.project.as_ref().expect("project").revision, 3);
+    assert_eq!(updated.project.as_ref().expect("project").revision, 4);
     assert_eq!(updated.tasks[0].status, v1::TaskStatus::Done as i32);
-    assert_eq!(updated.tasks[0].version, 2);
+    assert_eq!(updated.tasks[0].version, 3);
 
     let retried = api
         .api
@@ -97,8 +129,8 @@ async fn plan_depth_transport_reads_writes_and_reports_the_same_revision() {
     let retried = retried
         .snapshot
         .expect("retried snapshot should be present");
-    assert_eq!(retried.project.as_ref().expect("project").revision, 3);
-    assert_eq!(retried.tasks[0].version, 2);
+    assert_eq!(retried.project.as_ref().expect("project").revision, 4);
+    assert_eq!(retried.tasks[0].version, 3);
 
     let report = api
         .api
@@ -116,7 +148,7 @@ async fn plan_depth_transport_reads_writes_and_reports_the_same_revision() {
         .into_inner()
         .report
         .expect("report should be present");
-    assert_eq!(report.source_revision, 3);
+    assert_eq!(report.source_revision, 4);
     assert_eq!(report.tasks.len(), 1);
     assert_eq!(report.tasks[0].status, v1::TaskStatus::Done as i32);
 

@@ -60,6 +60,76 @@ public actor InMemoryKshiftPlanDepthBoundary: KshiftPlanDepthBoundary {
             tasks[index] = updated
             return commit(tasks: tasks, action: "updated", summary: "更新任务「\(current.title)」")
 
+        case let .rescheduleTask(
+            taskID,
+            startsOn,
+            dueOn,
+            reason,
+            expectedTaskVersion,
+            expectedRevision
+        ):
+            guard expectedRevision == snapshot.revision else {
+                throw KshiftPlanDepthError.revisionConflict(currentRevision: snapshot.revision)
+            }
+            guard startsOn <= dueOn, !reason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw KshiftPlanDepthError.invalidSchedule
+            }
+            guard let index = snapshot.tasks.firstIndex(where: { $0.id == taskID }) else {
+                throw KshiftPlanDepthError.notFound
+            }
+            let current = snapshot.tasks[index]
+            guard current.version == expectedTaskVersion else {
+                throw KshiftPlanDepthError.versionConflict(currentVersion: current.version)
+            }
+            guard current.startsOn != startsOn || current.dueOn != dueOn else {
+                throw KshiftPlanDepthError.invalidSchedule
+            }
+            let revision = snapshot.revision + 1
+            let calendar = Calendar(identifier: .gregorian)
+            let delayDays = max(
+                0,
+                calendar.dateComponents([.day], from: current.dueOn, to: dueOn).day ?? 0
+            )
+            let updated = KshiftPlanTask(
+                id: current.id,
+                projectID: current.projectID,
+                parentID: current.parentID,
+                title: current.title,
+                descriptionMarkdown: current.descriptionMarkdown,
+                status: current.status,
+                priority: current.priority,
+                assigneeID: current.assigneeID,
+                startsOn: startsOn,
+                dueOn: dueOn,
+                estimateMinutes: current.estimateMinutes,
+                position: current.position,
+                version: current.version + 1,
+                completedAt: current.completedAt
+            )
+            var tasks = snapshot.tasks
+            tasks[index] = updated
+            let event = KshiftPlanReschedule(
+                id: UUID(),
+                taskID: taskID,
+                revision: revision,
+                previousStartsOn: current.startsOn,
+                previousDueOn: current.dueOn,
+                newStartsOn: startsOn,
+                newDueOn: dueOn,
+                delayDays: delayDays,
+                wasOverdueAtChange: current.dueOn < calendar.startOfDay(for: .now)
+                    && current.status != .done,
+                reason: reason.trimmingCharacters(in: .whitespacesAndNewlines),
+                actorID: KshiftPlanSampleData.viewerID,
+                occurredAt: .now
+            )
+            return commit(
+                tasks: tasks,
+                reschedules: snapshot.reschedules + [event],
+                action: "task_rescheduled",
+                summary: "将任务「\(current.title)」改期至 \(startsOn) 至 \(dueOn)"
+            )
+
         case let .rollback(targetRevision, reason, expectedRevision):
             guard expectedRevision == snapshot.revision else {
                 throw KshiftPlanDepthError.revisionConflict(currentRevision: snapshot.revision)
@@ -75,6 +145,7 @@ public actor InMemoryKshiftPlanDepthBoundary: KshiftPlanDepthBoundary {
                 people: target.people,
                 tasks: target.tasks,
                 dependencies: target.dependencies,
+                reschedules: target.reschedules,
                 attachments: target.attachments,
                 attachmentLinks: target.attachmentLinks,
                 history: history
@@ -159,6 +230,7 @@ public actor InMemoryKshiftPlanDepthBoundary: KshiftPlanDepthBoundary {
 
     private func commit(
         tasks: [KshiftPlanTask],
+        reschedules: [KshiftPlanReschedule]? = nil,
         action: String,
         summary: String
     ) -> KshiftPlanDepthSnapshot {
@@ -179,6 +251,7 @@ public actor InMemoryKshiftPlanDepthBoundary: KshiftPlanDepthBoundary {
             people: snapshot.people,
             tasks: tasks,
             dependencies: snapshot.dependencies,
+            reschedules: reschedules ?? snapshot.reschedules,
             attachments: snapshot.attachments,
             attachmentLinks: snapshot.attachmentLinks,
             history: [history] + snapshot.history
@@ -212,6 +285,7 @@ public actor InMemoryKshiftPlanDepthBoundary: KshiftPlanDepthBoundary {
             people: restored.people,
             tasks: restored.tasks,
             dependencies: restored.dependencies,
+            reschedules: restored.reschedules,
             attachments: restored.attachments,
             attachmentLinks: restored.attachmentLinks,
             history: [history] + restored.history
@@ -301,7 +375,7 @@ public enum KshiftPlanSampleData {
                 status: .todo,
                 priority: .high,
                 assigneeID: chenID,
-                startOffset: 2,
+                startOffset: -2,
                 length: 3,
                 estimateMinutes: 180,
                 position: 2,
@@ -379,6 +453,27 @@ public enum KshiftPlanSampleData {
             filename: "r3-acceptance.md"
         )
         let link = KshiftPlanAttachmentLink(attachmentID: attachmentID, taskID: planTaskID)
+        let ganttTask = tasks.first { $0.id == ganttTaskID }!
+        let reschedules = [
+            KshiftPlanReschedule(
+                id: UUID(uuidString: "F2000000-0000-4000-8000-000000000001")!,
+                taskID: ganttTaskID,
+                revision: 6,
+                previousStartsOn: ganttTask.startsOn,
+                previousDueOn: calendar.date(
+                    byAdding: .day,
+                    value: -2,
+                    to: ganttTask.dueOn
+                )!,
+                newStartsOn: ganttTask.startsOn,
+                newDueOn: ganttTask.dueOn,
+                delayDays: 2,
+                wasOverdueAtChange: true,
+                reason: "等待依赖任务完成",
+                actorID: chenID,
+                occurredAt: calendar.date(byAdding: .hour, value: -6, to: now)!
+            ),
+        ]
         let history = [
             KshiftPlanHistoryEntry(
                 id: UUID(uuidString: "F1000000-0000-4000-8000-000000000001")!,
@@ -406,6 +501,7 @@ public enum KshiftPlanSampleData {
             people: people,
             tasks: tasks,
             dependencies: dependencies,
+            reschedules: reschedules,
             attachments: [attachment],
             attachmentLinks: [link],
             history: history

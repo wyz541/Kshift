@@ -857,6 +857,19 @@ extension RustClient {
                     expectedVersion: expectedTaskVersion
                 )
             )
+        case let .rescheduleTask(taskID, startsOn, dueOn, reason, expectedTaskVersion, expectedRevision):
+            return FFIPlanDepthCommandRequest(
+                requestID: UUID().uuidString,
+                projectID: projectID.uuidString,
+                expectedRevision: expectedRevision,
+                command: .rescheduleTask(
+                    taskID: taskID.uuidString,
+                    startsOn: Self.planDepthDateString(startsOn),
+                    dueOn: Self.planDepthDateString(dueOn),
+                    reason: reason,
+                    expectedVersion: expectedTaskVersion
+                )
+            )
         case let .rollback(targetRevision, reason, expectedRevision):
             return FFIPlanDepthCommandRequest(
                 requestID: UUID().uuidString,
@@ -931,6 +944,33 @@ extension RustClient {
             }
             return KshiftPlanDependency(taskID: taskID, dependsOnTaskID: dependsOnTaskID)
         }
+        let reschedules = try dto.reschedules.map { entry -> KshiftPlanReschedule in
+            guard let id = UUID(uuidString: entry.id),
+                  let taskID = UUID(uuidString: entry.taskID),
+                  let previousStartsOn = planDepthDate(entry.previousStartsOn),
+                  let previousDueOn = planDepthDate(entry.previousDueOn),
+                  let newStartsOn = planDepthDate(entry.newStartsOn),
+                  let newDueOn = planDepthDate(entry.newDueOn),
+                  let actorID = UUID(uuidString: entry.actorID),
+                  let occurredAt = planDepthTimestamp(entry.occurredAt)
+            else {
+                throw KshiftPlanDepthError.invalidResponse
+            }
+            return KshiftPlanReschedule(
+                id: id,
+                taskID: taskID,
+                revision: entry.revision,
+                previousStartsOn: previousStartsOn,
+                previousDueOn: previousDueOn,
+                newStartsOn: newStartsOn,
+                newDueOn: newDueOn,
+                delayDays: entry.delayDays,
+                wasOverdueAtChange: entry.wasOverdueAtChange,
+                reason: entry.reason,
+                actorID: actorID,
+                occurredAt: occurredAt
+            )
+        }
         let attachments = try dto.attachments.map { attachment -> KshiftPlanAttachment in
             guard let id = UUID(uuidString: attachment.id) else {
                 throw KshiftPlanDepthError.invalidResponse
@@ -976,6 +1016,7 @@ extension RustClient {
             people: people,
             tasks: tasks,
             dependencies: dependencies,
+            reschedules: reschedules,
             attachments: attachments,
             attachmentLinks: attachmentLinks,
             history: history
@@ -1066,6 +1107,11 @@ extension RustClient {
         {
             return .invalidAttachment
         }
+        if error.status == KshiftFFIStatus.invalidArgument,
+           error.message.contains("改期") || error.message.contains("日期")
+        {
+            return .invalidSchedule
+        }
         if error.status == KshiftFFIStatus.protocolError {
             return .invalidResponse
         }
@@ -1129,6 +1175,13 @@ private struct FFIPlanDepthCommandRequest: Encodable {
 
 private enum FFIPlanDepthCommand: Encodable {
     case setTaskStatus(taskID: String, status: String, expectedVersion: UInt64)
+    case rescheduleTask(
+        taskID: String,
+        startsOn: String,
+        dueOn: String,
+        reason: String,
+        expectedVersion: UInt64
+    )
     case rollback(targetRevision: UInt64, reason: String)
 
     enum CodingKeys: String, CodingKey {
@@ -1144,6 +1197,22 @@ private enum FFIPlanDepthCommand: Encodable {
         enum CodingKeys: String, CodingKey {
             case taskID = "task_id"
             case status
+            case expectedVersion = "expected_version"
+        }
+    }
+
+    private struct RescheduleTask: Encodable {
+        let taskID: String
+        let startsOn: String
+        let dueOn: String
+        let reason: String
+        let expectedVersion: UInt64
+
+        enum CodingKeys: String, CodingKey {
+            case taskID = "task_id"
+            case startsOn = "starts_on"
+            case dueOn = "due_on"
+            case reason
             case expectedVersion = "expected_version"
         }
     }
@@ -1167,6 +1236,18 @@ private enum FFIPlanDepthCommand: Encodable {
                 SetTaskStatus(
                     taskID: taskID,
                     status: status,
+                    expectedVersion: expectedVersion
+                ),
+                forKey: .value
+            )
+        case let .rescheduleTask(taskID, startsOn, dueOn, reason, expectedVersion):
+            try container.encode("reschedule_task", forKey: .type)
+            try container.encode(
+                RescheduleTask(
+                    taskID: taskID,
+                    startsOn: startsOn,
+                    dueOn: dueOn,
+                    reason: reason,
                     expectedVersion: expectedVersion
                 ),
                 forKey: .value
@@ -1196,6 +1277,7 @@ private struct RustPlanDepthSnapshotDTO: Decodable {
     let people: [RustPlanPersonDTO]
     let tasks: [RustPlanTaskDTO]
     let dependencies: [RustPlanDependencyDTO]
+    let reschedules: [RustPlanRescheduleDTO]
     let attachments: [RustPlanAttachmentDTO]
     let attachmentLinks: [RustPlanAttachmentLinkDTO]
     let history: [RustPlanHistoryDTO]
@@ -1205,6 +1287,7 @@ private struct RustPlanDepthSnapshotDTO: Decodable {
         case people
         case tasks
         case dependencies
+        case reschedules
         case attachments
         case attachmentLinks = "attachment_links"
         case history
@@ -1215,6 +1298,14 @@ private struct RustPlanProjectDTO: Decodable {
     let id: String
     let name: String
     let revision: UInt64
+    let timeZone: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case revision
+        case timeZone = "time_zone"
+    }
 }
 
 private struct RustPlanPersonDTO: Decodable {
@@ -1272,6 +1363,36 @@ private struct RustPlanDependencyDTO: Decodable {
     enum CodingKeys: String, CodingKey {
         case taskID = "task_id"
         case dependsOnTaskID = "depends_on_task_id"
+    }
+}
+
+private struct RustPlanRescheduleDTO: Decodable {
+    let id: String
+    let taskID: String
+    let revision: UInt64
+    let previousStartsOn: String
+    let previousDueOn: String
+    let newStartsOn: String
+    let newDueOn: String
+    let delayDays: Int
+    let wasOverdueAtChange: Bool
+    let reason: String
+    let actorID: String
+    let occurredAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case taskID = "task_id"
+        case revision
+        case previousStartsOn = "previous_starts_on"
+        case previousDueOn = "previous_due_on"
+        case newStartsOn = "new_starts_on"
+        case newDueOn = "new_due_on"
+        case delayDays = "delay_days"
+        case wasOverdueAtChange = "was_overdue_at_change"
+        case reason
+        case actorID = "actor_id"
+        case occurredAt = "occurred_at"
     }
 }
 

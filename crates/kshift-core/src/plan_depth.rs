@@ -6,6 +6,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use chrono::{NaiveDate, Utc};
+use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -16,6 +17,7 @@ pub const PLAN_SCHEMA_VERSION: u32 = 1;
 pub const MAX_DESCRIPTION_BYTES: usize = 256 * 1024;
 pub const MAX_ATTACHMENT_BYTES: usize = 10 * 1024 * 1024;
 pub const MAX_HISTORY_ENTRIES: usize = 100;
+pub const MAX_RESCHEDULE_REASON_CHARS: usize = 500;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PlanProject {
@@ -23,6 +25,12 @@ pub struct PlanProject {
     pub name: String,
     pub revision: u64,
     pub schema_version: u32,
+    #[serde(default = "default_time_zone")]
+    pub time_zone: String,
+}
+
+fn default_time_zone() -> String {
+    "UTC".to_owned()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -60,6 +68,22 @@ pub struct TaskDependency {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlanTaskReschedule {
+    pub id: String,
+    pub task_id: String,
+    pub revision: u64,
+    pub previous_starts_on: NaiveDate,
+    pub previous_due_on: NaiveDate,
+    pub new_starts_on: NaiveDate,
+    pub new_due_on: NaiveDate,
+    pub delay_days: i64,
+    pub was_overdue_at_change: bool,
+    pub reason: String,
+    pub actor_id: String,
+    pub occurred_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AttachmentMetadata {
     pub id: String,
     pub sha256: String,
@@ -92,6 +116,8 @@ pub struct PlanDepthSnapshot {
     pub people: Vec<Person>,
     pub tasks: Vec<PlanTask>,
     pub dependencies: Vec<TaskDependency>,
+    #[serde(default)]
+    pub reschedules: Vec<PlanTaskReschedule>,
     pub attachments: Vec<AttachmentMetadata>,
     pub attachment_links: Vec<AttachmentLink>,
     pub history: Vec<PlanHistoryEntry>,
@@ -104,6 +130,7 @@ impl PlanDepthSnapshot {
             project_id: &'a str,
             tasks: &'a [PlanTask],
             dependencies: &'a [TaskDependency],
+            reschedules: &'a [PlanTaskReschedule],
             attachments: &'a [AttachmentMetadata],
             attachment_links: &'a [AttachmentLink],
         }
@@ -111,6 +138,7 @@ impl PlanDepthSnapshot {
             project_id: &self.project.id,
             tasks: &self.tasks,
             dependencies: &self.dependencies,
+            reschedules: &self.reschedules,
             attachments: &self.attachments,
             attachment_links: &self.attachment_links,
         };
@@ -177,6 +205,13 @@ pub enum PlanCommand {
         task_id: String,
         status: TaskStatus,
         expected_version: u64,
+    },
+    RescheduleTask {
+        task_id: String,
+        expected_version: u64,
+        starts_on: NaiveDate,
+        due_on: NaiveDate,
+        reason: String,
     },
     AttachFile {
         task_id: String,
@@ -446,6 +481,21 @@ impl PlanDepthStore {
                 status,
                 expected_version,
             } => apply_set_task_status(&mut next, task_id, *status, *expected_version),
+            PlanCommand::RescheduleTask {
+                task_id,
+                expected_version,
+                starts_on,
+                due_on,
+                reason,
+            } => apply_reschedule_task(
+                &mut next,
+                task_id,
+                *expected_version,
+                *starts_on,
+                *due_on,
+                reason,
+                envelope,
+            ),
             PlanCommand::AttachFile {
                 task_id,
                 expected_version,
@@ -825,6 +875,74 @@ fn apply_set_task_status(
     Ok(())
 }
 
+fn apply_reschedule_task(
+    snapshot: &mut PlanDepthSnapshot,
+    task_id: &str,
+    expected_version: u64,
+    starts_on: NaiveDate,
+    due_on: NaiveDate,
+    reason: &str,
+    envelope: &PlanCommandEnvelope,
+) -> Result<(), PlanError> {
+    let index = task_index(snapshot, task_id)?;
+    let current = &snapshot.tasks[index];
+    if current.version != expected_version {
+        return Err(version_conflict(current.version, task_id));
+    }
+    if starts_on > due_on {
+        return Err(validation("任务开始日期不能晚于截止日期。"));
+    }
+    if current.starts_on == starts_on && current.due_on == due_on {
+        return Err(validation("任务日期没有变化，不需要创建改期记录。"));
+    }
+    let reason = reason.trim();
+    if reason.is_empty() {
+        return Err(validation("改期原因不能为空。"));
+    }
+    if reason.chars().count() > MAX_RESCHEDULE_REASON_CHARS {
+        return Err(validation("改期原因不能超过 500 个字符。"));
+    }
+
+    let previous_starts_on = current.starts_on;
+    let previous_due_on = current.due_on;
+    let delay_days = if due_on > previous_due_on {
+        (due_on - previous_due_on).num_days()
+    } else {
+        0
+    };
+    let today = project_local_today(&snapshot.project.time_zone);
+    let was_overdue_at_change =
+        previous_due_on < today && snapshot.tasks[index].status != TaskStatus::Done;
+    let occurred_at = Utc::now().to_rfc3339();
+    let revision = snapshot.project.revision.saturating_add(1);
+    let task = &mut snapshot.tasks[index];
+    task.starts_on = starts_on;
+    task.due_on = due_on;
+    task.version = expected_version.saturating_add(1);
+    snapshot.reschedules.push(PlanTaskReschedule {
+        id: envelope.request_id.clone(),
+        task_id: task_id.to_owned(),
+        revision,
+        previous_starts_on,
+        previous_due_on,
+        new_starts_on: starts_on,
+        new_due_on: due_on,
+        delay_days,
+        was_overdue_at_change,
+        reason: reason.to_owned(),
+        actor_id: envelope.actor_id.clone(),
+        occurred_at,
+    });
+    Ok(())
+}
+
+fn project_local_today(time_zone: &str) -> NaiveDate {
+    time_zone
+        .parse::<Tz>()
+        .map(|zone| Utc::now().with_timezone(&zone).date_naive())
+        .unwrap_or_else(|_| Utc::now().date_naive())
+}
+
 fn apply_attachment(
     snapshot: &mut PlanDepthSnapshot,
     attachment_bytes: &mut HashMap<String, Vec<u8>>,
@@ -893,6 +1011,7 @@ fn apply_rollback(
     let current_history = snapshot.history.clone();
     snapshot.tasks = target.tasks.clone();
     snapshot.dependencies = target.dependencies.clone();
+    snapshot.reschedules = target.reschedules.clone();
     snapshot.attachments = target.attachments.clone();
     snapshot.attachment_links = target.attachment_links.clone();
     snapshot.history = current_history;
@@ -942,6 +1061,7 @@ pub fn validate_snapshot(snapshot: &PlanDepthSnapshot) -> Result<(), PlanError> 
     validate_parents(snapshot, &task_ids)?;
     validate_dependencies(snapshot, &task_ids)?;
     validate_attachments(snapshot, &task_ids)?;
+    validate_reschedules(snapshot, &task_ids)?;
     Ok(())
 }
 
@@ -985,6 +1105,40 @@ fn validate_tasks(snapshot: &PlanDepthSnapshot, ids: &HashSet<&str>) -> Result<(
             && !ids.contains(parent_id)
         {
             return Err(validation("父任务不存在或已跨项目。"));
+        }
+    }
+    Ok(())
+}
+
+fn validate_reschedules(
+    snapshot: &PlanDepthSnapshot,
+    ids: &HashSet<&str>,
+) -> Result<(), PlanError> {
+    let mut event_ids = HashSet::new();
+    for event in &snapshot.reschedules {
+        if !ids.contains(event.task_id.as_str()) {
+            return Err(validation("改期记录引用不存在的任务。"));
+        }
+        if !event_ids.insert(event.id.as_str()) {
+            return Err(validation("改期记录 ID 重复。"));
+        }
+        if event.previous_starts_on > event.previous_due_on
+            || event.new_starts_on > event.new_due_on
+        {
+            return Err(validation("改期记录日期范围无效。"));
+        }
+        let expected_delay_days = if event.new_due_on > event.previous_due_on {
+            (event.new_due_on - event.previous_due_on).num_days()
+        } else {
+            0
+        };
+        if event.delay_days != expected_delay_days {
+            return Err(validation("改期记录的延期天数无效。"));
+        }
+        if event.reason.trim().is_empty()
+            || event.reason.chars().count() > MAX_RESCHEDULE_REASON_CHARS
+        {
+            return Err(validation("改期原因长度无效。"));
         }
     }
     Ok(())
@@ -1166,6 +1320,7 @@ fn affected_task_id(command: &PlanCommand) -> Vec<String> {
         | PlanCommand::SetParent { task_id, .. }
         | PlanCommand::ReplaceDependencies { task_id, .. }
         | PlanCommand::SetTaskStatus { task_id, .. }
+        | PlanCommand::RescheduleTask { task_id, .. }
         | PlanCommand::AttachFile { task_id, .. } => vec![task_id.clone()],
         PlanCommand::Rollback { .. } => Vec::new(),
     }
@@ -1179,6 +1334,7 @@ fn action_name(command: &PlanCommand) -> &'static str {
         PlanCommand::SetParent { .. } => "parent_changed",
         PlanCommand::ReplaceDependencies { .. } => "dependencies_replaced",
         PlanCommand::SetTaskStatus { .. } => "status_changed",
+        PlanCommand::RescheduleTask { .. } => "task_rescheduled",
         PlanCommand::AttachFile { .. } => "attachment_added",
         PlanCommand::Rollback { .. } => "rollback",
     }
@@ -1198,6 +1354,13 @@ fn command_summary(command: &PlanCommand) -> String {
         } => {
             format!("将任务 {task_id} 状态改为 {}", status.label())
         }
+        PlanCommand::RescheduleTask {
+            task_id,
+            starts_on,
+            due_on,
+            reason,
+            ..
+        } => format!("将任务 {task_id} 改期为 {starts_on} 至 {due_on}：{reason}"),
         PlanCommand::AttachFile { filename, .. } => format!("添加附件「{filename}」"),
         PlanCommand::Rollback {
             target_revision,
@@ -1315,6 +1478,7 @@ pub fn demo_snapshot(today: NaiveDate) -> PlanDepthSnapshot {
         name: "Kshift 计划深度".to_owned(),
         revision: 7,
         schema_version: PLAN_SCHEMA_VERSION,
+        time_zone: "Asia/Shanghai".to_owned(),
     };
     let people = vec![
         Person {
@@ -1455,6 +1619,7 @@ pub fn demo_snapshot(today: NaiveDate) -> PlanDepthSnapshot {
         people,
         tasks,
         dependencies,
+        reschedules: Vec::new(),
         attachments,
         attachment_links,
         history: Vec::new(),
@@ -1521,6 +1686,88 @@ mod tests {
         assert_eq!(task.status, TaskStatus::Done);
         assert_eq!(task.version, 2);
         assert!(task.completed_at.is_some());
+    }
+
+    #[test]
+    fn reschedule_appends_delay_evidence_and_updates_task_version() {
+        let mut snapshot = demo_snapshot(today());
+        let task = snapshot
+            .tasks
+            .iter_mut()
+            .find(|task| task.id == "task-plan")
+            .expect("sample task");
+        task.starts_on = NaiveDate::from_ymd_opt(2000, 1, 1).unwrap();
+        task.due_on = NaiveDate::from_ymd_opt(2000, 1, 2).unwrap();
+        let mut store = PlanDepthStore::new(snapshot).unwrap();
+
+        let response = store.execute(&envelope(
+            "reschedule-one",
+            PlanActorRole::Editor,
+            PlanCommand::RescheduleTask {
+                task_id: "task-plan".to_owned(),
+                expected_version: 1,
+                starts_on: NaiveDate::from_ymd_opt(2000, 1, 1).unwrap(),
+                due_on: NaiveDate::from_ymd_opt(2000, 1, 4).unwrap(),
+                reason: "等待接口联调".to_owned(),
+            },
+        ));
+        assert!(response.ok, "unexpected error: {:?}", response.error);
+        let task = response
+            .snapshot
+            .tasks
+            .iter()
+            .find(|task| task.id == "task-plan")
+            .expect("task should exist");
+        assert_eq!(task.version, 2);
+        assert_eq!(task.due_on, NaiveDate::from_ymd_opt(2000, 1, 4).unwrap());
+        let event = response
+            .snapshot
+            .reschedules
+            .last()
+            .expect("reschedule event");
+        assert_eq!(
+            event.previous_due_on,
+            NaiveDate::from_ymd_opt(2000, 1, 2).unwrap()
+        );
+        assert_eq!(
+            event.new_due_on,
+            NaiveDate::from_ymd_opt(2000, 1, 4).unwrap()
+        );
+        assert_eq!(event.delay_days, 2);
+        assert!(event.was_overdue_at_change);
+        assert_eq!(event.reason, "等待接口联调");
+        assert_eq!(response.snapshot.history[0].action, "task_rescheduled");
+        assert_eq!(response.snapshot.project.revision, 8);
+    }
+
+    #[test]
+    fn reschedule_requires_a_date_change_and_reason() {
+        let mut store = store();
+        let unchanged = store.execute(&envelope(
+            "reschedule-unchanged",
+            PlanActorRole::Editor,
+            PlanCommand::RescheduleTask {
+                task_id: "task-plan".to_owned(),
+                expected_version: 1,
+                starts_on: today(),
+                due_on: today() + chrono::Duration::days(2),
+                reason: "无变化".to_owned(),
+            },
+        ));
+        assert_eq!(unchanged.error.unwrap().code, "validation_error");
+
+        let missing_reason = store.execute(&envelope(
+            "reschedule-no-reason",
+            PlanActorRole::Editor,
+            PlanCommand::RescheduleTask {
+                task_id: "task-plan".to_owned(),
+                expected_version: 1,
+                starts_on: today(),
+                due_on: today() + chrono::Duration::days(3),
+                reason: "  ".to_owned(),
+            },
+        ));
+        assert_eq!(missing_reason.error.unwrap().code, "validation_error");
     }
 
     #[test]

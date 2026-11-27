@@ -26,6 +26,33 @@ final class KshiftPlanDepthUITests: XCTestCase {
 
         app.buttons["甘特"].tap()
         XCTAssertTrue(app.staticTexts["跨日排期"].waitForExistence(timeout: 3))
+        let ganttScroll = app.scrollViews["plan-depth-gantt-scroll"].firstMatch
+        if ganttScroll.exists {
+            ganttScroll.swipeLeft()
+        }
+        let delayedRow = app.descendants(matching: .any)[
+            "plan-depth-gantt-task-e0000000-0000-4000-8000-000000000003"
+        ].firstMatch
+        XCTAssertTrue(delayedRow.waitForExistence(timeout: 3), app.debugDescription)
+        XCTAssertTrue(
+            delayedRow.label.contains("延期 2 天") || delayedRow.value as? String == "延期 2 天",
+            delayedRow.debugDescription
+        )
+        attachScreenshot(app, name: "ios-gantt-delay")
+
+        delayedRow.tap()
+        XCTAssertTrue(app.staticTexts["任务详情"].waitForExistence(timeout: 3))
+        attachScreenshot(app, name: "ios-delay-task-detail")
+        let rescheduleButton = app.buttons[
+            "plan-depth-reschedule-e0000000-0000-4000-8000-000000000003"
+        ].firstMatch
+        XCTAssertTrue(rescheduleButton.waitForExistence(timeout: 3), app.debugDescription)
+        rescheduleButton.tap()
+        XCTAssertTrue(app.staticTexts["修改排期"].waitForExistence(timeout: 3))
+        app.swipeUp()
+        attachScreenshot(app, name: "ios-reschedule-editor")
+        app.buttons["取消"].firstMatch.tap()
+        app.buttons["关闭"].firstMatch.tap()
 
         app.buttons["历史"].tap()
         XCTAssertTrue(app.staticTexts["审计与回退"].waitForExistence(timeout: 3))
@@ -59,5 +86,12 @@ final class KshiftPlanDepthUITests: XCTestCase {
             return true
         }
         XCTAssertTrue(unexpectedIssues.isEmpty, unexpectedIssues.joined(separator: "\n"))
+    }
+
+    private func attachScreenshot(_ app: XCUIApplication, name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

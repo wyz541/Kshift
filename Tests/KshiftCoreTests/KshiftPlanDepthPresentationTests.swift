@@ -58,6 +58,23 @@ final class KshiftPlanDepthPresentationTests: XCTestCase {
         XCTAssertTrue(presentation.gantt.rows.contains { $0.crossDay })
     }
 
+    func testDelayedGanttRowKeepsBaselineAndCumulativeDelay() {
+        let snapshot = KshiftPlanSampleData.makeSnapshot()
+        let presentation = mapper.makePresentation(
+            snapshot: snapshot,
+            filter: KshiftPlanDepthFilter(),
+            viewerRole: .editor
+        )
+        let row = presentation.gantt.rows.first { $0.hasDelay }
+        XCTAssertNotNil(row)
+        XCTAssertEqual(row?.delayDays, 2)
+        XCTAssertEqual(row?.delayLabel, "延期 2 天")
+        XCTAssertNotNil(row?.extensionStartFraction)
+        XCTAssertNil(row?.connectorStartFraction)
+        XCTAssertTrue(row?.accessibilityLabel.contains("原计划") == true)
+        XCTAssertTrue(row?.accessibilityLabel.contains("延期 2 天") == true)
+    }
+
     func testSearchAndAssigneeFilterUseOneSnapshot() {
         let snapshot = KshiftPlanSampleData.makeSnapshot()
         let presentation = mapper.makePresentation(

@@ -355,6 +355,7 @@ message PlanProject {
   string name = 2;
   uint64 revision = 3;
   uint32 schema_version = 4;
+  string time_zone = 5;
 }
 
 // PlanPerson is one project member shown in R3 views.
@@ -387,6 +388,22 @@ message PlanTask {
 message PlanTaskDependency {
   string task_id = 1;
   string depends_on_task_id = 2;
+}
+
+// PlanTaskReschedule is one append-only task schedule change.
+message PlanTaskReschedule {
+  string id = 1;
+  string task_id = 2;
+  uint64 revision = 3;
+  string previous_starts_on = 4;
+  string previous_due_on = 5;
+  string new_starts_on = 6;
+  string new_due_on = 7;
+  int64 delay_days = 8;
+  bool was_overdue_at_change = 9;
+  string reason = 10;
+  string actor_id = 11;
+  string occurred_at = 12;
 }
 
 // PlanAttachment is immutable attachment metadata.
@@ -425,6 +442,7 @@ message PlanDepthSnapshot {
   repeated PlanAttachment attachments = 5;
   repeated PlanAttachmentLink attachment_links = 6;
   repeated PlanHistoryEntry history = 7;
+  repeated PlanTaskReschedule reschedules = 8;
 }
 
 // SetPlanTaskStatusCommand changes only status and task version.
@@ -432,6 +450,15 @@ message SetPlanTaskStatusCommand {
   string task_id = 1;
   TaskStatus status = 2;
   uint64 expected_version = 3;
+}
+
+// ReschedulePlanTaskCommand changes one task schedule and appends a reschedule event.
+message ReschedulePlanTaskCommand {
+  string task_id = 1;
+  uint64 expected_version = 2;
+  string starts_on = 3;
+  string due_on = 4;
+  string reason = 5;
 }
 
 // RollbackPlanCommand restores one retained revision as a new revision.
@@ -445,6 +472,7 @@ message PlanCommand {
   oneof command {
     SetPlanTaskStatusCommand set_task_status = 1;
     RollbackPlanCommand rollback = 2;
+    ReschedulePlanTaskCommand reschedule_task = 3;
   }
 }
 

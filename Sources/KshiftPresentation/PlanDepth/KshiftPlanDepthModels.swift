@@ -108,6 +108,49 @@ public struct KshiftPlanTask: Identifiable, Codable, Hashable, Sendable {
     }
 }
 
+public struct KshiftPlanReschedule: Identifiable, Codable, Hashable, Sendable {
+    public let id: UUID
+    public let taskID: UUID
+    public let revision: UInt64
+    public let previousStartsOn: Date
+    public let previousDueOn: Date
+    public let newStartsOn: Date
+    public let newDueOn: Date
+    public let delayDays: Int
+    public let wasOverdueAtChange: Bool
+    public let reason: String
+    public let actorID: UUID
+    public let occurredAt: Date
+
+    public init(
+        id: UUID,
+        taskID: UUID,
+        revision: UInt64,
+        previousStartsOn: Date,
+        previousDueOn: Date,
+        newStartsOn: Date,
+        newDueOn: Date,
+        delayDays: Int,
+        wasOverdueAtChange: Bool,
+        reason: String,
+        actorID: UUID,
+        occurredAt: Date
+    ) {
+        self.id = id
+        self.taskID = taskID
+        self.revision = revision
+        self.previousStartsOn = previousStartsOn
+        self.previousDueOn = previousDueOn
+        self.newStartsOn = newStartsOn
+        self.newDueOn = newDueOn
+        self.delayDays = delayDays
+        self.wasOverdueAtChange = wasOverdueAtChange
+        self.reason = reason
+        self.actorID = actorID
+        self.occurredAt = occurredAt
+    }
+}
+
 public struct KshiftPlanDependency: Codable, Hashable, Sendable {
     public let taskID: UUID
     public let dependsOnTaskID: UUID
@@ -188,6 +231,7 @@ public struct KshiftPlanDepthSnapshot: Codable, Hashable, Sendable {
     public let people: [KshiftPlanPerson]
     public let tasks: [KshiftPlanTask]
     public let dependencies: [KshiftPlanDependency]
+    public let reschedules: [KshiftPlanReschedule]
     public let attachments: [KshiftPlanAttachment]
     public let attachmentLinks: [KshiftPlanAttachmentLink]
     public let history: [KshiftPlanHistoryEntry]
@@ -199,6 +243,7 @@ public struct KshiftPlanDepthSnapshot: Codable, Hashable, Sendable {
         people: [KshiftPlanPerson],
         tasks: [KshiftPlanTask],
         dependencies: [KshiftPlanDependency],
+        reschedules: [KshiftPlanReschedule],
         attachments: [KshiftPlanAttachment],
         attachmentLinks: [KshiftPlanAttachmentLink],
         history: [KshiftPlanHistoryEntry]
@@ -209,6 +254,7 @@ public struct KshiftPlanDepthSnapshot: Codable, Hashable, Sendable {
         self.people = people
         self.tasks = tasks
         self.dependencies = dependencies
+        self.reschedules = reschedules
         self.attachments = attachments
         self.attachmentLinks = attachmentLinks
         self.history = history
@@ -332,6 +378,14 @@ public enum KshiftPlanDepthCommand: Equatable, Sendable {
         expectedTaskVersion: UInt64,
         expectedRevision: UInt64
     )
+    case rescheduleTask(
+        taskID: UUID,
+        startsOn: Date,
+        dueOn: Date,
+        reason: String,
+        expectedTaskVersion: UInt64,
+        expectedRevision: UInt64
+    )
     case rollback(targetRevision: UInt64, reason: String, expectedRevision: UInt64)
 }
 
@@ -344,6 +398,7 @@ public enum KshiftPlanDepthError: Error, Equatable, Sendable {
     case dependencyCycle
     case rollbackUnavailable
     case invalidAttachment
+    case invalidSchedule
     case invalidResponse
     case released
 }

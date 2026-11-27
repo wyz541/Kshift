@@ -7,6 +7,11 @@ public struct KshiftPlanDepthFeatureView: View {
     @State private var selectedTask: KshiftPlanTaskPresentation?
     @State private var showsAssigneeFilter = false
     @State private var showsStatusFilter = false
+    @State private var rescheduleTaskID: UUID?
+    @State private var rescheduleStartsOn = Date()
+    @State private var rescheduleDueOn = Date()
+    @State private var rescheduleReason = ""
+    @State private var rescheduleError: String?
     private let capabilities: any KshiftPlatformCapabilities
 
     @Environment(\.dismiss) private var dismiss
@@ -68,6 +73,7 @@ public struct KshiftPlanDepthFeatureView: View {
                 .padding(.vertical, 24)
                 .frame(maxWidth: .infinity)
             }
+            .accessibilityIdentifier("plan-depth-content-scroll")
             .kshiftScreenBackground()
             .navigationTitle("计划深度")
             .toolbar {
@@ -416,67 +422,192 @@ public struct KshiftPlanDepthFeatureView: View {
                 Text("没有可显示的任务")
                     .foregroundStyle(.primary.opacity(0.8))
                     .frame(maxWidth: .infinity, minHeight: 160)
+            } else if horizontalSizeClass == .compact {
+                VStack(spacing: 1) {
+                    ganttRows(presentation.gantt.rows, compact: true)
+                }
             } else {
                 ScrollView(.horizontal) {
                     VStack(spacing: 1) {
-                        ForEach(presentation.gantt.rows) { row in
-                            ganttRow(row)
-                        }
+                        ganttRows(presentation.gantt.rows, compact: false)
                     }
                     .frame(minWidth: 760)
                 }
+                .accessibilityIdentifier("plan-depth-gantt-scroll")
             }
         }
         .padding(18)
         .contentSurface(cornerRadius: 18)
     }
 
-    private func ganttRow(_ row: KshiftGanttRow) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(row.title)
-                    .font(.subheadline.weight(.semibold))
-                    .lineLimit(1)
-                Text(row.assigneeName)
-                    .font(.caption)
-                    .foregroundStyle(.primary.opacity(0.8))
+    private func ganttRows(_ rows: [KshiftGanttRow], compact: Bool) -> some View {
+        ForEach(rows) { row in
+            Button {
+                selectedTask = row.taskPresentation
+            } label: {
+                ganttRow(row, compact: compact)
             }
-            .frame(width: 210, alignment: .leading)
+            .buttonStyle(.plain)
+            .contentShape(Rectangle())
+        }
+    }
 
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.primary.opacity(0.055))
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.kshift(statusRole(row.status)).gradient)
-                        .frame(width: max(28, proxy.size.width * row.widthFraction))
-                        .offset(x: proxy.size.width * row.startFraction)
-                        .overlay(alignment: .leading) {
-                            Text(row.dateLabel)
-                                .font(.caption2.monospacedDigit())
-                                .lineLimit(1)
-                                .padding(.horizontal, 8)
-                                .padding(.leading, proxy.size.width * row.startFraction)
-                        }
+    private func ganttRow(_ row: KshiftGanttRow, compact: Bool) -> some View {
+        Group {
+            if compact {
+                VStack(alignment: .leading, spacing: 8) {
+                    ganttHeader(row)
+                    ganttTimeline(row)
+                }
+            } else {
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        ganttTitle(row)
+                    }
+                    .frame(width: 210, alignment: .leading)
+
+                    ganttTimeline(row)
+
+                    ganttStatus(row)
+                        .frame(width: 92, alignment: .trailing)
                 }
             }
-            .frame(height: 32)
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(row.status.title)
-                    .font(.caption.weight(.semibold))
-                if row.dependencyCount > 0 {
-                    Label("\(row.dependencyCount)", systemImage: "arrow.triangle.branch")
-                        .font(.caption2)
-                }
-            }
-            .frame(width: 76, alignment: .trailing)
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
         .background(Color.primary.opacity(0.025), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(row.accessibilityLabel)
+        .accessibilityValue(row.delayLabel ?? "")
+        .accessibilityIdentifier("plan-depth-gantt-task-\(row.id.uuidString.lowercased())")
+    }
+
+    private func ganttHeader(_ row: KshiftGanttRow) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            ganttTitle(row)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            ganttStatus(row)
+        }
+    }
+
+    private func ganttTitle(_ row: KshiftGanttRow) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(row.title)
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+            Text(row.assigneeName)
+                .font(.caption)
+                .foregroundStyle(.primary.opacity(0.8))
+            if row.rescheduleCount > 0 {
+                Text("改期 \(row.rescheduleCount) 次")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func ganttStatus(_ row: KshiftGanttRow) -> some View {
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(row.status.title)
+                .font(.caption.weight(.semibold))
+            if let delayLabel = row.delayLabel {
+                Text(delayLabel)
+                    .font(.caption2.monospacedDigit().weight(.semibold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        Color.kshift(.warning).opacity(0.16),
+                        in: Capsule(style: .continuous)
+                    )
+                    .foregroundStyle(.primary)
+            }
+            if row.dependencyCount > 0 {
+                Label("\(row.dependencyCount)", systemImage: "arrow.triangle.branch")
+                    .font(.caption2)
+            }
+        }
+    }
+
+    private func ganttTimeline(_ row: KshiftGanttRow) -> some View {
+        GeometryReader { proxy in
+            let width = proxy.size.width
+            let baselineX = width * row.baselineStartFraction
+            let baselineWidth = min(
+                width - baselineX,
+                max(18, width * row.baselineWidthFraction)
+            )
+            let currentX = width * row.startFraction
+            let currentWidth = min(
+                width - currentX,
+                max(28, width * row.widthFraction)
+            )
+            let baselineEndX = min(width, baselineX + baselineWidth)
+
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.primary.opacity(0.055))
+
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.kshift(statusRole(row.status)).gradient)
+                    .frame(width: currentWidth)
+                    .offset(x: currentX)
+
+                if row.hasDelay {
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.primary.opacity(0.02))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(
+                                    Color.primary.opacity(0.58),
+                                    style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])
+                                )
+                        }
+                        .frame(width: baselineWidth)
+                        .offset(x: baselineX)
+                }
+
+                if let start = row.extensionStartFraction,
+                   let extensionWidth = row.extensionWidthFraction {
+                    DelayStripeOverlay()
+                        .frame(
+                            width: max(0, width * extensionWidth),
+                            height: 30
+                        )
+                        .offset(x: width * start)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .accessibilityHidden(true)
+                }
+
+                if row.hasDelay {
+                    Rectangle()
+                        .fill(Color.kshift(.warning))
+                        .frame(width: 2, height: 38)
+                        .offset(x: max(0, min(width - 2, baselineEndX - 1)))
+                        .accessibilityHidden(true)
+                }
+
+                if let start = row.connectorStartFraction,
+                   let end = row.connectorEndFraction {
+                    DelayConnectorShape(
+                        startX: width * start,
+                        endX: width * end
+                    )
+                    .stroke(
+                        Color.kshift(.warning),
+                        style: StrokeStyle(lineWidth: 1.5, dash: [4, 3])
+                    )
+                    .accessibilityHidden(true)
+                }
+
+                Text(row.dateLabel)
+                    .font(.caption2.monospacedDigit())
+                    .lineLimit(1)
+                    .padding(.horizontal, 8)
+                    .offset(x: currentX + 4)
+                    .foregroundStyle(.primary)
+            }
+        }
+        .frame(height: 38)
     }
 
     private func history(_ presentation: KshiftPlanDepthPresentation) -> some View {
@@ -701,8 +832,46 @@ public struct KshiftPlanDepthFeatureView: View {
                         KshiftSemanticBadge("优先级 \(task.priority.title)", role: priorityRole(task.priority))
                     }
                     detailRow("负责人", task.assigneeName, systemImage: "person")
-                    detailRow("排期", task.scheduleLabel, systemImage: "calendar")
+                    detailRow("当前排期", task.scheduleLabel, systemImage: "calendar")
+                    if let baseline = task.baselineScheduleLabel {
+                        detailRow("原始排期", baseline, systemImage: "clock.arrow.circlepath")
+                    }
+                    if task.delayDays > 0 {
+                        detailRow(
+                            "累计延期",
+                            "延期 \(task.delayDays) 天" + (task.latestRescheduleWasOverdue ? " · 逾期后改期" : ""),
+                            systemImage: "exclamationmark.triangle"
+                        )
+                    }
+                    if let reason = task.latestRescheduleReason {
+                        detailRow("最近改期原因", reason, systemImage: "text.bubble")
+                    }
                     detailRow("依赖 / 子任务", "\(task.dependencyCount) / \(task.subtaskCount)", systemImage: "arrow.triangle.branch")
+                    if !task.reschedules.isEmpty {
+                        DisclosureGroup("改期历史 \(task.reschedules.count) 次") {
+                            VStack(alignment: .leading, spacing: 12) {
+                                ForEach(task.reschedules.reversed()) { entry in
+                                    rescheduleRow(entry)
+                                }
+                            }
+                            .padding(.top, 8)
+                        }
+                        .font(.subheadline)
+                    }
+                    if model.viewerRole.canWrite {
+                        if rescheduleTaskID == task.id {
+                            rescheduleEditor(task)
+                        } else {
+                            KshiftSecondaryGlassButton {
+                                beginReschedule(task)
+                            } label: {
+                                Label("修改排期", systemImage: "calendar.badge.clock")
+                            }
+                            .accessibilityIdentifier(
+                                "plan-depth-reschedule-\(task.id.uuidString.lowercased())"
+                            )
+                        }
+                    }
                     Divider()
                     markdown(task.markdown)
                     if let snapshot = model.snapshot {
@@ -741,6 +910,106 @@ public struct KshiftPlanDepthFeatureView: View {
                 }
             }
         }
+    }
+
+    private func rescheduleRow(_ entry: KshiftReschedulePresentation) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(spacing: 8) {
+                Text(entry.revisionLabel)
+                    .font(.caption.monospacedDigit().weight(.semibold))
+                Text(entry.delayLabel)
+                    .font(.caption.weight(.semibold))
+                Spacer()
+                Text(entry.timeLabel)
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            Text("\(entry.previousScheduleLabel) → \(entry.newScheduleLabel)")
+                .font(.caption.monospacedDigit())
+            Text("\(entry.timingLabel) · \(entry.actorName)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(entry.reason)
+                .font(.caption)
+                .foregroundStyle(.primary)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 10))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(entry.accessibilityLabel)
+    }
+
+    private func beginReschedule(_ task: KshiftPlanTaskPresentation) {
+        guard let source = model.snapshot?.tasks.first(where: { $0.id == task.id }) else {
+            return
+        }
+        rescheduleStartsOn = source.startsOn
+        rescheduleDueOn = source.dueOn
+        rescheduleReason = ""
+        rescheduleError = nil
+        rescheduleTaskID = task.id
+    }
+
+    private func rescheduleEditor(_ task: KshiftPlanTaskPresentation) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("修改排期")
+                .font(.headline)
+            DatePicker("开始日期", selection: $rescheduleStartsOn, displayedComponents: .date)
+                .onChange(of: rescheduleStartsOn) { _, newValue in
+                    if rescheduleDueOn < newValue {
+                        rescheduleDueOn = newValue
+                    }
+                }
+            DatePicker("截止日期", selection: $rescheduleDueOn, displayedComponents: .date)
+            TextField("改期原因", text: $rescheduleReason, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(2...4)
+            if rescheduleDueOn < rescheduleStartsOn {
+                Text("开始日期不能晚于截止日期。")
+                    .font(.caption)
+                    .foregroundStyle(Color.kshift(.danger))
+            }
+            if let rescheduleError {
+                Text(rescheduleError)
+                    .font(.caption)
+                    .foregroundStyle(Color.kshift(.danger))
+            }
+            HStack {
+                Button("取消") {
+                    rescheduleTaskID = nil
+                    rescheduleError = nil
+                }
+                Spacer()
+                KshiftPrimaryGlassButton {
+                    Task {
+                        let succeeded = await model.reschedule(
+                            taskID: task.id,
+                            startsOn: rescheduleStartsOn,
+                            dueOn: rescheduleDueOn,
+                            reason: rescheduleReason
+                        )
+                        if succeeded {
+                            rescheduleTaskID = nil
+                            rescheduleError = nil
+                            selectedTask = nil
+                        } else {
+                            rescheduleError = "改期保存失败，请检查日期、原因或刷新后重试。"
+                        }
+                    }
+                } label: {
+                    Label("保存改期", systemImage: "checkmark")
+                }
+                .accessibilityIdentifier("plan-depth-save-reschedule")
+                .disabled(
+                    model.pendingTaskID != nil
+                        || rescheduleDueOn < rescheduleStartsOn
+                        || rescheduleReason.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                )
+            }
+        }
+        .padding(14)
+        .background(Color.primary.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder
@@ -784,6 +1053,46 @@ public struct KshiftPlanDepthFeatureView: View {
         case .high: .danger
         case .urgent: .danger
         }
+    }
+}
+
+private struct DelayStripeOverlay: View {
+    var body: some View {
+        Canvas { context, size in
+            var path = Path()
+            var x = -size.height
+            while x < size.width {
+                path.move(to: CGPoint(x: x, y: size.height))
+                path.addLine(to: CGPoint(x: x + size.height, y: 0))
+                x += 7
+            }
+            context.fill(
+                Path(CGRect(origin: .zero, size: size)),
+                with: .color(Color.kshift(.warning).opacity(0.12))
+            )
+            context.stroke(
+                path,
+                with: .color(Color.kshift(.warning).opacity(0.7)),
+                lineWidth: 1
+            )
+        }
+    }
+}
+
+private struct DelayConnectorShape: Shape {
+    let startX: CGFloat
+    let endX: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let y = rect.midY
+        let tipX = max(startX, endX - 6)
+        path.move(to: CGPoint(x: startX, y: y))
+        path.addLine(to: CGPoint(x: tipX, y: y))
+        path.move(to: CGPoint(x: tipX, y: y - 5))
+        path.addLine(to: CGPoint(x: endX, y: y))
+        path.addLine(to: CGPoint(x: tipX, y: y + 5))
+        return path
     }
 }
 

@@ -100,6 +100,39 @@ public final class KshiftPlanDepthFeatureModel {
         }
     }
 
+    @discardableResult
+    public func reschedule(
+        taskID: UUID,
+        startsOn: Date,
+        dueOn: Date,
+        reason: String
+    ) async -> Bool {
+        guard pendingTaskID == nil, let snapshot else { return false }
+        pendingTaskID = taskID
+        defer { pendingTaskID = nil }
+        do {
+            let updated = try await boundary.execute(
+                projectID: projectID,
+                .rescheduleTask(
+                    taskID: taskID,
+                    startsOn: startsOn,
+                    dueOn: dueOn,
+                    reason: reason,
+                    expectedTaskVersion: currentTaskVersion(id: taskID) ?? 1,
+                    expectedRevision: snapshot.revision
+                )
+            )
+            apply(updated)
+            phase = .loaded
+            capabilities.perform(.success)
+            return true
+        } catch {
+            phase = .failed(errorMessage(error))
+            capabilities.perform(.error)
+            return false
+        }
+    }
+
     public func requestRollback(to revision: UInt64) {
         guard viewerRole.canRollback else { return }
         rollbackCandidate = snapshot?.history.first(where: { $0.revision == revision })
@@ -214,6 +247,8 @@ public final class KshiftPlanDepthFeatureModel {
             return "目标版本不在回退窗口内。"
         case .invalidAttachment:
             return "附件类型或大小不符合规则。"
+        case .invalidSchedule:
+            return "改期日期或原因无效。请检查后重试。"
         case .invalidResponse:
             return "共享服务返回了无法识别的数据。"
         case .released:

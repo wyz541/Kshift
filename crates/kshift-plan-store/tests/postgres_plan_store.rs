@@ -5,7 +5,8 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 #[tokio::test]
-async fn persistent_plan_depth_survives_conflict_attachment_and_rollback() -> anyhow::Result<()> {
+async fn persistent_plan_depth_survives_conflict_reschedule_attachment_and_rollback(
+) -> anyhow::Result<()> {
     let Ok(database_url) = std::env::var("KSHIFT_TEST_DATABASE_URL") else {
         eprintln!("KSHIFT_TEST_DATABASE_URL is not set; skipping PostgreSQL integration test");
         return Ok(());
@@ -127,7 +128,7 @@ async fn persistent_plan_depth_survives_conflict_attachment_and_rollback() -> an
             actor_id: actor_uuid.clone(),
             actor_role: PlanActorRole::Editor,
             command: PlanCommand::AttachFile {
-                task_id,
+                task_id: task_id.clone(),
                 expected_version: 1,
                 filename: "evidence.md".to_owned(),
                 declared_media_type: "text/markdown".to_owned(),
@@ -140,11 +141,33 @@ async fn persistent_plan_depth_survives_conflict_attachment_and_rollback() -> an
     let digest = attached.snapshot.attachments.last().unwrap().sha256.clone();
     assert_eq!(store.attachment(project_id, &digest).await?, Some(content));
 
+    let rescheduled = store
+        .execute(PlanCommandEnvelope {
+            request_id: format!("reschedule-{suffix}"),
+            project_id,
+            expected_revision: 9,
+            actor_id: actor_uuid.clone(),
+            actor_role: PlanActorRole::Editor,
+            command: PlanCommand::RescheduleTask {
+                task_id,
+                expected_version: 2,
+                starts_on: NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
+                due_on: NaiveDate::from_ymd_opt(2026, 11, 17).unwrap(),
+                reason: "持久化延期记录".to_owned(),
+            },
+        })
+        .await?;
+    assert!(rescheduled.ok);
+    assert_eq!(rescheduled.snapshot.project.revision, 10);
+    let reschedule = rescheduled.snapshot.reschedules.last().unwrap();
+    assert_eq!(reschedule.delay_days, 2);
+    assert_eq!(reschedule.reason, "持久化延期记录");
+
     let rolled_back = store
         .execute(PlanCommandEnvelope {
             request_id: format!("rollback-{suffix}"),
             project_id,
-            expected_revision: 9,
+            expected_revision: 10,
             actor_id: actor_uuid,
             actor_role: PlanActorRole::Admin,
             command: PlanCommand::Rollback {
@@ -154,14 +177,14 @@ async fn persistent_plan_depth_survives_conflict_attachment_and_rollback() -> an
         })
         .await?;
     assert!(rolled_back.ok);
-    assert_eq!(rolled_back.snapshot.project.revision, 10);
+    assert_eq!(rolled_back.snapshot.project.revision, 11);
     let audit = &rolled_back.snapshot.history[0];
     assert_eq!(audit.action, "rollback");
     assert_eq!(audit.restored_from_revision, Some(7));
     assert_eq!(audit.content_sha256, target_digest);
 
     let restarted = store.load(project_id).await?;
-    assert_eq!(restarted.snapshot().project.revision, 10);
+    assert_eq!(restarted.snapshot().project.revision, 11);
     assert!(restarted
         .snapshot()
         .tasks
@@ -177,7 +200,7 @@ async fn persistent_plan_depth_survives_conflict_attachment_and_rollback() -> an
             NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
         )
         .await?;
-    assert_eq!(report.source_revision, 10);
+    assert_eq!(report.source_revision, 11);
     Ok(())
 }
 

@@ -211,6 +211,7 @@ fn affected_task_ids(command: &PlanCommand) -> Vec<String> {
         | PlanCommand::SetParent { task_id, .. }
         | PlanCommand::ReplaceDependencies { task_id, .. }
         | PlanCommand::SetTaskStatus { task_id, .. }
+        | PlanCommand::RescheduleTask { task_id, .. }
         | PlanCommand::AttachFile { task_id, .. } => vec![task_id.clone()],
         PlanCommand::Rollback { .. } => Vec::new(),
     }
