@@ -3,7 +3,7 @@ slug: /specs/domain
 title: KS-DOMAIN Kshift 任务领域规范
 type: standard
 status: active
-updated: "2026-11-14"
+updated: "2026-11-27"
 owner: "@wyz541"
 keywords:
   - 项目
@@ -107,6 +107,14 @@ description: 定义 Kshift 的项目隔离、任务、负责人、自然日期�
 - `FR-R3-016`：回退记录必须保存 `restored_from_revision` 和恢复内容 SHA-256。
 - `FR-R3-017`：报告必须固定一个 `source_revision`。
 - `FR-R3-018`：工作报告、统计、打印和 PNG 导出必须读取同一个 report snapshot。
+- `FR-R3-019`：任务改期必须使用 typed `RescheduleTask` command。命令必须携带 task ID、expected entity version、新的 `starts_on` / `due_on`、原因和 request ID。
+- `FR-R3-020`：只有 `starts_on` 或 `due_on` 实际变化时才允许生成 append-only reschedule event。事件必须保存 previous/new dates、`delay_days`、`was_overdue_at_change`、reason、actor、occurred_at 和 revision。
+- `FR-R3-021`：原始计划基线由最早 retained reschedule event 的 previous dates 确定，不得被后续改期覆盖。当前计划始终是任务当前的 `starts_on` / `due_on`。
+- `FR-R3-022`：`delay_days` 必须按自然日计算，等于 `new due_on - previous due_on` 的正数；截止日期提前或只改变开始日期时不得伪造负数延期。
+- `FR-R3-023`：`was_overdue_at_change` 必须由服务端按项目时区计算。旧 `due_on` 已早于改期日且任务未完成时为 true。阻塞状态本身不得使该字段为 true。
+- `FR-R3-024`：改期任务更新、reschedule event、任务版本递增、项目 revision 和审计记录必须在同一事务内提交。任一版本或 revision 过期时整次改期拒绝。
+- `FR-R3-025`：改期历史只能追加。回退必须恢复目标 revision 的完整 reschedule 链，不得删除已有 retained history。
+- `FR-R3-026`：当前产品尚未实现子任务联动。首版改期只作用于被选中的任务，禁止自动改写父任务、子任务或依赖任务的日期。
 
 ## 7. 历史与审计
 

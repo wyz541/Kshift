@@ -3,7 +3,7 @@ slug: /specs/ui
 title: KS-UI Kshift 界面与无障碍规范
 type: standard
 status: active
-updated: "2026-11-23"
+updated: "2026-11-27"
 owner: "@wyz541"
 keywords:
   - SwiftUI
@@ -92,6 +92,11 @@ flowchart TB
 - `UI-R3-005`：报告打印和图片导出不得重新读取 live project state。
 - `UI-R3-006`：R3 页面必须通过对比度、动态字号、触控区域、文字裁切和元素描述审计。
 - `UI-R3-007`：Plan Depth sheet 必须提供 explicit Close action，accessibility identifier 为 `close-plan-depth`。Regular horizontal-size presentation 必须有 `860pt` minimum width 和 `700pt` minimum height。
+- `UI-R3-008`：甘特任务行必须同时表达原始计划、当前目标和延期。连续延长时保留原计划段，使用独立延期段覆盖新增日期，并在原截止日绘制 marker。延期任务必须显示 `延期 N 天` 徽标。
+- `UI-R3-009`：同一行连续延长不得绘制冗余长连线。只有前后区间不连续或存在多次改期时才绘制改期轨迹。改期轨迹必须使用虚线或独立 marker，并带有日期/延期文案；不得复用普通任务依赖的跨行正交箭头。
+- `UI-R3-010`：甘特任务详情必须显示原始计划、当前计划、累计延期、是否逾期后改期、最近一次原因、操作者和改期时间。多次改期必须可查看每次增量。
+- `UI-R3-011`：延期状态不得只依赖颜色或纹理。任务行和详情的 accessibility label 必须包含原计划、当前目标、延期天数和改期原因；普通依赖必须继续读作任务依赖。
+- `UI-R3-012`：可编辑的 Plan Depth task 必须提供改期 entry。Date picker 必须拒绝 `starts_on > due_on`；保存时必须提交 reason、task version 和 project revision，并展示冲突错误。
 
 ## 5. Liquid Glass 边界
 
