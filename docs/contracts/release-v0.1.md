@@ -117,6 +117,8 @@ runtime evidence 使用 schema version `1`，至少包含以下内容。
 
 portable 模式不会把跨编译 host 的二进制 hash 差异当成源码不匹配。平台源码输入摘要仍是 runtime evidence 的主绑定。
 
+Stable signing policy 只适用于可分发资产角色 `application`、`server-bundle` 和 `source`。`evidence`、manifest、checksums、SBOM 和 notes 使用 `not-applicable`，不得让元数据资产的签名状态伪装成应用签名。
+
 ## 5. 校验顺序
 
 Release orchestrator 按以下顺序校验。

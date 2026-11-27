@@ -546,7 +546,8 @@ function validateStableManifest(manifest, policy) {
     }
     const allowed = policy.stable_signing[platform]
     if (!Array.isArray(allowed)) fail(`stable signing policy is missing for ${platform}`)
-    for (const asset of platformAssets) {
+    const signedRoles = new Set(['application', 'server-bundle', 'source'])
+    for (const asset of platformAssets.filter((item) => signedRoles.has(item.role))) {
       if (!allowed.includes(asset.signing_status)) {
         fail(`stable signing status is not allowed for ${platform}: ${asset.signing_status}`)
       }
