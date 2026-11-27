@@ -15,28 +15,31 @@ import { basename, dirname, join, relative, resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 const INPUT_ALGORITHM = 'kshift-runtime-inputs-v1'
-const COMMON_INPUT_PATHS = [
+const RUST_INPUT_PATHS = [
   '.gitattributes',
   'Cargo.lock',
   'Cargo.toml',
-  'Package.resolved',
-  'Package.swift',
-  'Sources',
   'crates',
   'include',
-  'migrations',
-  'ops',
   'proto',
   'rust-toolchain.toml',
   'rustfmt.toml',
   'schemas',
 ]
 const INPUT_PATHS = {
-  server: [...COMMON_INPUT_PATHS, 'release/platform/build-server.sh'],
+  server: [
+    ...RUST_INPUT_PATHS,
+    'migrations',
+    'ops',
+    'release/platform/build-server.sh',
+  ],
   macos: [
-    ...COMMON_INPUT_PATHS,
+    ...RUST_INPUT_PATHS,
     'Apps/KshiftMacOS',
     'Assets',
+    'Package.resolved',
+    'Package.swift',
+    'Sources',
     'project.yml',
     'release/platform/build-macos.sh',
     'scripts/build-ffi.sh',
