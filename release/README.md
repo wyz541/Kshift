@@ -63,7 +63,7 @@ node release/tools/runtime-evidence.mjs verify \
 
 ## Stable 状态
 
-`release/policy.json` 控制 Stable 必需平台、角色、gate 和签名状态。当前决策已批准为 server、macOS、source；iOS 没有 Apple Developer Program，仅保留内部测试证据，不属于 Stable required platform。`v0.1.0` 已通过 runtime evidence、candidate、Draft 和 same-Draft Promote；后续 Stable 合并和验证仍会 fail closed，直到新候选的 server 与 macOS 运行时 gate 通过。
+`release/policy.json` 控制 Stable 必需平台、角色、gate 和签名状态。当前决策已批准为 server、macOS、source；iOS 没有 Apple Developer Program，仅保留内部测试证据，不属于 Stable required platform。`v0.2.0` 已通过 runtime evidence、candidate、Draft、`verify-draft` 和 same-Draft Promote；后续 Stable 合并和验证仍会 fail closed，直到新候选的 server 与 macOS 运行时 gate 通过。
 
 ## Runtime evidence
 

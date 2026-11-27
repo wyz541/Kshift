@@ -1,0 +1,210 @@
+{
+  "schema_version": "1",
+  "product": "Kshift",
+  "version": "0.2.0",
+  "channel": "stable",
+  "tag": "v0.2.0",
+  "source_commit": "04289a715c498e66c09480852e215cf92062229d",
+  "generated_at": "2026-11-27T06:35:14.750Z",
+  "minimum_os": {
+    "macos": "26.0",
+    "ios": "26.0"
+  },
+  "database": {
+    "engine": "postgresql",
+    "major": 18,
+    "exact_version": "18.7",
+    "schema_version": "3",
+    "migration_digest": "76d52640b1d854e9d18663b59f08522d6a60c48929b1c69c6424a782836bc164"
+  },
+  "assets": [
+    {
+      "name": "kshift-0.2.0-macos-arm64.dmg",
+      "platform": "macos",
+      "architecture": "arm64",
+      "role": "application",
+      "signing_status": "ad-hoc",
+      "size_bytes": 8225756,
+      "sha256": "d9aa955b92f3571b8212c73d2f15eda6bc144f42c8c145be95c743e8ff14ffe5"
+    },
+    {
+      "name": "kshift-0.2.0-macos-arm64.zip",
+      "platform": "macos",
+      "architecture": "arm64",
+      "role": "application",
+      "signing_status": "ad-hoc",
+      "size_bytes": 7237080,
+      "sha256": "971d25da1b0486cb0368793259fb56670058b06db3fa40a6b9e3ee7c028062cb"
+    },
+    {
+      "name": "kshift-0.2.0-macos-runtime-evidence.json",
+      "platform": "macos",
+      "architecture": "arm64",
+      "role": "evidence",
+      "signing_status": "not-applicable",
+      "size_bytes": 3301,
+      "sha256": "05260a4dd01c1dd5a49c08026b07a4c4fe6a9f63b7ae359847f966f68f35c3a5"
+    },
+    {
+      "name": "kshift-0.2.0-server-macos-arm64.tar.gz",
+      "platform": "server",
+      "architecture": "arm64",
+      "role": "server-bundle",
+      "signing_status": "not-applicable",
+      "size_bytes": 4543736,
+      "sha256": "b406dcaf3b8e4bc64b739605fed9c310fa54ddfeb498703a56fbc9b8b916687b"
+    },
+    {
+      "name": "kshift-0.2.0-server-runtime-evidence.json",
+      "platform": "server",
+      "architecture": "arm64",
+      "role": "evidence",
+      "signing_status": "not-applicable",
+      "size_bytes": 2720,
+      "sha256": "13f633ad2bb8e51f7b70d6db3deb77fa66bdb11ba28b48d31d8258d83c9a7cad"
+    },
+    {
+      "name": "kshift-0.2.0-source.tar.gz",
+      "platform": "source",
+      "architecture": "all",
+      "role": "source",
+      "signing_status": "not-applicable",
+      "size_bytes": 26503767,
+      "sha256": "c3bfe7d3e8569e8139682c05eb5eface419706dccd2463cbbb13effe1bf6b063"
+    },
+    {
+      "name": "sbom.spdx.json",
+      "platform": "source",
+      "architecture": "all",
+      "role": "sbom",
+      "size_bytes": 201866,
+      "sha256": "693c093ba3d6a7f2f562bc814c5b808e716e318fe2b0f44a18b658316ed4cc76",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "release-notes.md",
+      "platform": "source",
+      "architecture": "all",
+      "role": "notes",
+      "size_bytes": 2505,
+      "sha256": "eb3d45e40dc400fbc1feb411021b6902463edc97fb6707e278866820cb77b638",
+      "signing_status": "not-applicable"
+    }
+  ],
+  "signing": {
+    "status": "ad-hoc",
+    "identity": null,
+    "notarization": "not-requested"
+  },
+  "sbom": {
+    "format": "spdx-json",
+    "file": "sbom.spdx.json",
+    "sha256": "693c093ba3d6a7f2f562bc814c5b808e716e318fe2b0f44a18b658316ed4cc76"
+  },
+  "provenance": {
+    "workflow": "release-orchestrate.yml",
+    "run_id": "45952650836",
+    "run_attempt": 1,
+    "artifact_id": "release-candidate-45952650836"
+  },
+  "gates": [
+    {
+      "name": "macos:build",
+      "status": "passed",
+      "evidence": "xcodebuild completed"
+    },
+    {
+      "name": "macos:signature",
+      "status": "passed",
+      "evidence": "codesign verification"
+    },
+    {
+      "name": "macos:install",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate install)"
+    },
+    {
+      "name": "macos:upgrade",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate upgrade)"
+    },
+    {
+      "name": "macos:uninstall",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate uninstall)"
+    },
+    {
+      "name": "macos:rollback",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate rollback)"
+    },
+    {
+      "name": "macos:liquid-glass",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate liquid-glass)"
+    },
+    {
+      "name": "macos:accessibility",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate accessibility)"
+    },
+    {
+      "name": "macos:performance",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate performance)"
+    },
+    {
+      "name": "server:build",
+      "status": "passed",
+      "evidence": "cargo build and archive creation"
+    },
+    {
+      "name": "server:health",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate health)"
+    },
+    {
+      "name": "server:migration",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate migration)"
+    },
+    {
+      "name": "server:backup-restore",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate backup-restore)"
+    },
+    {
+      "name": "server:startup-recovery",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate startup-recovery)"
+    },
+    {
+      "name": "server:logs",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate logs)"
+    },
+    {
+      "name": "source:source-archive",
+      "status": "passed",
+      "evidence": "git archive from the candidate source commit"
+    }
+  ],
+  "limitations": [
+    "Internal network only.",
+    "External platform import is not supported.",
+    "Ad-hoc builds are intended for internal distribution and may be blocked by Gatekeeper outside the managed environment."
+  ],
+  "rollback": {
+    "strategy": "new-patch-release",
+    "notes": "Publish a new patch release and keep the original Stable release unchanged."
+  },
+  "release_notes": "# Kshift v0.2.0\n\n## 状态\n\n这是 `v0.1.0` 之后的 Stable 发布。Server、macOS 和 source 进入 Stable 资产；iOS 没有 Apple Developer Program，仅做内部测试，不进入 Stable 资产。\n\n## 平台\n\n| 平台 | 最低版本 | 分发 |\n| --- | --- | --- |\n| macOS | 26.0 | ad-hoc 或 Developer ID 签名 DMG/ZIP |\n| iOS | 26.0 | 仅内部测试；不进入 Stable 资产 |\n| Server | PostgreSQL 18.x | 内网 macOS arm64 安装包 |\n| Source | 不适用 | source archive |\n\n所有 Stable 资产必须来自同一个 source commit，并绑定同一份 manifest 和 SHA-256。\n\n## 本次变更\n\n- Plan Depth 甘特图支持任务延期展示：保留原始计划、当前目标、原截止 marker、延期纹理和 `延期 N 天` 徽标。\n- 新增 typed `RescheduleTask` 命令和 append-only 改期记录，保存前后日期、延期天数、原因、操作者和 revision。\n- 任务详情显示当前排期、原始排期、累计延期、逾期后改期标记和改期历史。\n- 增加任务改期编辑器，并将连续延期与普通任务依赖在视觉和无障碍语义上区分。\n- 优化紧凑宽度下的甘特任务行布局，避免横向裁切。\n- Protocol 只新增兼容字段；`kshift.v1` 包版本不变。\n\n## 安装\n\n1. 备份数据库。\n2. 下载 Release manifest 和 `SHA256SUMS`。\n3. 验证所有资产 SHA-256。\n4. 验证 GitHub attestation。\n5. 安装 server bundle 并执行迁移前备份检查。\n6. 安装 macOS DMG 或 ZIP。\n7. iOS 内部测试 build 只在受控环境安装，不属于 Stable 发布步骤。\n8. 运行健康检查和 P0 流程。\n\n## 已知限制\n\n- 仅限内网。\n- 不支持外部平台导入。\n- 不提供高可用数据库承诺。\n- macOS 使用 ad-hoc 签名；没有 Developer ID 和 notarization。\n- 4 小时 RPO 和 4 小时 RTO。\n- 暂不包含子任务联动和预计延期预测。\n\n## 验证\n\n- Server：PostgreSQL 18.x migration、backup/restore、LaunchAgent SIGKILL recovery 和日志检查。\n- macOS：DMG/ZIP install、upgrade、uninstall、rollback、Liquid Glass、无障碍和性能检查。\n- Runtime evidence：`release/evidence/server-runtime.json`、`release/evidence/macos-runtime.json`。\n- Release：manifest、SBOM、provenance、attestation、SHA-256 和 same-Draft Promote。\n\n## 回滚\n\n1. 禁止移动 Stable 标签。\n2. 禁止覆盖 Stable 资产。\n3. 应用回滚使用已批准旧版本。\n4. 数据库回滚使用迁移前备份。\n5. 发布新的 patch 或 minor 版本修复问题。\n",
+  "release_status": "promoted",
+  "missing_platforms": [],
+  "promotion": {
+    "approved_by": "wyz541",
+    "approved_at": "2026-11-27T06:39:17Z",
+    "run_id": "45953043023"
+  },
+  "release_url": "https://github.com/wyz541/Kshift/releases/tag/v0.2.0"
+}
