@@ -1,0 +1,187 @@
+{
+  "schema_version": "1",
+  "kind": "release-evidence",
+  "generated_at": "2026-11-27T06:35:17.877Z",
+  "product": "Kshift",
+  "version": "0.2.0",
+  "channel": "stable",
+  "tag": "v0.2.0",
+  "source_commit": "04289a715c498e66c09480852e215cf92062229d",
+  "manifest_sha256": "986384a9ea50fe6f30945b914119abe34ab378723b47b7eb7b4390e49d80f0a9",
+  "release_url": "https://github.com/wyz541/Kshift/releases/tag/v0.2.0",
+  "workflow_run": {
+    "run_id": "45952650836",
+    "run_attempt": 1
+  },
+  "assets": [
+    {
+      "name": "kshift-0.2.0-macos-arm64.dmg",
+      "platform": "macos",
+      "architecture": "arm64",
+      "role": "application",
+      "size_bytes": 8225756,
+      "sha256": "d9aa955b92f3571b8212c73d2f15eda6bc144f42c8c145be95c743e8ff14ffe5",
+      "signing_status": "ad-hoc"
+    },
+    {
+      "name": "kshift-0.2.0-macos-arm64.zip",
+      "platform": "macos",
+      "architecture": "arm64",
+      "role": "application",
+      "size_bytes": 7237080,
+      "sha256": "971d25da1b0486cb0368793259fb56670058b06db3fa40a6b9e3ee7c028062cb",
+      "signing_status": "ad-hoc"
+    },
+    {
+      "name": "kshift-0.2.0-macos-runtime-evidence.json",
+      "platform": "macos",
+      "architecture": "arm64",
+      "role": "evidence",
+      "size_bytes": 3301,
+      "sha256": "05260a4dd01c1dd5a49c08026b07a4c4fe6a9f63b7ae359847f966f68f35c3a5",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "kshift-0.2.0-server-macos-arm64.tar.gz",
+      "platform": "server",
+      "architecture": "arm64",
+      "role": "server-bundle",
+      "size_bytes": 4543736,
+      "sha256": "b406dcaf3b8e4bc64b739605fed9c310fa54ddfeb498703a56fbc9b8b916687b",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "kshift-0.2.0-server-runtime-evidence.json",
+      "platform": "server",
+      "architecture": "arm64",
+      "role": "evidence",
+      "size_bytes": 2720,
+      "sha256": "13f633ad2bb8e51f7b70d6db3deb77fa66bdb11ba28b48d31d8258d83c9a7cad",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "kshift-0.2.0-source.tar.gz",
+      "platform": "source",
+      "architecture": "all",
+      "role": "source",
+      "size_bytes": 26503767,
+      "sha256": "c3bfe7d3e8569e8139682c05eb5eface419706dccd2463cbbb13effe1bf6b063",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "sbom.spdx.json",
+      "platform": "source",
+      "architecture": "all",
+      "role": "sbom",
+      "size_bytes": 201866,
+      "sha256": "693c093ba3d6a7f2f562bc814c5b808e716e318fe2b0f44a18b658316ed4cc76",
+      "signing_status": "not-applicable"
+    },
+    {
+      "name": "release-notes.md",
+      "platform": "source",
+      "architecture": "all",
+      "role": "notes",
+      "size_bytes": 2505,
+      "sha256": "eb3d45e40dc400fbc1feb411021b6902463edc97fb6707e278866820cb77b638",
+      "signing_status": "not-applicable"
+    }
+  ],
+  "signing": {
+    "status": "ad-hoc",
+    "identity": null,
+    "notarization": "not-requested"
+  },
+  "promotion": {
+    "approved_by": "wyz541",
+    "approved_at": "2026-11-27T06:39:17Z",
+    "run_id": "45953043023"
+  },
+  "gates": [
+    {
+      "name": "macos:build",
+      "status": "passed",
+      "evidence": "xcodebuild completed"
+    },
+    {
+      "name": "macos:signature",
+      "status": "passed",
+      "evidence": "codesign verification"
+    },
+    {
+      "name": "macos:install",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate install)"
+    },
+    {
+      "name": "macos:upgrade",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate upgrade)"
+    },
+    {
+      "name": "macos:uninstall",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate uninstall)"
+    },
+    {
+      "name": "macos:rollback",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate rollback)"
+    },
+    {
+      "name": "macos:liquid-glass",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate liquid-glass)"
+    },
+    {
+      "name": "macos:accessibility",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate accessibility)"
+    },
+    {
+      "name": "macos:performance",
+      "status": "passed",
+      "evidence": "release evidence macos-runtime.json (inputs fb44b9f381e2, gate performance)"
+    },
+    {
+      "name": "server:build",
+      "status": "passed",
+      "evidence": "cargo build and archive creation"
+    },
+    {
+      "name": "server:health",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate health)"
+    },
+    {
+      "name": "server:migration",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate migration)"
+    },
+    {
+      "name": "server:backup-restore",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate backup-restore)"
+    },
+    {
+      "name": "server:startup-recovery",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate startup-recovery)"
+    },
+    {
+      "name": "server:logs",
+      "status": "passed",
+      "evidence": "release evidence server-runtime.json (inputs c1a1712204fb, gate logs)"
+    },
+    {
+      "name": "source:source-archive",
+      "status": "passed",
+      "evidence": "git archive from the candidate source commit"
+    }
+  ],
+  "limitations": [
+    "Internal network only.",
+    "External platform import is not supported.",
+    "Ad-hoc builds are intended for internal distribution and may be blocked by Gatekeeper outside the managed environment."
+  ]
+}

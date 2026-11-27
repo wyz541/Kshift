@@ -100,3 +100,9 @@ v1 验收当前为失败。阻断项见验收报告。
 | 项目 | 入口 |
 | --- | --- |
 | Gantt delay and reschedule evidence | [task-reschedule](task-reschedule/README.md) |
+
+## v0.2.0 Stable release
+
+| 项目 | 入口 |
+| --- | --- |
+| v0.2.0 Stable release evidence | [v0.2.0-release](v0.2.0-release/README.md) |
