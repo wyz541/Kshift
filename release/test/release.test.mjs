@@ -420,16 +420,22 @@ test('checksums are deterministic', () => {
 
 function runtimeFixture(root) {
   const bundle = join(root, 'server-bundle')
+  const candidateCommit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).stdout.trim()
   mkdirSync(join(bundle, 'bin'), { recursive: true })
   writeFileSync(join(bundle, 'bin/kshift-server'), 'server-binary')
   writeFileSync(join(bundle, 'bin/kshift-ops'), 'ops-binary')
-  writeFileSync(join(bundle, 'BUILD_INFO.json'), '{"built_at":"ignored"}\n')
+  writeFileSync(join(bundle, 'BUILD_INFO.json'), `${JSON.stringify({
+    product: 'Kshift',
+    version: '0.1.0',
+    channel: 'stable',
+    source_commit: candidateCommit,
+    built_at: 'ignored',
+  })}\n`)
   const source = JSON.parse(runRuntimeEvidence(['source-digest', '--root', REPO, '--platform', 'server']).stdout)
   const bundleDigest = JSON.parse(runRuntimeEvidence([
     'tree-digest', '--root', bundle, '--exclude', 'BUILD_INFO.json',
   ]).stdout).sha256
   const digest = (value) => createHash('sha256').update(value).digest('hex')
-  const candidateCommit = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: REPO, encoding: 'utf8' }).stdout.trim()
   const evidence = {
     schema_version: '1',
     kind: 'runtime-release-evidence',
@@ -504,6 +510,28 @@ test('runtime evidence fails closed when source inputs changed', () => {
     '--output', join(root, 'server-gates.json'),
   ], 2)
   assert.match(result.stderr, /source inputs do not match/)
+})
+
+test('portable runtime evidence accepts a rebuild with matching source and build identity', () => {
+  const root = tempRoot()
+  const fixture = runtimeFixture(root)
+  writeFileSync(join(fixture.bundle, 'bin/kshift-server'), 'rebuilt-server-binary')
+  const output = join(root, 'server-gates.json')
+  runRuntimeEvidence([
+    'verify',
+    '--root', REPO,
+    '--evidence', fixture.evidencePath,
+    '--platform', 'server',
+    '--version', '0.1.0',
+    '--channel', 'stable',
+    '--candidate-commit', fixture.candidateCommit,
+    '--bundle', fixture.bundle,
+    '--artifact-mode', 'portable',
+    '--expected-gates', 'health',
+    '--output', output,
+  ])
+  const result = JSON.parse(readFileSync(output, 'utf8'))
+  assert.equal(result.artifact_mode, 'portable')
 })
 
 test('runtime evidence rejects incomplete gate detail', () => {
