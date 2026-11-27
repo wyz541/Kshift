@@ -94,3 +94,9 @@ v1 验收当前为失败。阻断项见验收报告。
 | 项目 | 入口 |
 | --- | --- |
 | Task editor Popover 证据 | [task-editor-popover](task-editor-popover/README.md) |
+
+## Task reschedule
+
+| 项目 | 入口 |
+| --- | --- |
+| Gantt delay and reschedule evidence | [task-reschedule](task-reschedule/README.md) |

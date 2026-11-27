@@ -160,6 +160,7 @@ struct PlanDepthCommandRequestDto {
 #[serde(tag = "type", content = "value", rename_all = "snake_case")]
 enum PlanDepthCommandDto {
     SetTaskStatus(SetPlanTaskStatusDto),
+    RescheduleTask(ReschedulePlanTaskDto),
     Rollback(RollbackPlanDto),
 }
 
@@ -169,6 +170,16 @@ struct SetPlanTaskStatusDto {
     task_id: String,
     status: TaskStatusDto,
     expected_version: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ReschedulePlanTaskDto {
+    task_id: String,
+    expected_version: u64,
+    starts_on: String,
+    due_on: String,
+    reason: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -274,6 +285,13 @@ pub fn plan_depth_command_from_json(
             task_id: parse_uuid("task_id", &value.task_id)?.to_string(),
             status: plan_task_status(value.status),
             expected_version: value.expected_version,
+        },
+        PlanDepthCommandDto::RescheduleTask(value) => PlanCommand::RescheduleTask {
+            task_id: parse_uuid("task_id", &value.task_id)?.to_string(),
+            expected_version: value.expected_version,
+            starts_on: parse_date("starts_on", &value.starts_on)?,
+            due_on: parse_date("due_on", &value.due_on)?,
+            reason: value.reason,
         },
         PlanDepthCommandDto::Rollback(value) => PlanCommand::Rollback {
             target_revision: value.target_revision,
@@ -544,6 +562,35 @@ mod tests {
         assert!(matches!(patch.starts_on, Maybe::Null));
         assert!(matches!(patch.due_on, Maybe::Unset));
         assert!(matches!(patch.tags, Maybe::Unset));
+    }
+
+    #[test]
+    fn parses_r3_reschedule_command() {
+        let json = br#"{
+          "request_id": "99999999-8888-4777-8666-555555555555",
+          "project_id": "11111111-2222-4333-8444-555555555555",
+          "expected_revision": 7,
+          "command": {
+            "type": "reschedule_task",
+            "value": {
+              "task_id": "22222222-2222-4222-8222-222222222222",
+              "expected_version": 3,
+              "starts_on": "2026-11-27",
+              "due_on": "2026-11-30",
+              "reason": "Waiting for API integration"
+            }
+          }
+        }"#;
+        let input = plan_depth_command_from_json(json).expect("R3 reschedule should parse");
+        assert_eq!(input.expected_revision, 7);
+        assert!(matches!(
+            input.command,
+            PlanCommand::RescheduleTask {
+                expected_version: 3,
+                reason,
+                ..
+            } if reason == "Waiting for API integration"
+        ));
     }
 
     #[test]

@@ -17,7 +17,8 @@ pub use model::{
 pub use plan_depth::{
     AttachmentLink, AttachmentMetadata, AttachmentPolicy, PLAN_SCHEMA_VERSION, PlanActorRole,
     PlanCommand, PlanCommandEnvelope, PlanCommandResponse, PlanDepthSnapshot, PlanDepthStore,
-    PlanError, PlanHistoryEntry, PlanProject, PlanStatistics, PlanTask, PlanTaskDraft, ReportRange,
-    ReportTask, TaskDependency, WorkReport, build_report_html, demo_snapshot,
+    PlanError, PlanHistoryEntry, PlanProject, PlanStatistics, PlanTask, PlanTaskDraft,
+    PlanTaskReschedule, ReportRange, ReportTask, TaskDependency, WorkReport, build_report_html,
+    demo_snapshot,
 };
 pub use store::{KshiftStore, StoreError};

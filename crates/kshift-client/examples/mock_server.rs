@@ -100,6 +100,7 @@ impl MockService {
                 name: snapshot.project.name,
                 revision: snapshot.project.current_revision,
                 schema_version: kshift_core::PLAN_SCHEMA_VERSION,
+                time_zone: snapshot.project.time_zone,
             },
             people: vec![kshift_core::Person {
                 id: user_id().to_string(),
@@ -128,6 +129,7 @@ impl MockService {
                 completed_at: None,
             }],
             dependencies: Vec::new(),
+            reschedules: Vec::new(),
             attachments: Vec::new(),
             attachment_links: Vec::new(),
             history: Vec::new(),

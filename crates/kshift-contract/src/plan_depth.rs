@@ -4,7 +4,8 @@ use chrono::NaiveDate;
 use kshift_core::{
     AttachmentLink, AttachmentMetadata, PlanActorRole, PlanCommand, PlanCommandResponse,
     PlanDepthSnapshot, PlanError, PlanHistoryEntry, PlanProject, PlanStatistics, PlanTask,
-    ReportRange, ReportTask, TaskDependency, TaskPriority, TaskStatus, WorkReport,
+    PlanTaskReschedule, ReportRange, ReportTask, TaskDependency, TaskPriority, TaskStatus,
+    WorkReport,
 };
 use uuid::Uuid;
 
@@ -52,6 +53,19 @@ pub fn plan_depth_command_to_proto(
             status: task_status_to_proto(*status) as i32,
             expected_version: *expected_version,
         }),
+        PlanCommand::RescheduleTask {
+            task_id,
+            expected_version,
+            starts_on,
+            due_on,
+            reason,
+        } => v1::plan_command::Command::RescheduleTask(v1::ReschedulePlanTaskCommand {
+            task_id: parse_required_uuid_string(task_id, "task_id")?,
+            expected_version: *expected_version,
+            starts_on: starts_on.to_string(),
+            due_on: due_on.to_string(),
+            reason: reason.clone(),
+        }),
         PlanCommand::Rollback {
             target_revision,
             reason,
@@ -61,7 +75,8 @@ pub fn plan_depth_command_to_proto(
         }),
         _ => {
             return Err(ApiError::Unsupported(
-                "R3 boundary currently supports status and rollback commands".to_owned(),
+                "R3 boundary currently supports status, reschedule and rollback commands"
+                    .to_owned(),
             ))
         }
     };
@@ -85,6 +100,13 @@ fn parse_plan_command(command: Option<&v1::PlanCommand>) -> Result<PlanCommand, 
             status: task_status_from_proto(value.status)?,
             expected_version: value.expected_version,
         }),
+        v1::plan_command::Command::RescheduleTask(value) => Ok(PlanCommand::RescheduleTask {
+            task_id: value.task_id.clone(),
+            expected_version: value.expected_version,
+            starts_on: parse_date(&value.starts_on, "reschedule_task.starts_on")?,
+            due_on: parse_date(&value.due_on, "reschedule_task.due_on")?,
+            reason: value.reason.clone(),
+        }),
         v1::plan_command::Command::Rollback(value) => Ok(PlanCommand::Rollback {
             target_revision: value.target_revision,
             reason: value.reason.clone(),
@@ -100,6 +122,7 @@ pub fn plan_depth_snapshot_to_proto(value: &PlanDepthSnapshot) -> v1::PlanDepthS
             name: value.project.name.clone(),
             revision: value.project.revision,
             schema_version: value.project.schema_version,
+            time_zone: value.project.time_zone.clone(),
         }),
         people: value
             .people
@@ -137,6 +160,24 @@ pub fn plan_depth_snapshot_to_proto(value: &PlanDepthSnapshot) -> v1::PlanDepthS
             .map(|dependency| v1::PlanTaskDependency {
                 task_id: dependency.task_id.clone(),
                 depends_on_task_id: dependency.depends_on_task_id.clone(),
+            })
+            .collect(),
+        reschedules: value
+            .reschedules
+            .iter()
+            .map(|entry| v1::PlanTaskReschedule {
+                id: entry.id.clone(),
+                task_id: entry.task_id.clone(),
+                revision: entry.revision,
+                previous_starts_on: entry.previous_starts_on.to_string(),
+                previous_due_on: entry.previous_due_on.to_string(),
+                new_starts_on: entry.new_starts_on.to_string(),
+                new_due_on: entry.new_due_on.to_string(),
+                delay_days: entry.delay_days,
+                was_overdue_at_change: entry.was_overdue_at_change,
+                reason: entry.reason.clone(),
+                actor_id: entry.actor_id.clone(),
+                occurred_at: entry.occurred_at.clone(),
             })
             .collect(),
         attachments: value
@@ -188,6 +229,7 @@ pub fn plan_depth_snapshot_from_proto(
             name: project.name,
             revision: project.revision,
             schema_version: project.schema_version,
+            time_zone: project.time_zone,
         },
         people: value
             .people
@@ -212,6 +254,11 @@ pub fn plan_depth_snapshot_from_proto(
                 depends_on_task_id: dependency.depends_on_task_id,
             })
             .collect(),
+        reschedules: value
+            .reschedules
+            .into_iter()
+            .map(plan_reschedule_from_proto)
+            .collect::<Result<Vec<_>, _>>()?,
         attachments: value
             .attachments
             .into_iter()
@@ -245,6 +292,25 @@ pub fn plan_depth_snapshot_from_proto(
                 content_sha256: entry.content_sha256,
             })
             .collect(),
+    })
+}
+
+fn plan_reschedule_from_proto(
+    value: v1::PlanTaskReschedule,
+) -> Result<PlanTaskReschedule, ApiError> {
+    Ok(PlanTaskReschedule {
+        id: value.id,
+        task_id: value.task_id,
+        revision: value.revision,
+        previous_starts_on: parse_date(&value.previous_starts_on, "reschedule.previous_starts_on")?,
+        previous_due_on: parse_date(&value.previous_due_on, "reschedule.previous_due_on")?,
+        new_starts_on: parse_date(&value.new_starts_on, "reschedule.new_starts_on")?,
+        new_due_on: parse_date(&value.new_due_on, "reschedule.new_due_on")?,
+        delay_days: value.delay_days,
+        was_overdue_at_change: value.was_overdue_at_change,
+        reason: value.reason,
+        actor_id: value.actor_id,
+        occurred_at: value.occurred_at,
     })
 }
 
@@ -479,10 +545,44 @@ mod tests {
 
     #[test]
     fn plan_depth_snapshot_round_trips() {
-        let snapshot = kshift_core::demo_snapshot(NaiveDate::from_ymd_opt(2026, 11, 14).unwrap());
+        let mut snapshot =
+            kshift_core::demo_snapshot(NaiveDate::from_ymd_opt(2026, 11, 14).unwrap());
+        snapshot.reschedules.push(PlanTaskReschedule {
+            id: Uuid::new_v4().to_string(),
+            task_id: "task-plan".to_owned(),
+            revision: 8,
+            previous_starts_on: NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
+            previous_due_on: NaiveDate::from_ymd_opt(2026, 11, 14).unwrap(),
+            new_starts_on: NaiveDate::from_ymd_opt(2026, 11, 13).unwrap(),
+            new_due_on: NaiveDate::from_ymd_opt(2026, 11, 16).unwrap(),
+            delay_days: 2,
+            was_overdue_at_change: true,
+            reason: "等待依赖".to_owned(),
+            actor_id: "d0000000-0000-4000-8000-000000000002".to_owned(),
+            occurred_at: "2026-11-15T03:00:00Z".to_owned(),
+        });
         let decoded = plan_depth_snapshot_from_proto(plan_depth_snapshot_to_proto(&snapshot))
             .expect("snapshot should decode");
         assert_eq!(decoded, snapshot);
+    }
+
+    #[test]
+    fn reschedule_command_round_trips() {
+        let input = PlanDepthCommandInput {
+            request_id: Uuid::new_v4(),
+            project_id: Uuid::new_v4(),
+            expected_revision: 7,
+            command: PlanCommand::RescheduleTask {
+                task_id: Uuid::new_v4().to_string(),
+                expected_version: 3,
+                starts_on: NaiveDate::from_ymd_opt(2026, 11, 27).unwrap(),
+                due_on: NaiveDate::from_ymd_opt(2026, 11, 30).unwrap(),
+                reason: "等待接口联调".to_owned(),
+            },
+        };
+        let wire = plan_depth_command_to_proto(&input).expect("command should encode");
+        let decoded = parse_execute_plan_depth_command(&wire).expect("command should decode");
+        assert_eq!(decoded, input);
     }
 
     #[test]

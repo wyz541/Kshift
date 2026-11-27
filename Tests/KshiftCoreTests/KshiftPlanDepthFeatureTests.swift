@@ -63,6 +63,48 @@ final class KshiftPlanDepthFeatureTests: XCTestCase {
         }
     }
 
+    func testFeatureModelReschedulePersistsAuditEventAndPresentation() async throws {
+        let boundary = KshiftPlanSampleData.makeBoundary()
+        let capabilities = KshiftNoopPlatformCapabilities()
+        let model = KshiftPlanDepthFeatureModel(
+            boundary: boundary,
+            capabilities: capabilities
+        )
+        await model.load()
+        let task = try XCTUnwrap(
+            model.snapshot?.tasks.first { $0.id == KshiftPlanSampleData.planTaskID }
+        )
+        let countBefore = model.snapshot?.reschedules.count ?? 0
+        let calendar = Calendar(identifier: .gregorian)
+        let newDue = try XCTUnwrap(calendar.date(byAdding: .day, value: 2, to: task.dueOn))
+
+        let succeeded = await model.reschedule(
+            taskID: task.id,
+            startsOn: task.startsOn,
+            dueOn: newDue,
+            reason: "等待接口联调"
+        )
+
+        XCTAssertTrue(succeeded)
+        let updated = try XCTUnwrap(
+            model.snapshot?.tasks.first { $0.id == task.id }
+        )
+        XCTAssertEqual(updated.dueOn, newDue)
+        XCTAssertEqual(updated.version, task.version + 1)
+        XCTAssertEqual(model.snapshot?.reschedules.count, countBefore + 1)
+        let event = try XCTUnwrap(model.snapshot?.reschedules.last)
+        XCTAssertEqual(event.reason, "等待接口联调")
+        XCTAssertEqual(event.delayDays, 2)
+        XCTAssertFalse(event.wasOverdueAtChange)
+        XCTAssertEqual(model.phase, .loaded)
+        let row = try XCTUnwrap(
+            model.presentation?.gantt.rows.first { $0.id == task.id }
+        )
+        XCTAssertFalse(row.hasDelay)
+        XCTAssertNil(row.delayLabel)
+        XCTAssertEqual(row.rescheduleCount, 1)
+    }
+
     func testFeatureModelUsesServerAuthoritativeViewerRole() async {
         let snapshot = KshiftPlanSampleData.makeSnapshot()
         let boundary = InMemoryKshiftPlanDepthBoundary(

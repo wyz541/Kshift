@@ -30,6 +30,19 @@ public struct KshiftPlanDepthFilter: Equatable, Sendable {
     }
 }
 
+public struct KshiftReschedulePresentation: Identifiable, Hashable, Sendable {
+    public let id: UUID
+    public let revisionLabel: String
+    public let previousScheduleLabel: String
+    public let newScheduleLabel: String
+    public let delayLabel: String
+    public let timingLabel: String
+    public let reason: String
+    public let actorName: String
+    public let timeLabel: String
+    public let accessibilityLabel: String
+}
+
 public struct KshiftPlanTaskPresentation: Identifiable, Hashable, Sendable {
     public let id: UUID
     public let title: String
@@ -38,6 +51,11 @@ public struct KshiftPlanTaskPresentation: Identifiable, Hashable, Sendable {
     public let priority: KshiftPlanPriority
     public let assigneeName: String
     public let scheduleLabel: String
+    public let baselineScheduleLabel: String?
+    public let delayDays: Int
+    public let latestRescheduleReason: String?
+    public let latestRescheduleWasOverdue: Bool
+    public let reschedules: [KshiftReschedulePresentation]
     public let dependencyCount: Int
     public let subtaskCount: Int
     public let attachmentCount: Int
@@ -58,11 +76,23 @@ public struct KshiftPlanBoardColumn: Identifiable, Hashable, Sendable {
 
 public struct KshiftGanttRow: Identifiable, Hashable, Sendable {
     public let id: UUID
+    public let taskPresentation: KshiftPlanTaskPresentation
     public let title: String
     public let status: KshiftPlanTaskStatus
     public let assigneeName: String
     public let startFraction: Double
     public let widthFraction: Double
+    public let baselineStartFraction: Double
+    public let baselineWidthFraction: Double
+    public let extensionStartFraction: Double?
+    public let extensionWidthFraction: Double?
+    public let connectorStartFraction: Double?
+    public let connectorEndFraction: Double?
+    public let hasDelay: Bool
+    public let isContiguousDelay: Bool
+    public let delayDays: Int
+    public let delayLabel: String?
+    public let rescheduleCount: Int
     public let crossDay: Bool
     public let dependencyCount: Int
     public let dateLabel: String
@@ -154,6 +184,7 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
     ) -> KshiftPlanDepthPresentation {
         let people = Dictionary(uniqueKeysWithValues: snapshot.people.map { ($0.id, $0.name) })
         let dependencies = Dictionary(grouping: snapshot.dependencies, by: \.taskID)
+        let reschedules = Dictionary(grouping: snapshot.reschedules, by: \.taskID)
         let subtasks = Dictionary(grouping: snapshot.tasks.compactMap { task in
             task.parentID.map { ($0, task) }
         }, by: \.0)
@@ -164,12 +195,27 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
         let visible = Array(matching.prefix(Self.maximumVisibleInteractiveCards))
         let hiddenCount = max(0, matching.count - visible.count)
 
-        let taskPresentations = Dictionary(uniqueKeysWithValues: visible.map { task in
+        let taskPresentations = Dictionary(uniqueKeysWithValues: matching.map { task in
             let assignee = task.assigneeID.flatMap { people[$0] } ?? "未分配"
             let dependencyCount = dependencies[task.id]?.count ?? 0
             let subtaskCount = subtasks[task.id]?.count ?? 0
             let attachmentCount = snapshot.attachmentIDs(for: task.id).count
             let schedule = "\(dateLabel(task.startsOn)) 至 \(dateLabel(task.dueOn))"
+            let taskReschedules = (reschedules[task.id] ?? []).sorted { $0.revision < $1.revision }
+            let baselineStart = taskReschedules.first?.previousStartsOn ?? task.startsOn
+            let baselineDue = taskReschedules.first?.previousDueOn ?? task.dueOn
+            let confirmedDelay = taskReschedules.contains(where: \.wasOverdueAtChange)
+            let delayDays = confirmedDelay
+                ? max(
+                    0,
+                    calendar.dateComponents([.day], from: baselineDue, to: task.dueOn).day ?? 0
+                )
+                : 0
+            let latestReschedule = taskReschedules.last
+            let delayLabel = delayDays > 0 ? "延期 \(delayDays) 天" : nil
+            let accessibilityDelay = delayLabel.map {
+                "，原计划 \(dateLabel(baselineStart)) 至 \(dateLabel(baselineDue))，\($0)"
+            } ?? ""
             let nextAction = task.status == .done ? "重新打开" : "标记完成"
             return (
                 task.id,
@@ -181,12 +227,39 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
                     priority: task.priority,
                     assigneeName: assignee,
                     scheduleLabel: schedule,
+                    baselineScheduleLabel: taskReschedules.isEmpty
+                        ? nil
+                        : "\(dateLabel(baselineStart)) 至 \(dateLabel(baselineDue))",
+                    delayDays: delayDays,
+                    latestRescheduleReason: latestReschedule?.reason,
+                    latestRescheduleWasOverdue: latestReschedule?.wasOverdueAtChange ?? false,
+                    reschedules: taskReschedules.map { entry in
+                        let actor = people[entry.actorID] ?? "未知成员"
+                        let previousSchedule = "\(dateLabel(entry.previousStartsOn)) 至 \(dateLabel(entry.previousDueOn))"
+                        let newSchedule = "\(dateLabel(entry.newStartsOn)) 至 \(dateLabel(entry.newDueOn))"
+                        let entryDelay = entry.wasOverdueAtChange && entry.delayDays > 0
+                            ? "延期 \(entry.delayDays) 天"
+                            : "计划内改期"
+                        let timing = entry.wasOverdueAtChange ? "旧截止日之后改期" : "计划内改期"
+                        return KshiftReschedulePresentation(
+                            id: entry.id,
+                            revisionLabel: "r\(entry.revision)",
+                            previousScheduleLabel: previousSchedule,
+                            newScheduleLabel: newSchedule,
+                            delayLabel: entryDelay,
+                            timingLabel: timing,
+                            reason: entry.reason,
+                            actorName: actor,
+                            timeLabel: historyTimeLabel(entry.occurredAt),
+                            accessibilityLabel: "\(entryDelay)，\(timing)，\(previousSchedule) 改为 \(newSchedule)，原因 \(entry.reason)，\(actor)，\(historyTimeLabel(entry.occurredAt))"
+                        )
+                    },
                     dependencyCount: dependencyCount,
                     subtaskCount: subtaskCount,
                     attachmentCount: attachmentCount,
                     isCrossDay: task.isCrossDay,
                     isCompleted: task.status == .done,
-                    accessibilityLabel: "\(task.title)，\(task.status.title)，优先级\(task.priority.title)，负责人\(assignee)，\(schedule)",
+                    accessibilityLabel: "\(task.title)，\(task.status.title)，优先级\(task.priority.title)，负责人\(assignee)，\(schedule)\(accessibilityDelay)",
                     accessibilityHint: "\(nextAction)。任务版本 \(task.version)，项目版本 \(snapshot.revision)。"
                 )
             )
@@ -208,7 +281,12 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
             )
         }
 
-        let gantt = makeGantt(snapshot: snapshot, tasks: matching, people: people)
+        let gantt = makeGantt(
+            snapshot: snapshot,
+            tasks: matching,
+            people: people,
+            taskPresentations: taskPresentations
+        )
         let history = snapshot.history.map { entry in
             let actor = people[entry.actorID] ?? "未知成员"
             return KshiftHistoryRow(
@@ -280,10 +358,13 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
     private func makeGantt(
         snapshot: KshiftPlanDepthSnapshot,
         tasks: [KshiftPlanTask],
-        people: [UUID: String]
+        people: [UUID: String],
+        taskPresentations: [UUID: KshiftPlanTaskPresentation]
     ) -> KshiftGanttPresentation {
-        guard let earliest = snapshot.tasks.map(\.startsOn).min(),
-              let latest = snapshot.tasks.map(\.dueOn).max()
+        let baselineStarts = snapshot.reschedules.map(\.previousStartsOn)
+        let baselineDues = snapshot.reschedules.map(\.previousDueOn)
+        guard let earliest = (snapshot.tasks.map(\.startsOn) + baselineStarts).min(),
+              let latest = (snapshot.tasks.map(\.dueOn) + baselineDues).max()
         else {
             return KshiftGanttPresentation(
                 startDateLabel: "无任务",
@@ -296,28 +377,74 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
         let windowEnd = calendar.startOfDay(for: latest)
         let dayCount = max(1, (calendar.dateComponents([.day], from: windowStart, to: windowEnd).day ?? 0) + 1)
         let dependencyCounts = Dictionary(grouping: snapshot.dependencies, by: \.taskID).mapValues(\.count)
+        let reschedules = Dictionary(grouping: snapshot.reschedules, by: \.taskID)
         let rows = tasks.map { task in
-            let offset = calendar.dateComponents(
-                [.day],
-                from: windowStart,
-                to: calendar.startOfDay(for: task.startsOn)
-            ).day ?? 0
-            let span = max(1, (calendar.dateComponents([.day], from: task.startsOn, to: task.dueOn).day ?? 0) + 1)
-            let startFraction = min(1, max(0, Double(offset) / Double(dayCount)))
-            let widthFraction = min(1 - startFraction, max(1 / Double(dayCount), Double(span) / Double(dayCount)))
+            let taskReschedules = (reschedules[task.id] ?? []).sorted { $0.revision < $1.revision }
+            let baselineStart = taskReschedules.first?.previousStartsOn ?? task.startsOn
+            let baselineDue = taskReschedules.first?.previousDueOn ?? task.dueOn
+            let confirmedDelay = taskReschedules.contains(where: \.wasOverdueAtChange)
+            let delayDays = confirmedDelay
+                ? max(
+                    0,
+                    calendar.dateComponents([.day], from: baselineDue, to: task.dueOn).day ?? 0
+                )
+                : 0
+            let hasDelay = delayDays > 0
+            let baseline = fractions(
+                startsOn: baselineStart,
+                dueOn: baselineDue,
+                windowStart: windowStart,
+                dayCount: dayCount
+            )
+            let current = fractions(
+                startsOn: task.startsOn,
+                dueOn: task.dueOn,
+                windowStart: windowStart,
+                dayCount: dayCount
+            )
+            let isContiguousDelay = hasDelay && task.startsOn <= baselineDue
+            let extensionStart = isContiguousDelay ? calendar.date(byAdding: .day, value: 1, to: baselineDue) : nil
+            let extensionFractions = extensionStart.flatMap { start in
+                start <= task.dueOn
+                    ? fractions(startsOn: start, dueOn: task.dueOn, windowStart: windowStart, dayCount: dayCount)
+                    : nil
+            }
+            let nonContiguous = hasDelay && task.startsOn > baselineDue
+            let connectorStart = nonContiguous ? baseline.startFraction : nil
+            let connectorEnd = nonContiguous ? current.startFraction : nil
             let assignee = task.assigneeID.flatMap { people[$0] } ?? "未分配"
             let dateRange = "\(dateLabel(task.startsOn)) 至 \(dateLabel(task.dueOn))"
+            let delayLabel = hasDelay ? "延期 \(delayDays) 天" : nil
+            let baselineRange = "\(dateLabel(baselineStart)) 至 \(dateLabel(baselineDue))"
+            let accessibilityLabel = hasDelay
+                ? "\(task.title)，\(dateRange)，原计划\(baselineRange)，\(delayLabel ?? "")，负责人\(assignee)，\(task.isCrossDay ? "跨日任务" : "单日任务")"
+                : "\(task.title)，\(dateRange)，负责人\(assignee)，\(task.isCrossDay ? "跨日任务" : "单日任务")"
+            guard let taskPresentation = taskPresentations[task.id] else {
+                preconditionFailure("matching Gantt task must have a presentation")
+            }
             return KshiftGanttRow(
                 id: task.id,
+                taskPresentation: taskPresentation,
                 title: task.title,
                 status: task.status,
                 assigneeName: assignee,
-                startFraction: startFraction,
-                widthFraction: widthFraction,
+                startFraction: current.startFraction,
+                widthFraction: current.widthFraction,
+                baselineStartFraction: baseline.startFraction,
+                baselineWidthFraction: baseline.widthFraction,
+                extensionStartFraction: extensionFractions?.startFraction,
+                extensionWidthFraction: extensionFractions?.widthFraction,
+                connectorStartFraction: connectorStart,
+                connectorEndFraction: connectorEnd,
+                hasDelay: hasDelay,
+                isContiguousDelay: isContiguousDelay,
+                delayDays: delayDays,
+                delayLabel: delayLabel,
+                rescheduleCount: taskReschedules.count,
                 crossDay: task.isCrossDay,
                 dependencyCount: dependencyCounts[task.id] ?? 0,
                 dateLabel: dateRange,
-                accessibilityLabel: "\(task.title)，\(dateRange)，负责人\(assignee)，\(task.isCrossDay ? "跨日任务" : "单日任务")"
+                accessibilityLabel: accessibilityLabel
             )
         }.sorted {
             if $0.startFraction != $1.startFraction { return $0.startFraction < $1.startFraction }
@@ -329,6 +456,29 @@ public struct KshiftPlanDepthPresentationMapper: Sendable {
             dayCount: dayCount,
             rows: rows
         )
+    }
+
+    private func fractions(
+        startsOn: Date,
+        dueOn: Date,
+        windowStart: Date,
+        dayCount: Int
+    ) -> (startFraction: Double, widthFraction: Double) {
+        let offset = calendar.dateComponents(
+            [.day],
+            from: windowStart,
+            to: calendar.startOfDay(for: startsOn)
+        ).day ?? 0
+        let span = max(
+            1,
+            (calendar.dateComponents([.day], from: startsOn, to: dueOn).day ?? 0) + 1
+        )
+        let startFraction = min(1, max(0, Double(offset) / Double(dayCount)))
+        let widthFraction = min(
+            1 - startFraction,
+            max(1 / Double(dayCount), Double(span) / Double(dayCount))
+        )
+        return (startFraction, widthFraction)
     }
 
     private func matches(_ task: KshiftPlanTask, filter: KshiftPlanDepthFilter) -> Bool {
